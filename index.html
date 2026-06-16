@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OFP Briefing Tool</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/2.1.5/tesseract.min.js"></script>
+<style>
+  :root{
+    --navy:#0B2545; --plum:#5A1846; --plum2:#7A2A5E; --ink:#1F2937; --grey:#6B7280;
+    --line:#C7CED8; --light:#EEF2F7; --paper:#FFFFFF; --bg:#0E1726;
+    --green:#0F7B3F; --amber:#B26A00; --red:#B00020;
+    --mono:"SFMono-Regular",ui-monospace,Menlo,Consolas,monospace;
+    --sans:"Inter",-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:#E6ECF5;font-family:var(--sans);font-size:14px;line-height:1.45}
+  header.app{padding:18px 22px;background:linear-gradient(90deg,var(--plum),var(--plum2));display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
+  header.app h1{margin:0;font-size:18px;letter-spacing:.4px;font-weight:700}
+  header.app .sub{font-size:12px;color:#E8C9DD}
+  .wrap{max-width:980px;margin:0 auto;padding:20px}
+  .panel{background:#13203A;border:1px solid #20304f;border-radius:10px;padding:16px;margin-bottom:18px}
+  .panel h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:#9FB3D1}
+  .drop{position:relative;border:1.5px dashed #3a4f74;border-radius:10px;padding:26px;text-align:center;cursor:pointer;transition:.15s;background:#0f1b31}
+  .drop.drag{border-color:var(--plum2);background:#17243f}
+  .drop b{color:#fff}
+  .drop input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:12px}
+  label.fld{display:flex;flex-direction:column;gap:4px;font-size:11px;color:#9FB3D1;flex:1;min-width:220px}
+  input[type=text]{background:#0f1b31;border:1px solid #2a3c5e;color:#E6ECF5;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:12px}
+  button{background:var(--plum);color:#fff;border:0;border-radius:7px;padding:10px 16px;font-weight:600;cursor:pointer;font-size:13px}
+  button:hover{background:var(--plum2)}
+  button.ghost{background:transparent;border:1px solid #3a4f74;color:#cfe}
+  textarea{width:100%;min-height:120px;background:#0f1b31;border:1px solid #2a3c5e;color:#cfe;border-radius:8px;padding:10px;font-family:var(--mono);font-size:11px}
+  .msg{font-size:12px;margin-top:8px}
+  .msg.err{color:#ff9aa2}
+  .msg.ok{color:#7be0a4}
+  .hint{font-size:11px;color:#7e90ad;margin-top:6px}
+
+  /* ---- output sheets (print-friendly) ---- */
+  #out-ofp,#out-route,#out-wx,#out-notam{margin-top:6px}
+  .sheet{background:var(--paper);color:var(--ink);border-radius:8px;overflow:hidden;margin:0 auto 22px;max-width:820px;box-shadow:0 8px 30px rgba(0,0,0,.35);font-family:var(--sans)}
+  .sheet .hd{background:var(--plum);color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:baseline}
+  .sheet .hd h3{margin:0;font-size:16px;font-weight:700;letter-spacing:.3px}
+  .sheet .hd .r{font-size:11px;color:#E8C9DD}
+  .sec{background:var(--navy);color:#fff;font-size:11px;font-weight:700;letter-spacing:.5px;padding:6px 12px;text-transform:uppercase;margin:0}
+  .body{padding:12px 16px}
+  .grid{display:grid;gap:8px}
+  .g4{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:repeat(3,1fr)}
+  .g5{grid-template-columns:repeat(5,1fr)}.g6{grid-template-columns:repeat(6,1fr)}.g2{grid-template-columns:repeat(2,1fr)}
+  .cell label{display:block;font-size:8.5px;color:var(--grey);font-weight:700;letter-spacing:.4px;text-transform:uppercase;margin-bottom:2px}
+  .cell input{width:100%;background:#fff;border:1px solid var(--line);border-radius:3px;padding:5px 6px;font-family:var(--mono);font-weight:600;font-size:12px;color:var(--ink)}
+  .cell input.hl{background:var(--light)}
+  .flag{border-radius:6px;padding:8px 10px;font-size:12px;margin:8px 0;border:1px solid var(--line);background:var(--light)}
+  .flag b{display:inline-block;min-width:64px}
+  .chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;color:#fff;margin-right:6px;vertical-align:middle}
+  .chip.g{background:var(--green)}.chip.a{background:var(--amber)}.chip.r{background:var(--red)}.chip.n{background:var(--grey)}
+  table.t{width:100%;border-collapse:collapse;font-size:11.5px}
+  table.t th{text-align:left;color:var(--grey);font-size:8.5px;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--line);padding:4px 6px}
+  table.t td{padding:4px 6px;border-bottom:1px solid #eef}
+  table.t td.k{font-weight:700;color:var(--navy);white-space:nowrap}
+  .item{margin:0 0 9px}
+  .item h4{margin:0 0 2px;font-size:11.5px;color:var(--navy);font-weight:700}
+  .item p{margin:0 0 2px;font-size:11.5px;color:var(--ink)}
+  .item .fl{font-size:11px;font-weight:700;margin-top:2px}
+  .fl.g{color:var(--green)}.fl.a{color:var(--amber)}.fl.r{color:var(--red)}.fl.n{color:var(--grey)}
+  .mono{font-family:var(--mono)}
+  .raw{font-family:var(--mono);font-size:10.5px;color:#445;background:#f6f8fb;border:1px solid #e6ebf2;border-radius:4px;padding:6px 8px;white-space:pre-wrap;word-break:break-word}
+  .notes{width:100%;min-height:60px;border:1px solid var(--line);border-radius:4px;padding:6px;font-family:var(--sans);font-size:12px}
+  .foot{font-size:9px;color:var(--grey);padding:8px 16px;border-top:1px solid var(--line);display:flex;justify-content:space-between}
+  .toolbar{position:sticky;top:0;z-index:5;background:#0E1726;padding:10px 0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  @media print{
+    body{background:#fff}
+    header.app,nav.topnav,nav.subnav,.wrap>.panel,.toolbar,.hint,#io{display:none!important}
+    .wrap{max-width:none;padding:0;margin:0}
+    .view:not(.active){display:none!important}
+    .subview{display:block!important}
+    .sheet{box-shadow:none;margin:0;max-width:none;border-radius:0;page-break-after:always}
+    .cell input{border:1px solid #aaa}
+    .banner{display:none!important}
+  }
+
+  /* ===== top tabs + sub tabs ===== */
+  nav.topnav{display:flex;gap:2px;background:#0b1322;border-bottom:1px solid #20304f;padding:0 12px;overflow-x:auto;position:sticky;top:0;z-index:6}
+  nav.topnav button{background:transparent;border:0;border-bottom:3px solid transparent;color:#9FB3D1;padding:12px 14px;font-size:12.5px;font-weight:600;border-radius:0;white-space:nowrap}
+  nav.topnav button:hover{background:#13203A;color:#cfe}
+  nav.topnav button.active{color:#fff;border-bottom-color:var(--plum2)}
+  nav.subnav{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 16px}
+  nav.subnav button{background:#0f1b31;border:1px solid #2a3c5e;color:#9FB3D1;border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:600}
+  nav.subnav button.active{background:var(--plum);border-color:var(--plum);color:#fff}
+  .subview{display:none}
+  .subview.active{display:block}
+  .view{display:none}
+  .view.active{display:block}
+  .fcard{background:#13203A;border:1px solid #20304f;border-radius:10px;padding:16px;margin-bottom:16px}
+  .fcard h2{margin:0 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:#9FB3D1}
+  .fsub{color:#7e90ad;font-size:12px;margin:0 0 14px}
+  .fgrid{display:flex;gap:12px;flex-wrap:wrap}
+  .fgrid>div{flex:1 1 150px}
+  label.lab{display:block;font-size:11px;color:#9FB3D1;margin:0 0 4px;font-weight:600}
+  .view select,.view input[type=time],.view input[type=number],.view input[type=text]{width:100%;background:#0f1b31;border:1px solid #2a3c5e;color:#E6ECF5;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:12px}
+  .feat-field{margin-bottom:12px}
+  table.ft{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.ft th{text-align:left;color:#9FB3D1;font-size:9px;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #2a3c5e;padding:7px 6px}
+  table.ft td{padding:7px 6px;border-bottom:1px solid #1b2942;vertical-align:top}
+  .dgrow{border-bottom:1px solid #1b2942;padding:9px 0}
+  .dgrow .k{font-size:10px;color:#E0A33A;text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+  .dgrow .v{font-size:13px;margin-top:3px;color:#E6ECF5}
+  .dispgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .dispbox{background:#0f1b31;border:1px solid #2a3c5e;border-radius:9px;padding:14px;text-align:center}
+  .dispbox .v{font-size:24px;font-weight:700;font-family:var(--mono);letter-spacing:1px;color:#fff}
+  .dispbox .l{font-size:10px;color:#9FB3D1;text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
+  .badge{display:inline-block;padding:4px 14px;border-radius:20px;font-weight:700;font-size:13px}
+  .badge.day{background:#FFD66B;color:#5a4500}.badge.night{background:#1b2c4d;color:#bcd0ff}
+  .patabs{display:flex;gap:6px;margin-bottom:14px}
+  .patabs button{flex:1;background:#0f1b31;border:1px solid #2a3c5e;color:#9FB3D1;border-radius:7px;padding:9px;font-size:13px;font-weight:600}
+  .patabs button.active{background:var(--plum);border-color:var(--plum);color:#fff}
+  .rest-B{color:#7ec8ff;font-weight:700}.rest-A{color:#ffcaa8;font-weight:700}
+  .banner{background:var(--amber);color:#241500;border-radius:9px;padding:12px 14px;margin-bottom:14px;display:none;align-items:center;justify-content:space-between;gap:10px;font-weight:700}
+  .banner.rvsm{background:#c0392b;color:#fff}
+  .banner button{background:rgba(0,0,0,.25);color:inherit;padding:7px 12px}
+  .ofpchip{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:10px;background:#11324a;color:#7ec8ff;border:1px solid #245}
+  .ofpchip.off{background:#3a2330;color:#ffb0b0;border-color:#633}
+</style>
+</head>
+<body>
+<header class="app">
+  <div><h1>OFP Briefing Tool</h1><div class="sub">Parse a LIDO / Qatar-style Operational Flight Plan into a fillable briefing card &amp; hazard supplement</div></div>
+  <div class="sub mono">A350 long-haul &middot; offline-capable</div>
+</header>
+
+<nav class="topnav" id="topnav">
+  <button data-v="briefing" class="active">OFP Briefing</button>
+  <button data-v="dg">&#9888; Dangerous Goods</button>
+  <button data-v="disp">&#9992; Inflight Display</button>
+  <button data-v="rest">&#128719; Inflight Rest</button>
+  <button data-v="pa">&#128226; PA Guide</button>
+</nav>
+
+<div class="wrap view active" id="view-briefing">
+  <div id="io">
+    <div class="panel">
+      <h2>1 &mdash; Load an OFP</h2>
+      <div id="drop" class="drop">
+        <b>Drop an OFP file here</b> or click to choose &nbsp;<span style="color:#7e90ad">(.pdf or .txt)</span>
+        <input id="file" type="file" accept=".pdf,.txt,.text,application/pdf,text/plain">
+      </div>
+      <div class="hint">PDF text is extracted in-browser via PDF.js (needs internet the first time). If you have the OFP as text, paste it below instead &mdash; that always works offline.</div>
+      <div class="row">
+        <label class="fld" style="flex:1 1 100%">Or paste OFP text
+          <textarea id="paste" placeholder="Paste the full OFP text here…"></textarea>
+        </label>
+      </div>
+      <div class="row">
+        <label class="fld">Standard crew items to ignore (comma-separated)
+          <input id="known" type="text" value="CO2/26,CB01,CB18/19,CB18/23,CB58/24">
+        </label>
+        <label class="fld">Qsuite trigger (flight-attendant seats =)
+          <input id="qseats" type="text" value="16">
+        </label>
+      </div>
+      <div class="row">
+        <button id="go">Generate briefing</button>
+        <button id="print" class="ghost">Print / Save as PDF</button>
+        <span id="msg" class="msg"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="toolbar" id="tb" style="display:none">
+    <button id="print2">Print / Save as PDF</button>
+    <button id="reset" class="ghost">Load another OFP</button>
+  </div>
+
+  <nav class="subnav" id="subnav" style="display:none">
+    <button data-s="ofp" class="active">OFP</button>
+    <button data-s="route">Route</button>
+    <button data-s="wx">Weather Alerts</button>
+    <button data-s="notam">NOTAMs &amp; Enroute</button>
+  </nav>
+  <div id="out-ofp" class="subview active"></div>
+  <div id="out-route" class="subview"></div>
+  <div id="out-wx" class="subview"></div>
+  <div id="out-notam" class="subview"></div>
+</div>
+
+<!-- ===================== DANGEROUS GOODS ===================== -->
+<div class="wrap view" id="view-dg">
+  <div class="fcard">
+    <h2>Dangerous Goods &mdash; Emergency Response</h2>
+    <p class="fsub">ICAO Emergency Response Guidance. Choose a hazard class and/or a drill letter from the menus to see the relevant response.</p>
+    <div class="fgrid">
+      <div class="feat-field"><label class="lab">Hazard class (drill code)</label>
+        <select id="dgClass"><option value="">— select hazard class —</option></select></div>
+      <div class="feat-field"><label class="lab">Drill letter</label>
+        <select id="dgLetter"><option value="">— select drill letter —</option></select></div>
+    </div>
+    <div id="dgClassDetail"></div>
+    <div id="dgLetterDetail"></div>
+  </div>
+</div>
+
+<!-- ===================== INFLIGHT DISPLAY ===================== -->
+<div class="wrap view" id="view-disp">
+  <div class="banner" id="bnr"><span id="bnrTxt"></span><button id="bnrAck">Acknowledge</button></div>
+  <div class="fcard">
+    <h2>Inflight Display <span id="dispOfp" class="ofpchip off">no OFP loaded</span></h2>
+    <p class="fsub">Live flight progress. Takeoff time drives the rest window and the checklist reminders. Destination &amp; trip auto-fill from the OFP.</p>
+    <div class="fgrid">
+      <div class="feat-field"><label class="lab">Takeoff (UTC HH:MM)</label><input id="d_to" type="time"></div>
+      <div class="feat-field"><label class="lab">Trip time (HH:MM, from OFP)</label><input id="d_trip" type="time"></div>
+      <div class="feat-field"><label class="lab">Destination (ICAO/IATA)</label><input id="d_dest" type="text" placeholder="auto from OFP"></div>
+    </div>
+    <p class="hint" id="d_destinfo">Destination resolves from the OFP; you can override the airport code above.</p>
+  </div>
+  <div class="fcard">
+    <div style="text-align:center;margin-bottom:14px">
+      <span id="dn" class="badge day">DAY</span>
+      <div style="color:#9FB3D1;font-size:11px;margin-top:6px">Now (UTC): <span id="utcnow" class="mono">--:--</span></div>
+    </div>
+    <div class="dispgrid">
+      <div class="dispbox"><div class="v" id="d_elapsed">--:--</div><div class="l">Elapsed</div></div>
+      <div class="dispbox"><div class="v" id="d_togo">--:--</div><div class="l">Time to go</div></div>
+      <div class="dispbox"><div class="v" id="d_eta">--:--</div><div class="l">ETA (UTC)</div></div>
+      <div class="dispbox"><div class="v" id="d_etaL">--:--</div><div class="l">ETA (Local dest)</div></div>
+      <div class="dispbox"><div class="v" id="d_rest1">--:--</div><div class="l">To rest start</div></div>
+      <div class="dispbox"><div class="v" id="d_rest2">--:--</div><div class="l">To rest end</div></div>
+    </div>
+  </div>
+  <div class="fcard">
+    <h2>Sun &mdash; departure, destination &amp; en-route</h2>
+    <table class="ft"><thead><tr><th>Where</th><th>Sunrise</th><th>Sunset</th><th>Day/Night now</th></tr></thead>
+      <tbody id="sunTable"></tbody></table>
+    <div id="routeSun" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<!-- ===================== INFLIGHT REST ===================== -->
+<div class="wrap view" id="view-rest">
+  <div class="fcard">
+    <h2>Inflight Rest <span id="restOfp" class="ofpchip off">no OFP loaded</span></h2>
+    <p class="fsub">Rest window auto-builds from takeoff + OFP trip time: rest start = takeoff + 15 min; rest end = takeoff + trip &minus; 60 min. Times are editable.</p>
+    <div class="fgrid">
+      <div class="feat-field"><label class="lab">Takeoff (UTC HH:MM)</label><input id="r_to" type="time"></div>
+      <div class="feat-field"><label class="lab">Rest pattern</label>
+        <select id="r_type">
+          <option value="1,1">R / R</option>
+          <option value="1,1,1">R / R / R</option>
+          <option value="1,2,1">R / 2R / R</option>
+          <option value="1,1,1,1">R / R / R / R</option>
+          <option value="1,1,2,2">R / R / 2R / 2R</option>
+          <option value="2,2,1,1">2R / 2R / R / R</option>
+        </select></div>
+    </div>
+    <div class="fgrid">
+      <div class="feat-field"><label class="lab">Rest start (UTC HH:MM)</label><input id="r_start" type="time"></div>
+      <div class="feat-field"><label class="lab">Rest end (UTC HH:MM)</label><input id="r_end" type="time"></div>
+      <div class="feat-field"><label class="lab">Handover gap (min)</label><input id="r_gap" type="number" value="10" min="0"></div>
+    </div>
+    <p class="hint"><button id="r_auto" class="ghost" style="padding:6px 12px">Re-sync from takeoff + OFP</button></p>
+  </div>
+  <div class="fcard">
+    <table class="ft"><thead><tr><th>#</th><th>Crew</th><th>Start</th><th>End</th><th>Duration</th></tr></thead>
+      <tbody id="restTable"></tbody></table>
+    <p class="hint" id="restSummary"></p>
+  </div>
+</div>
+
+<!-- ===================== PA GUIDE ===================== -->
+<div class="wrap view" id="view-pa">
+  <div class="fcard">
+    <h2>PA Guide <span id="paOfp" class="ofpchip off">no OFP loaded</span></h2>
+    <p class="fsub">Aircraft type, destination name and cruise level auto-fill from the OFP. Upload a roster screenshot to read crew names, or type them in.</p>
+    <div class="patabs">
+      <button data-pa="welcome" class="active">Welcome</button>
+      <button data-pa="descent">Descent</button>
+    </div>
+    <div class="fgrid">
+      <div class="feat-field"><label class="lab">Who is speaking</label>
+        <select id="p_speaker"><option value="Captain">Captain</option><option value="First Officer">First Officer</option></select></div>
+      <div class="feat-field"><label class="lab">Time of day</label>
+        <select id="p_greet"><option>morning</option><option>afternoon</option><option>evening</option></select></div>
+    </div>
+    <div class="fgrid">
+      <div class="feat-field"><label class="lab">Captain name</label><input id="p_capt" type="text" placeholder="[CAPTAIN]"></div>
+      <div class="feat-field"><label class="lab">First Officer name</label><input id="p_fo" type="text" placeholder="[FO]"></div>
+    </div>
+    <div class="fgrid">
+      <div class="feat-field"><label class="lab">CSD / CS name</label><input id="p_csd" type="text" placeholder="[CSDNAME]"></div>
+      <div class="feat-field"><label class="lab">Aircraft type (from OFP)</label><input id="p_ac" type="text" value="Airbus A350"></div>
+    </div>
+    <div class="fgrid">
+      <div class="feat-field"><label class="lab">Flight number</label><input id="p_no" type="text" placeholder="[NUMBER]"></div>
+      <div class="feat-field"><label class="lab">Destination (full name, from OFP)</label><input id="p_destn" type="text" placeholder="[DESTINATION_NAME]"></div>
+    </div>
+    <div class="fgrid pa-welcome">
+      <div class="feat-field"><label class="lab">Flight time</label><input id="p_dur" type="text" placeholder="7 hours 30 minutes"></div>
+      <div class="feat-field"><label class="lab">Cruise level (highest FL, from OFP)</label><input id="p_fl" type="text" placeholder="FL380"></div>
+    </div>
+    <div class="fgrid pa-descent" style="display:none">
+      <div class="feat-field"><label class="lab">Landing in (min)</label><input id="p_ttg" type="text" placeholder="[TIME_TO_GO]"></div>
+      <div class="feat-field"><label class="lab">ETA local</label><input id="p_eta" type="text" placeholder="[ETA_LOCAL]"></div>
+    </div>
+    <div class="fgrid pa-descent" style="display:none">
+      <div class="feat-field"><label class="lab">Weather</label><input id="p_wx" type="text" placeholder="sunny"></div>
+      <div class="feat-field"><label class="lab">Temp &deg;C</label><input id="p_tc" type="text" placeholder="22"></div>
+      <div class="feat-field"><label class="lab">Local time now</label><input id="p_tn" type="text" placeholder="[TIME_NOW]"></div>
+    </div>
+    <div class="feat-field" style="margin-top:6px">
+      <label class="lab">Roster screenshot (optional — reads crew names via OCR)</label>
+      <input id="p_shot" type="file" accept="image/*">
+      <span class="hint" id="p_ocr"></span>
+    </div>
+  </div>
+  <div class="fcard">
+    <label class="lab">Announcement</label>
+    <textarea id="paText" readonly style="min-height:240px;font-family:var(--sans);font-size:13px;color:#E6ECF5"></textarea>
+    <div style="margin-top:10px;display:flex;gap:10px;align-items:center">
+      <button id="paCopy">Copy</button>
+      <span class="hint" id="paCopied" style="margin-top:0"></span>
+    </div>
+    <p class="hint">Wording reproduced from the Eflight flight-bag app (Qatar Airways templates).</p>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   OFP BRIEFING TOOL  —  parser + decoders + renderer
+   ============================================================ */
+
+if (window.pdfjsLib) { try { pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch(e){} }
+
+/* ---------- file reading ---------- */
+async function readFile(file){
+  const buf = file.arrayBuffer ? await file.arrayBuffer() : await new Promise((res,rej)=>{
+    const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=()=>rej(new Error('read failed')); r.readAsArrayBuffer(file);
+  });
+  const head = new Uint8Array(buf.slice(0,5));
+  const isPdf = head[0]===0x25 && head[1]===0x50 && head[2]===0x44 && head[3]===0x46; // %PDF
+  if(!isPdf) return new TextDecoder('utf-8').decode(buf);
+  if(!window.pdfjsLib) throw new Error('This looks like a binary PDF and PDF.js failed to load (offline?). Paste the OFP text instead.');
+  const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+  let out=[];
+  for(let p=1;p<=pdf.numPages;p++){
+    const page=await pdf.getPage(p);
+    const c=await page.getTextContent();
+    const rows={};
+    c.items.forEach(it=>{
+      const y=Math.round(it.transform[5]);
+      (rows[y]=rows[y]||[]).push({x:it.transform[4],s:it.str});
+    });
+    Object.keys(rows).map(Number).sort((a,b)=>b-a).forEach(y=>{
+      out.push(rows[y].sort((a,b)=>a.x-b.x).map(o=>o.s).join(' ').replace(/\s+/g,' '));
+    });
+  }
+  return out.join('\n');
+}
+
+/* ---------- small helpers ---------- */
+const m=(re,t,i=1)=>{const x=re.exec(t);return x?x[i]:'';};
+const esc=s=>(s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const eet2hhmm=v=>{if(!v)return'';const[a,b]=v.split('.');return a.padStart(2,'0')+':'+(b||'00').padEnd(2,'0').slice(0,2);};
+const sgn=v=>v?v.replace(/^M/,'-').replace(/^P/,'+'):v;
+
+/* ---------- ICAO prefix -> country (worldwide) ---------- */
+const CC2={OT:'Qatar',OB:'Bahrain',OE:'Saudi Arabia',OI:'Iran',OM:'United Arab Emirates',OO:'Oman',OK:'Kuwait',
+ OR:'Iraq',OS:'Syria',OJ:'Jordan',OL:'Lebanon',OY:'Yemen',OP:'Pakistan',OA:'Afghanistan',
+ HE:'Egypt',HL:'Libya',HS:'Sudan',HA:'Ethiopia',HK:'Kenya',HT:'Tanzania',HH:'Eritrea',HU:'Uganda',HR:'Rwanda',HC:'Somalia',HD:'Djibouti',
+ LG:'Greece',LM:'Malta',LI:'Italy',LE:'Spain',LP:'Portugal',LF:'France',LS:'Switzerland',LT:'Turkey',
+ LC:'Cyprus',LR:'Romania',LB:'Bulgaria',LY:'Serbia/Montenegro',LD:'Croatia',LH:'Hungary',LO:'Austria',
+ LK:'Czechia',LZ:'Slovakia',LU:'Moldova',LW:'North Macedonia',LA:'Albania',LQ:'Bosnia',LJ:'Slovenia',LN:'Monaco',LX:'Gibraltar',LV:'Palestine',
+ DA:'Algeria',DT:'Tunisia',DR:'Niger',DG:'Ghana',DB:'Benin',DN:'Nigeria',DF:'Burkina Faso',DI:'Ivory Coast',DX:'Togo',
+ GM:'Morocco',GC:'Spain (Canary Is.)',GO:'Senegal',GA:'Mali',GB:'Gambia',GF:'Sierra Leone',GG:'Guinea-Bissau',GU:'Guinea',GV:'Cape Verde',GL:'Liberia',GQ:'Mauritania',
+ ED:'Germany',ET:'Germany (mil)',EH:'Netherlands',EB:'Belgium',EG:'United Kingdom',EI:'Ireland',EK:'Denmark',
+ EN:'Norway',ES:'Sweden',EF:'Finland',EP:'Poland',EV:'Latvia',EE:'Estonia',EY:'Lithuania',EL:'Luxembourg',
+ BI:'Iceland',BG:'Greenland',BK:'Kosovo',
+ UU:'Russia',UL:'Russia',UR:'Russia',UW:'Russia',UE:'Russia',UH:'Russia',UN:'Russia',UO:'Russia',UI:'Russia',US:'Russia',
+ UK:'Ukraine',UG:'Georgia',UD:'Armenia',UB:'Azerbaijan',UM:'Belarus',UA:'Kazakhstan',UC:'Kyrgyzstan',UT:'Uzbekistan/Tajikistan/Turkmenistan',
+ VA:'India',VE:'India',VI:'India',VO:'India',VC:'Sri Lanka',VR:'Maldives',VT:'Thailand',VV:'Vietnam',VD:'Cambodia',
+ VL:'Laos',VY:'Myanmar',VG:'Bangladesh',VN:'Nepal',VH:'Hong Kong',VM:'Macau',VB:'Myanmar',VQ:'Bhutan',
+ WM:'Malaysia',WB:'Malaysia/Brunei',WA:'Indonesia',WI:'Indonesia',WR:'Indonesia',WS:'Singapore',WP:'Timor-Leste',WQ:'Indonesia',
+ RJ:'Japan',RO:'Japan',RK:'South Korea',RC:'Taiwan',RP:'Philippines',
+ ZB:'China',ZG:'China',ZS:'China',ZY:'China',ZP:'China',ZL:'China',ZH:'China',ZU:'China',ZW:'China',ZJ:'China',ZK:'North Korea',ZM:'Mongolia',
+ YB:'Australia',YM:'Australia',YS:'Australia',YP:'Australia',YB2:'Australia',
+ NZ:'New Zealand',NF:'Fiji',NV:'Vanuatu',NW:'New Caledonia',NT:'French Polynesia',NC:'Cook Islands',NS:'Samoa',NG:'Kiribati/Tuvalu',
+ FA:'South Africa',FB:'Botswana',FC:'Congo',FD:'Eswatini',FE:'Central African Rep.',FG:'Eq. Guinea',FH:'Ascension',
+ FI:'Mauritius',FJ:'Br. Indian Ocean',FK:'Cameroon',FL:'Zambia',FM:'Comoros/Madagascar',FN:'Angola',FO:'Gabon',
+ FP:'Sao Tome',FQ:'Mozambique',FS:'Seychelles',FT:'Chad',FV:'Zimbabwe',FW:'Malawi',FX:'Lesotho',FY:'Namibia',FZ:'DR Congo',
+ MM:'Mexico',MU:'Cuba',MD:'Dominican Republic',MT:'Haiti',MK:'Jamaica',MZ:'Belize',MG:'Guatemala',MH:'Honduras',
+ MN:'Nicaragua',MR:'Costa Rica',MP:'Panama',MS:'El Salvador',MB:'Turks & Caicos',MW:'Cayman Is.',MY:'Bahamas',
+ SB:'Brazil',SD:'Brazil',SA:'Argentina',SC:'Chile',SK:'Colombia',SP:'Peru',SU:'Uruguay',
+ SV:'Venezuela',SE:'Ecuador',SG:'Paraguay',SL:'Bolivia',SO:'Fr. Guiana',SM:'Suriname',SY:'Guyana',SF:'Falkland Is.',
+ TJ:'Puerto Rico (US)',TI:'US Virgin Is.',TX:'Bermuda',TT:'Trinidad & Tobago',TB:'Barbados',TG:'Grenada',TK:'St Kitts',
+ TL:'St Lucia',TA:'Antigua',TV:'St Vincent',TD:'Dominica',TF:'Guadeloupe/Martinique',TN:'Caribbean (Neth.)',TQ:'Anguilla',TU:'Br. Virgin Is.',
+ PA:'USA (Alaska)',PH:'USA (Hawaii)',PG:'Guam',PT:'Micronesia/Palau',PK:'Marshall Is.',PW:'Wake/Midway',PL:'Kiribati',PM:'Midway',
+ CY:'Canada',CZ:'Canada'};
+const CC1={K:'USA',C:'Canada',Y:'Australia',Z:'China',R:'East Asia',V:'South/SE Asia',W:'SE Asia',
+ E:'Northern Europe',L:'Southern Europe',O:'Middle East',H:'NE Africa',D:'West Africa',G:'NW Africa/Iberia',
+ F:'Southern Africa',U:'Former USSR',M:'Mexico/C.America/Caribbean',S:'South America',T:'Caribbean',
+ P:'Pacific (US)',B:'Iceland/Greenland',N:'South Pacific',A:'SW Pacific'};
+function country(icao){if(!icao)return'';const p2=icao.slice(0,2);if(CC2[p2])return CC2[p2];return CC1[icao[0]]||'';}
+
+/* ---------- weather decode dictionaries ---------- */
+const WXC={MI:'shallow',BC:'patches',PR:'partial',DR:'low drifting',BL:'blowing',SH:'showers',TS:'thunderstorm',FZ:'freezing',
+ DZ:'drizzle',RA:'rain',SN:'snow',SG:'snow grains',IC:'ice crystals',PL:'ice pellets',GR:'hail',GS:'small hail',
+ BR:'mist',FG:'fog',FU:'smoke',VA:'volcanic ash',DU:'dust',SA:'sand',HZ:'haze',PO:'dust whirls',SQ:'squalls',
+ FC:'funnel cloud',DS:'duststorm',SS:'sandstorm',NSW:'no significant weather'};
+const CLD={FEW:'few',SCT:'scattered',BKN:'broken',OVC:'overcast',NSC:'no significant cloud',SKC:'sky clear',CLR:'clear',NCD:'no cloud detected'};
+function decWind(t){let r=/^(\d{3}|VRB)(\d{2,3})(?:G(\d{2,3}))?(KT|MPS)/.exec(t);if(!r)return null;
+  const d=r[1]==='VRB'?'variable':r[1]+'°';let s=d+' '+(+r[2])+(r[4]==='KT'?'kt':'m/s');if(r[3])s+=' gusting '+(+r[3]);return s;}
+function decVis(t){if(t==='CAVOK')return'CAVOK (vis ≥10 km, no sig cloud/wx)';if(t==='9999')return'vis ≥10 km';
+  if(/^\d{4}$/.test(t))return'vis '+(+t)+' m';if(t==='P6SM')return'vis >6 SM';
+  let r=/^(\d{1,2})(?:\s?(\d)\/(\d))?SM$/.exec(t);if(r)return'vis '+t.replace('SM',' SM');
+  r=/^(\d)\/(\d)SM$/.exec(t);if(r)return'vis '+t;return null;}
+function decWx(t){let s=t,pre='';if(s[0]==='+'){pre='heavy ';s=s.slice(1);}else if(s[0]==='-'){pre='light ';s=s.slice(1);}
+  else if(s.startsWith('VC')){pre='in vicinity ';s=s.slice(2);}
+  if(s==='NSW')return'no significant weather';let parts=[];for(let i=0;i<s.length;i+=2){const c=s.slice(i,i+2);if(WXC[c])parts.push(WXC[c]);else return null;}
+  if(!parts.length)return null;return pre+parts.join(' ');}
+function decCloud(t){let r=/^(FEW|SCT|BKN|OVC)(\d{3})(CB|TCU)?$/.exec(t);
+  if(r)return CLD[r[1]]+' '+(+r[2]*100)+'ft'+(r[3]?(' ('+(r[3]==='CB'?'CB cumulonimbus':'towering cu')+')'):'');
+  if(CLD[t])return CLD[t];return null;}
+function decToken(t){return decWind(t)||decVis(t)||decWx(t)||decCloud(t)||(/^Q\d{4}$/.test(t)?('QNH '+t.slice(1)+' hPa'):
+  (/^A\d{4}$/.test(t)?('altimeter '+t.slice(1,3)+'.'+t.slice(3)+' inHg'):null));}
+function hazardOf(tok){
+  if(/CB/.test(tok))return'CB';
+  if(/^(\+|VC)?TS/.test(tok)||/TS/.test(tok))return'thunderstorm';
+  if(/^WS\b/.test(tok)||/^WS\d/.test(tok))return'wind shear';
+  if(/^\+/.test(tok)&&/(RA|SN|SHRA|TSRA)/.test(tok))return'heavy precip';
+  if(/^FZ/.test(tok))return'freezing precip';
+  let v=/^(\d{4})$/.exec(tok);if(v&&+v[1]<=3000)return'low vis';
+  let c=/^(BKN|OVC)(\d{3})/.exec(tok);if(c&&+c[2]<=5)return'low ceiling';
+  return null;
+}
+
+/* ---------- time helpers (day-of-month based, minutes) ---------- */
+function toMin(day,hh,mm){return day*1440+hh*60+(mm||0);}
+function parseValidity(s){
+  const r=/(\d{2})(\d{2})\/(\d{2})(\d{2})/.exec(s);if(!r)return null;
+  return{from:toMin(+r[1],+r[2],0),to:toMin(+r[3],+r[4],0),raw:r[0]};}
+function hhmm(min){const d=Math.floor(min/1440),h=Math.floor((min%1440)/60),mn=min%60;
+  return String(d).padStart(2,'0')+'/'+String(h).padStart(2,'0')+String(mn).padStart(2,'0')+'Z';}
+
+/* ---------- TAF decode ---------- */
+function decodeTAF(taf, relMin){
+  if(!taf) return null;
+  taf=taf.replace(/=$/,'').replace(/\s+/g,' ').trim();
+  const toks=taf.split(' ');
+  let i=0; if(/^(FT|TAF|FC)$/.test(toks[i]))i++;
+  if(/^\d{6}$/.test(toks[i]))i++;
+  if(/^[A-Z]{4}$/.test(toks[i]))i++;
+  if(/^\d{6}Z$/.test(toks[i]))i++;
+  const mainVal=parseValidity(toks.slice(i,i+1).join(''))||parseValidity(toks[i]||'');
+  const segs=[]; let cur={type:'BASE',period:mainVal,toks:[]};
+  for(;i<toks.length;i++){
+    const t=toks[i];
+    if(/^FM\d{6}$/.test(t)){ if(cur.toks.length||cur.type!=='BASE')segs.push(cur);
+      const d=+t.slice(2,4),h=+t.slice(4,6),mn=+t.slice(6,8);
+      cur={type:'FM',period:{from:toMin(d,h,mn),to:null},toks:[]}; continue; }
+    if(/^(BECMG|TEMPO)$/.test(t)){ if(cur.toks.length||cur.type!=='BASE')segs.push(cur);
+      const v=parseValidity(toks[i+1]||'');if(v)i++; cur={type:t,period:v,toks:[]}; continue; }
+    if(/^PROB\d{2}$/.test(t)){ if(cur.toks.length||cur.type!=='BASE')segs.push(cur);
+      let typ=t; let v=null;
+      if(/^(TEMPO)$/.test(toks[i+1])){typ=t+' '+toks[i+1];i++;}
+      v=parseValidity(toks[i+1]||'');if(v)i++; cur={type:typ,period:v,toks:[]}; continue; }
+    cur.toks.push(t);
+  }
+  segs.push(cur);
+  for(let k=0;k<segs.length;k++){ if(segs[k].type==='FM'&&!segs[k].period.to){
+      let nxt=segs.slice(k+1).find(s=>s.type==='FM'||s.type==='BASE');
+      segs[k].period.to=nxt&&nxt.period?nxt.period.from:(mainVal?mainVal.to:null);}}
+  segs.forEach(s=>{
+    const dec=[]; let haz=[];
+    s.toks.forEach(t=>{const d=decToken(t);if(d)dec.push(d);const h=hazardOf(t);if(h)haz.push(h);});
+    s.decoded=dec.join(', ');
+    s.hazards=[...new Set(haz)];
+    s.contains = (relMin!=null && s.period && s.period.from!=null &&
+      relMin>=s.period.from && (s.period.to==null || relMin<s.period.to));
+    s.active=false; s.overlap=false;
+  });
+  if(relMin!=null){
+    let best=-1,bestFrom=-1;
+    segs.forEach((s,i)=>{ if((s.type==='BASE'||s.type==='FM') && s.contains && s.period.from>=bestFrom){bestFrom=s.period.from;best=i;} });
+    if(best>=0) segs[best].active=true;
+    segs.forEach(s=>{ if(/TEMPO|PROB/.test(s.type) && s.contains) s.overlap=true; });
+  }
+  return {raw:taf, segs, mainVal};
+}
+
+/* ---------- abbreviation expander ---------- */
+const AB={EMBD:'embedded',TS:'thunderstorm',OBS:'observed',FCST:'forecast',MOV:'moving',NC:'no change',
+  INTSF:'intensifying',WKN:'weakening',TOP:'tops',FL:'flight level',OCNL:'occasional',ISOL:'isolated',
+  FRQ:'frequent',SEV:'severe',MOD:'moderate',TURB:'turbulence',ICE:'icing',MTW:'mountain waves',
+  TC:'tropical cyclone',VA:'volcanic ash',GR:'hail',SQL:'squall line',CB:'cumulonimbus',
+  STNR:'stationary',WI:'within',N:'north',S:'south',E:'east',W:'west',NE:'northeast',NW:'northwest',
+  SE:'southeast',SW:'southwest',KT:'kt',WS:'wind shear','U/S':'unserviceable'};
+function gloss(t){if(!t)return'';return t.replace(/\b([A-Z/]{1,5})\b/g,w=>AB[w]?AB[w]:w);}
+
+/* ---------- NOTAM validity parse ---------- */
+const MON={JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
+function parseNotamValidity(s){
+  const r=/(\d{2})-([A-Z]{3})-(\d{2})\s+(\d{4})\s*-\s*(?:(\d{2})-([A-Z]{3})-(\d{2})\s+)?(\d{4}|UFN|PERM)/.exec(s);
+  if(!r)return null;
+  const sMon=MON[r[2]], sDay=+r[1], sH=+r[4].slice(0,2),sM=+r[4].slice(2);
+  const eMon=r[6]?MON[r[6]]:sMon, eDay=r[5]?+r[5]:sDay;
+  const open=/UFN|PERM/.test(r[8]);
+  return {sMon,sDay,sMin:toMin(sDay,sH,sM),eMon,eDay,
+    eMin:open?Infinity:toMin(eDay,+r[8].slice(0,2),+r[8].slice(2)),open};
+}
+
+/* ============================================================
+   MAIN PARSER
+   ============================================================ */
+function parseOFP(text, opts){
+  const T=text.replace(/\r/g,'');
+  const data={raw:T};
+
+  data.atcCs   = m(/\b(QTR\w+)\/(QR\w+|QTR\w+)/,T) || m(/\b(QTR\d+\w?)\b/,T);
+  data.fltCs   = m(/QTR\w+\/(\w+)/,T) || m(/\b(QR\d+)\b/,T) || m(/STATION COPY\s+(\w+)/,T);
+  data.date    = m(/\b([0-3]\d[A-Z]{3})\b/,T);
+  data.depMonth= MON[(data.date||'').slice(2,5)]||0;
+  let depdest  = /\b([A-Z]{4})\/([A-Z]{4})\b/.exec(T);
+  data.dep = depdest?depdest[1]:''; data.dest = depdest?depdest[2]:'';
+  data.acType  = m(/[A-Z]{4}\/[A-Z]{4}\s+([A-Z0-9]{3,4})\b/,T) || m(/AIRCRAFT TYPE\s*:\s*(\S+)/,T);
+  data.tail    = m(/\b(A7-?[A-Z]{3})\b/,T) || m(/REG[.:]\s*([A-Z0-9-]+)/,T);
+  data.ofpNo   = m(/OFP:\s*([\d/]+)\//,T) || m(/OFP:\s*([\d/]+)/,T);
+  data.etops   = m(/ETOPS:\s*(\d+\s*MIN)/,T);
+
+  data.std = m(/\bSTD\s+(\d+\/\d+)/,T);
+  data.sta = m(/\bSTA\s+(\d+\/\d+)/,T);
+  data.blk = m(/\bBLK\s+(\d{3,4})/,T);
+  data.tripT = m(/\bTRIP\s+\d+\s+(\d{4})/,T);
+
+  data.fTaxi = m(/\bTAXI\s+(\d+)\s+\d{4}/,T);
+  data.fTrip = m(/\bTRIP\s+(\d+)\s+\d{4}/,T);
+  data.fCont=(()=>{
+    const re=/\bCONT(?:INGENCY)?\b([^\n]{0,40})/g; let mm;
+    while((mm=re.exec(T))){ const v=m(/(\d{2,6})\s+\d{4}\b/,mm[1]); if(v)return v; }
+    const cl=/\bCONT(?:INGENCY)?\b([^\n]{0,40})/.exec(T);
+    return cl?m(/(?:[0-9.]+\s*(?:%|PCT|MIN|M)\s+)?(\d{2,6})\b/,cl[1]):'';
+  })();
+  let altn   = /\bALTN\s+([A-Z]{4})\s+(\d+)\s+\d{4}/.exec(T);
+  data.altnIcao = altn?altn[1]:''; data.fAltn = altn?altn[2]:'';
+  data.fExtra= m(/\bEXTRA\s+\S*\s*(\d+)\s+\d{4}/,T);
+  data.fRamp = m(/\bRAMP FUEL\s+(\d+)/,T);
+
+  data.mzfw=m(/\bMZFW\s+(\d+)/,T); data.ezfw=m(/\bEZFW\s+(\d+)/,T);
+  data.mtow=m(/\bMTOW\s+(\d+)/,T); data.etow=m(/\bETOW\s+(\d+)/,T);
+  data.mlwt=m(/\bMLWT\s+(\d+)/,T); data.elwt=m(/\bELWT\s+(\d+)/,T);
+  data.elwOver = (data.elwt&&data.mlwt)? (+data.elwt > +data.mlwt) : null;
+
+  const flLine=m(/((?:FL\d{3}\s+\S+\/)+FL\d{3})/,T);
+  let fls=(T.match(/FL(\d{3})/g)||[]).map(x=>+x.slice(2));
+  data.initFL = m(/\bFL(\d{3})\b/,flLine) || (fls.length?String(fls[0]).padStart(3,'0'):'');
+  const pm=/(FL\d{3}[^\n]*\/FL\d{3}[^\n]*(?:\n[^\n]*FL\d{3}[^\n]*)*)/.exec(T);
+  let pfls=pm?(pm[1].match(/FL(\d{3})/g)||[]).map(x=>+x.slice(2)):fls;
+  data.highFL = pfls.length?String(Math.max(...pfls)):'';
+  data.gndDist=m(/GND DIST\s+(\d+)/,T);
+  data.airDist=m(/AIR DIST\s+(\d+)/,T);
+  data.speedCI=m(/SPEED\s+CI\s+(\w+)/,T)||m(/\bCI\s+(\d+)/,T);
+  data.tocTemp=m(/TOC TEMP\s+([MP]?\d+)/,T);
+  data.windComp=m(/\bWC\s+([MP]\d+)/,T);
+
+  data.depRwy=m(new RegExp(data.dep+'\\s+(\\d{2}[LRC]?)'),T);
+  data.sid   = m(new RegExp(data.dep+'\\s+\\d{2}[LRC]?\\s+(\\S+)'),T);
+  let endm=new RegExp('(\\S+)\\s+'+data.dest+'\\s+(\\d{2}[LRC]?)').exec(T);
+  data.star  = endm?endm[1]:''; data.arrRwy = endm?endm[2]:'';
+
+  data.navTime={};
+  T.split('\n').forEach(ln=>{
+    const r=/^\s*([A-Z][A-Z0-9]{1,5})\b.*?\b(\d{4})\s+\.{3,}\s+\.{3,}/.exec(ln);
+    if(r && !data.navTime[r[1]]) data.navTime[r[1]]=r[2];
+  });
+
+  data.etopsBased=m(/ETOPS INFORMATION BASED ON\s+(FL\d+)/,T);
+  data.etopsPts=[];
+  const eb=/ETOPS INFORMATION BASED ON[\s\S]*?(?=ETOPS SUITABLE|ETOPS AVAILABLE|\nPAGE )/.exec(T);
+  if(eb){
+    const lines=eb[0].split('\n');
+    for(let k=0;k<lines.length;k++){
+      const r=/^\s*(ENTRY\d|ETP|EXIT\d)\s+([\d.]+)\s+([NS]\d+\.?\d*)\s+([A-Z]{4})/.exec(lines[k]);
+      if(r){
+        let alts=[r[4]]; let lon='';
+        for(let j=1;j<=2 && k+j<lines.length;j++){
+          const nl=lines[k+j];
+          if(/^\s*(ENTRY\d|ETP|EXIT\d)\s/.test(nl))break;
+          const lo=/([EW]\d+\.?\d*)/.exec(nl); if(lo&&!lon)lon=lo[1];
+          const a2b=nl.match(/\b([A-Z]{4})\b/g);
+          if(a2b)a2b.forEach(c=>{if(c!==r[3]&&!alts.includes(c)&&!/^[NSEW]/.test(c))alts.push(c);});
+        }
+        data.etopsPts.push({posn:r[1],eet:eet2hhmm(r[2]),lat:r[3],lon,altn:alts.join(' / ')});
+      }
+    }
+  }
+
+  const cut=T.search(/\nNOTAMS\s*\n/); const preN = cut>0?T.slice(0,cut):T;
+  data.firs=[]; const seen=new Set();
+  const pushFir=(name,code)=>{ if(/^[A-Z]{4}$/.test(code)&&country(code)&&!seen.has(code)){
+    seen.add(code); data.firs.push({name:name.replace(/\s+/g,' ').trim(),code,country:country(code)});}};
+  const BADF=/WITHIN|CLOSED|PROHIBIT|OPERATION|EXEMPT|RVSM|REQUIRE|CONTINGENCY|NOTAM|REMARK|SLOT|CAUTION|AVOID|DUE|OVERFL|PERMIT/;
+  const lines=preN.split('\n');
+  lines.forEach(ln=>{ if(BADF.test(ln))return;
+    const r=/^\s*([A-Z][A-Z]+(?:\s+[A-Z]+){0,3}\s+(?:FIR|UIR))\b(?:\s+[A-Z0-9/.\-]+)*?\s+([A-Z]{4})\s*$/.exec(ln);
+    if(r) pushFir(r[1],r[2]); });
+  if(data.firs.length<3){
+    seen.clear(); data.firs.length=0;
+    lines.forEach(ln=>{ if(BADF.test(ln)||/[a-z]/.test(ln))return;
+      let r=/\b([A-Z]{4})\s+([A-Z][A-Z]+(?:\s+[A-Z]+){0,3}\s+(?:FIR|UIR))\b/.exec(ln);
+      if(r){ pushFir(r[2],r[1]); return; }
+      r=/\b([A-Z][A-Z]+(?:\s+[A-Z]+){0,3}\s+(?:FIR|UIR))\b[^A-Za-z\n]{0,14}?\b([A-Z]{4})\b/.exec(ln);
+      if(r) pushFir(r[1],r[2]); });
+  }
+
+  data.shearMax=(()=>{const r=/HIGHEST SR IS\s+(\d+)\s+AT\s+(FL\d+)\s+AT\s+(\S+)/.exec(T);
+    return r?{sr:r[1],fl:r[2],wpt:r[3]}:null;})();
+  data.tropo=(()=>{const r=/LOWEST TROPO IS\s+(FL\d+)\s+AT\s+(\S+)/.exec(T);
+    if(!r)return null; return{fl:r[1],wpt:r[2],elapsed:data.navTime[r[2]]||''};})();
+  data.shearWin=computeShearWindow(T,data.navTime);
+
+  data.faSeats=m(/FLIGHT ATTENDANT SEATS\s*:\s*(\d+)/,T);
+  data.seatCfg=m(/SEAT CONFIGURATION\s*:\s*(\S+)/,T);
+  data.qsuite = data.faSeats && (+data.faSeats === +(opts.qseats||16));
+
+  data.coCb=[];
+  const wxIx=T.search(/WX FORECAST/); const caIx=T.search(/CREW ALERT/);
+  if(caIx>=0){
+    const blk=T.slice(caIx, wxIx>caIx?wxIx:caIx+4000);
+    const re=/^(CO\d+\/\d+|CB\d+(?:\/\d+)?)\s*(?:-\s*|SUBJECT\s*:?\s*)?(.*)$/gm; let r;
+    while((r=re.exec(blk))){ data.coCb.push({code:r[1],subj:(r[2]||'').trim()}); }
+  }
+  const known=(opts.known||'').split(',').map(s=>s.trim().toUpperCase()).filter(Boolean);
+  data.coCbNonStd=data.coCb.filter(x=>!known.includes(x.code.toUpperCase()));
+
+  data.airmet=(m(/AIRMETs:\s*([\s\S]*?)\s*SIGMETs:/,T)||'').trim();
+  data.sigmet=(m(/\nSIGMETs:\s*([\s\S]*?)(?:Tropical Cyclone|Volcanic Ash|\nDESTINATION)/,T)||'').trim();
+
+  data.wx={};
+  const wxSec=m(/WX FORECAST([\s\S]*?)(?:\nNOTAMS\s*\n|$)/,T);
+  if(wxSec){
+    const re=/^([A-Z]{4})\/[A-Z]{3}\s+(.*)$/gm; let r, blocks=[];
+    while((r=re.exec(wxSec))) blocks.push({icao:r[1],name:r[2].trim(),ix:r.index});
+    blocks.forEach((b,j)=>{
+      const seg=wxSec.slice(b.ix,(j+1<blocks.length)?blocks[j+1].ix:undefined);
+      const metar=m(/\n?\s*SA\s+([\s\S]*?)=/,seg);
+      const taf  =m(/\n?\s*F[TC]\s+([\s\S]*?)=/,seg);
+      data.wx[b.icao]={name:b.name,metar:metar?('SA '+metar.replace(/\s+/g,' ').trim()):'',
+        taf:taf?('FT '+taf.replace(/\s+/g,' ').trim()):''};
+    });
+  }
+
+  data.notams={};
+  const nIx=T.search(/\nNOTAMS\s*\n/);
+  if(nIx>=0){
+    const nSec=T.slice(nIx);
+    const re=/^([A-Z]{4})\s*\/[A-Z]{3}\b.*$/gm; let r, blocks=[];
+    while((r=re.exec(nSec))) blocks.push({icao:r[1],ix:r.index});
+    blocks.forEach((b,j)=>{
+      const seg=nSec.slice(b.ix,(j+1<blocks.length)?blocks[j+1].ix:undefined);
+      const items=[]; const lines=seg.split('\n');
+      for(let k=0;k<lines.length;k++){
+        const v=/VALID:\s*(.+)$/.exec(lines[k]);
+        if(v){
+          let txt=[]; for(let q=k+1;q<lines.length;q++){
+            if(/VALID:|^[A-Z]{4}\s*\/[A-Z]{3}|^\+{3,}|^={3,}|^-{3,}/.test(lines[q]))break;
+            if(lines[q].trim())txt.push(lines[q].trim());
+          }
+          const body=txt.join(' ');
+          if(isRelevantNotam(body)){
+            items.push({valid:v[1].trim(),text:body,vobj:parseNotamValidity(v[1])});
+          }
+        }
+      }
+      if(items.length) data.notams[b.icao]=items;
+    });
+  }
+
+  /* ---- route coordinates + elapsed (for en-route sun crossings) ---- */
+  data.route=parseRouteCoords(T);
+
+  return data;
+}
+
+/* parse lat/long + cumulative elapsed time along the nav log */
+function parseRouteCoords(T){
+  const pts=[];
+  T.split('\n').forEach(ln=>{
+    let lat=null,lon=null;
+    // deg-min packed: N3730.5 E02355.9  /  N37300 E0235590
+    let r=/([NS])(\d{2})(\d{2}(?:\.\d+)?)\s*[ /]?\s*([EW])(\d{3})(\d{2}(?:\.\d+)?)/.exec(ln);
+    if(r){ lat=(+r[2]+ (+r[3])/60)*(r[1]==='S'?-1:1); lon=(+r[5]+ (+r[6])/60)*(r[4]==='W'?-1:1); }
+    if(lat===null){ // decimal: N37.9 E023.9  or  37.9N 023.9E
+      r=/([NS])\s?(\d{1,2}(?:\.\d+)?)\s*[ /]?\s*([EW])\s?(\d{1,3}(?:\.\d+)?)/.exec(ln)
+        ||/(\d{1,2}(?:\.\d+)?)\s?([NS])\s*[ /]?\s*(\d{1,3}(?:\.\d+)?)\s?([EW])/.exec(ln);
+      if(r){
+        if(r[1]==='N'||r[1]==='S'){lat=(+r[2])*(r[1]==='S'?-1:1);lon=(+r[4])*(r[3]==='W'?-1:1);}
+        else{lat=(+r[1])*(r[2]==='S'?-1:1);lon=(+r[3])*(r[4]==='W'?-1:1);}
+      }
+    }
+    if(lat===null||isNaN(lat)||isNaN(lon)||Math.abs(lat)>90||Math.abs(lon)>180)return;
+    // an elapsed time HHMM on the line (cumulative from off-blocks)
+    let tm=/\b([0-2]\d)([0-5]\d)\b/.exec(ln);
+    const elapsed=tm?(+tm[1]*60+ +tm[2]):null;
+    pts.push({lat,lon,elapsed});
+  });
+  // keep monotonic-elapsed sequence where available
+  return pts;
+}
+
+function isRelevantNotam(s){
+  if(/MINIMUM CLIMB|TAKEOFF MIN|CRANE|OBSTACLE|MSA|AMDT|OBSC|MARKINGS|GRASS|BIRD|FREQ CHG|AD HR|FUEL/.test(s)
+     && !/CLSD|CLOSED|U\/S|UNSERVICE|SUSPENDED/.test(s)) return false;
+  return /(RWY|TWY|APRON|STAND).*(CLSD|CLOSED)|CLSD|CLOSED|U\/S|UNSERVICEABLE|SUSPENDED|(ILS|VOR|DME|LOC|GP|GLIDE|PAPI|NDB|TACAN|RNAV|RVR).*(U\/S|UNSERVICE|SUSPEND|NOT MNT|OUT OF SERVICE|NOT HARMONIZED)|OUT OF SERVICE|DISPLACED/.test(s);
+}
+function notamTag(v, rel, depMon){
+  if(!v) return {kind:'n',txt:'time n/a'};
+  const M=44640;
+  const s=v.sMon*M+v.sMin, e=v.open?Infinity:(v.eMon*M+v.eMin);
+  if(rel==null) return {kind:'a',txt:'window: '+v.sDay+'th'+(v.open?'–UFN':'–'+v.eDay+'th')};
+  const r=(depMon||0)*M+rel;
+  if(v.open) return r>=s?{kind:'a',txt:'active (open-ended)'}:{kind:'g',txt:'starts after your time'};
+  if(r<s) return {kind:'g',txt:'starts after your time'};
+  if(r>e) return {kind:'g',txt:'clear before your time'};
+  return {kind:'r',txt:'ACTIVE at your time'};
+}
+
+function computeShearWindow(T, navTime){
+  try{
+    const start=T.search(/LAT\/LONG\s+WAYPT\s+ITT/);
+    if(start<0)return null;
+    const end=T.indexOf('DESC FL',start);
+    const sec=T.slice(start,end>0?end:start+6000);
+    const rows=[];
+    sec.split('\n').forEach(ln=>{
+      const wm=/\/[EW]\d+\.?\d*\s+([A-Z][A-Z0-9]{1,5})\b/.exec(ln);
+      const groups=[...ln.matchAll(/\b\d{5}\/(\d)\b/g)].map(x=>+x[1]);
+      if(wm && groups.length>=3){ rows.push({wpt:wm[1], sr:groups[2]}); }
+    });
+    if(!rows.length)return null;
+    let onset=null, offset=null;
+    for(let i=0;i<rows.length;i++){
+      if(onset===null && rows[i].sr>4) onset=rows[i];
+      else if(onset!==null && offset===null && rows[i].sr<4) {offset=rows[i];break;}
+    }
+    if(!onset)return {none:true};
+    const onT=navTime[onset.wpt]||'', offT=offset?(navTime[offset.wpt]||''):'';
+    let dur='';
+    if(onT&&offT){const a=+onT.slice(0,2)*60+ +onT.slice(2), b=+offT.slice(0,2)*60+ +offT.slice(2);
+      let d=b-a; if(d<0)d+=1440; dur='~'+d+' min';}
+    return {onset:onset.wpt,onsetSR:onset.sr,onsetT:onT,
+      offset:offset?offset.wpt:'',offsetSR:offset?offset.sr:'',offsetT:offT,dur};
+  }catch(e){return null;}
+}
+
+/* ============================================================
+   RENDER (sheets distributed across sub-tabs)
+   ============================================================ */
+function stdMin(s){const r=/(\d+)\/(\d{2})(\d{2})/.exec(s||'');return r?toMin(+r[1],+r[2],+r[3]):null;}
+
+function build(data){
+  const oOfp=document.getElementById('out-ofp'), oRoute=document.getElementById('out-route'),
+        oWx=document.getElementById('out-wx'), oNotam=document.getElementById('out-notam');
+  oOfp.innerHTML=''; oRoute.innerHTML=''; oWx.innerHTML=''; oNotam.innerHTML='';
+  const ident=`${esc(data.fltCs||'')} ${esc(data.date||'')} ${esc(data.dep||'')}–${esc(data.dest||'')} • OFP ${esc(data.ofpNo||'')} • ${esc(data.tail||'')}`;
+
+  /* ---- SHEET 1: card -> OFP ---- */
+  let s1=sheet('OFP QUICK-EXTRACT CARD','Airbus A350 — planning summary');
+  s1+=sec('Flight identification');
+  s1+=grid('g4',[c('Date of dep',data.date),c('Flight callsign',data.fltCs),c('ATC callsign',data.atcCs),c('OFP number',data.ofpNo)]);
+  s1+=grid('g3',[c('Dep (ICAO)',data.dep),c('Dest (ICAO)',data.dest),c('Dest time zone',tz(data.dest))]);
+  s1+=grid('g3',[c('Aircraft type',data.acType),c('Aircraft tail',data.tail),c('Dep time zone',tz(data.dep))]);
+  s1+=sec('Levels & performance');
+  s1+=grid('g5',[c('Initial FL','FL'+(data.initFL||'')),c('Highest FL','FL'+(data.highFL||'')),c('Gnd dist (NM)',data.gndDist),c('Speed / CI','CI '+(data.speedCI||'')),c('TOC temp',data.tocTemp)]);
+  s1+=sec('Fuel (kg)');
+  s1+=grid('g6',[c('Taxi',data.fTaxi),c('Trip',data.fTrip),c('Contingency',data.fCont),c('Alternate',data.fAltn),c('Extra',data.fExtra),c('Ramp',data.fRamp,true)]);
+  s1+=sec('Weights (kg) — estimated vs limit');
+  s1+=grid('g3',[c('EZFW / MZFW '+(data.mzfw||''),data.ezfw),c('ETOW / MTOW '+(data.mtow||''),data.etow),c('ELW / MLWT '+(data.mlwt||''),data.elwt)]);
+  if(data.elwOver!==null){
+    const over=data.elwOver; const marg=(data.mlwt&&data.elwt)?Math.abs(+data.mlwt-+data.elwt):'';
+    s1+=`<div class="flag"><span class="chip ${over?'r':'g'}">${over?'YES — OVWT':'NO — within limit'}</span>
+      ELW ${esc(data.elwt)} vs MLWT ${esc(data.mlwt)} &mdash; margin ${esc(marg)} kg ${over?'OVER':'under'} limit.</div>`;
+  }
+  s1+=sec('Times (UTC)');
+  s1+=grid('g4',[c('STD / dep',data.std),c('STA / arr',data.sta),c('Block time',fmtHHMM(data.blk)),c('Trip time',fmtHHMM(data.tripT))]);
+  s1+=grid('g4',[c('ATD',''),c('ATA',''),c('Actual block',''),c('Actual trip','')]);
+  s1+=foot('Pre-filled from OFP '+esc(data.ofpNo||'')+'. All fields editable.','Verify vs released OFP. Not for navigation.');
+  oOfp.insertAdjacentHTML('beforeend',s1+'</div>');
+
+  /* ---- SHEET 2: route -> Route ---- */
+  let s2=sheet('ROUTE • ETOPS • FIR • HAZARDS',ident);
+  s2+=sec('ETOPS points'+(data.etopsBased?(' (based on '+esc(data.etopsBased)+')'):''));
+  if(data.etopsPts.length){
+    let rows=data.etopsPts.map(p=>`<tr><td class="k">${esc(p.posn)}</td><td class="mono">${esc(p.lat)} ${esc(p.lon)}</td><td>${esc(p.altn)}</td><td class="mono">${esc(p.eet)}</td></tr>`).join('');
+    s2+=`<div class="body"><table class="t"><tr><th>Posn</th><th>Lat / Long</th><th>Altn(s)</th><th>EET</th></tr>${rows}</table></div>`;
+  } else s2+=`<div class="body"><p class="item">No ETOPS table found.</p></div>`;
+  s2+=sec('Departure / arrival — SID • STAR • runways');
+  s2+=grid('g4',[c('Dep RWY',data.depRwy),c('SID / dep',data.sid),c('STAR / arrival',data.star),c('Arr RWY',data.arrRwy)]);
+  s2+=sec('Wind shear — cruise-level SR > 4');
+  const sw=data.shearWin;
+  if(sw && !sw.none && sw.onset){
+    s2+=grid('g3',[c('Onset (SR>4)',`${sw.onset} ${sw.onsetT} SR${sw.onsetSR}`),
+      c('Falls below 4',sw.offset?`${sw.offset} ${sw.offsetT} SR${sw.offsetSR}`:'(end of cruise)'),
+      c('Duration > SR4',sw.dur)]);
+  } else s2+=`<div class="body"><p class="item">No cruise-level shear above SR4 detected.</p></div>`;
+  if(data.shearMax) s2+=grid('g2',[c('Highest SR (OFP)',`SR${data.shearMax.sr} @ ${data.shearMax.fl}`),c('At waypoint',data.shearMax.wpt)]);
+  s2+=sec('Tropopause');
+  if(data.tropo) s2+=grid('g3',[c('Lowest tropo',data.tropo.fl),c('At waypoint',data.tropo.wpt),c('Elapsed',fmtHHMM(data.tropo.elapsed))]);
+  s2+=sec('FIR / UIR crossings (in sequence)');
+  if(data.firs.length){
+    let rows=data.firs.map((f,i)=>`<tr><td class="k">${i+1}</td><td>${esc(f.name)} (${esc(f.code)})</td><td>${esc(f.country)}</td></tr>`).join('');
+    s2+=`<div class="body"><table class="t"><tr><th>#</th><th>FIR / UIR (ICAO)</th><th>Country</th></tr>${rows}</table></div>`;
+  } else s2+=`<div class="body"><p class="item">No FIR list found.</p></div>`;
+  s2+=foot('Extracted from OFP nav log & ETOPS summary.','EET elapsed from STD.');
+  oRoute.insertAdjacentHTML('beforeend',s2+'</div>');
+
+  /* ---- SHEET 3: crew/sigmet/taf -> Weather Alerts ---- */
+  const roles=airportRoles(data);
+  let s3=sheet('CREW ALERTS • SIGMET • TAF DECODE',ident);
+  s3+=sec('Cabin & non-standard crew items');
+  s3+=`<div class="body"><p class="item"><b>Flight attendant seats: ${esc(data.faSeats||'?')}</b> ${data.qsuite?'&rarr; <b>QSUITE</b> aircraft':''} ${data.seatCfg?('('+esc(data.seatCfg)+')'):''}</p>`;
+  if(data.coCbNonStd.length) data.coCbNonStd.forEach(x=>{
+    s3+=`<div class="item"><h4>${esc(x.code)} &nbsp; ${esc(x.subj)}</h4></div>`;});
+  else s3+=`<p class="item">No non-standard CO/CB items beyond the configured list.</p>`;
+  s3+=`</div>`;
+  s3+=sec('SIGMET / AIRMET');
+  s3+=`<div class="body">`;
+  s3+=`<p class="item"><b>AIRMETs:</b> ${data.airmet&&!/No Wx/i.test(data.airmet)?esc(data.airmet):'none issued.'}</p>`;
+  if(data.sigmet&&!/No Wx/i.test(data.sigmet)){
+    s3+=`<div class="item"><h4>SIGMET</h4><div class="raw">${esc(data.sigmet)}</div><p class="fl n">Plain: ${esc(gloss(data.sigmet))}</p></div>`;
+  } else s3+=`<p class="item"><b>SIGMETs:</b> none affecting route.</p>`;
+  s3+=`</div>`;
+  s3+=sec('TAF decode — flight window highlighted');
+  s3+=`<div class="body">`;
+  Object.keys(roles).forEach(icao=>{
+    const w=data.wx[icao]; if(!w||!w.taf)return;
+    const rel=roles[icao].relMin;
+    const dt=decodeTAF(w.taf, rel);
+    s3+=`<div class="item"><h4>${esc(icao)} ${esc(w.name||'')} &mdash; ${esc(roles[icao].label)}${roles[icao].timeTxt?(' ('+roles[icao].timeTxt+')'):''}</h4>`;
+    s3+=`<div class="raw">${esc(w.taf)}</div>`;
+    if(dt){
+      let anyHaz=false;
+      dt.segs.forEach(sg=>{
+        if(!sg.decoded)return;
+        const hz=sg.hazards.length; if(hz&&(sg.active||sg.overlap))anyHaz=true;
+        const mark=(sg.active||sg.overlap)?' style="font-weight:700"':'';
+        const pd=sg.period&&sg.period.from!=null?(hhmm(sg.period.from)+(sg.period.to!=null?'–'+hhmm(sg.period.to):'')):'';
+        s3+=`<p class="item"${mark}><span class="mono" style="color:#6B7280">${esc(sg.type)} ${esc(pd)}</span> &mdash; ${esc(sg.decoded)} ${hz?('<span class="chip '+((sg.active||sg.overlap)?'r':'a')+'">'+esc(sg.hazards.join(', '))+'</span>'):''}</p>`;
+      });
+      const af=roles[icao].kind;
+      s3+=`<p class="fl ${anyHaz?'r':af}">${anyHaz?'▸ Hazard (TS/CB/shear) in your window — plan accordingly.':'▸ No significant hazard in your window.'}</p>`;
+    }
+    s3+=`</div>`;
+  });
+  s3+=`</div>`;
+  s3+=foot('Decoded from OFP WX section. Times UTC.','Weather Alerts');
+  oWx.insertAdjacentHTML('beforeend',s3+'</div>');
+
+  /* ---- SHEET 4: notams -> NOTAMs & Enroute ---- */
+  let s4=sheet('NOTAMS AFFECTING FLIGHT • ROUTE WX',ident);
+  s4+=sec('NOTAMs — runway / taxiway / nav-aid (flight-relevant)');
+  s4+=`<div class="body">`;
+  const order=Object.keys(roles).filter(i=>data.notams[i]);
+  if(order.length){
+    order.forEach(icao=>{
+      s4+=`<div class="item"><h4>${esc(icao)} ${esc((data.wx[icao]||{}).name||'')} &mdash; ${esc(roles[icao].label)}</h4>`;
+      data.notams[icao].slice(0,8).forEach(n=>{
+        const tg=notamTag(n.vobj, roles[icao].relMin, data.depMonth);
+        s4+=`<p class="item"><span class="chip ${tg.kind}">${esc(tg.txt)}</span><span class="mono" style="color:#6B7280">${esc(n.valid)}</span><br>${esc(n.text.slice(0,220))}</p>`;
+      });
+      s4+=`</div>`;
+    });
+  } else s4+=`<p class="item">No flight-relevant runway/taxiway/nav NOTAMs detected for the key airports.</p>`;
+  s4+=`</div>`;
+  s4+=sec('Route weather synthesis');
+  s4+=`<div class="body">`+routeSynth(data).map(b=>`<p class="item">• ${b}</p>`).join('')+`</div>`;
+  s4+=sec('Crew notes');
+  s4+=`<div class="body"><textarea class="notes" placeholder="Annotations…"></textarea></div>`;
+  s4+=foot('Summary only — verify vs released OFP, NOTAMs & ATIS.','Not for navigation.');
+  oNotam.insertAdjacentHTML('beforeend',s4+'</div>');
+}
+
+function airportRoles(data){
+  const stdM=stdMin(data.std), staM=stdMin(data.sta);
+  const roles={};
+  if(data.dep)  roles[data.dep] ={label:'DEPARTURE',kind:'g',relMin:stdM,timeTxt:data.std?('~'+data.std.split('/')[1]+'Z'):''};
+  if(data.dest) roles[data.dest]={label:'DESTINATION',kind:'r',relMin:staM,timeTxt:data.sta?('arr '+data.sta.split('/')[1]+'Z'):''};
+  if(data.altnIcao) roles[data.altnIcao]={label:'DEST ALTERNATE',kind:'a',relMin:staM!=null?staM+40:null,timeTxt:'if used'};
+  data.etopsPts.forEach(p=>{
+    (p.altn||'').split('/').map(s=>s.trim()).forEach(code=>{
+      if(/^[A-Z]{4}$/.test(code)&&!roles[code]){
+        let rel=null; if(stdM!=null&&p.eet){const[h,mn]=p.eet.split(':').map(Number);rel=stdM+h*60+mn;}
+        roles[code]={label:'ETOPS',kind:'g',relMin:rel,timeTxt:p.eet?('~'+p.eet+' elapsed'):''};
+      }
+    });
+  });
+  return roles;
+}
+
+function routeSynth(d){
+  const b=[];
+  if(d.sigmet&&!/No Wx/i.test(d.sigmet)) b.push('SIGMET active ('+esc(d.sigmet.split('\n')[0].slice(0,60))+'…) — check vs track.');
+  else b.push('No SIGMET affecting the route.');
+  if(d.windComp||d.gndDist||d.airDist) b.push('Net wind component '+esc(sgn(d.windComp)||'?')+' kt; ground '+esc(d.gndDist||'?')+' NM vs air '+esc(d.airDist||'?')+' NM.');
+  if(d.tropo) b.push('Tropopause lowest '+esc(d.tropo.fl)+' at '+esc(d.tropo.wpt)+(d.tropo.elapsed?(' (~'+fmtHHMM(d.tropo.elapsed)+' elapsed)'):'')+'.');
+  if(d.shearMax) b.push('Max wind shear SR'+esc(d.shearMax.sr)+' at '+esc(d.shearMax.fl)+' near '+esc(d.shearMax.wpt)+(d.shearWin&&d.shearWin.dur?(' — band '+esc(d.shearWin.dur)):'')+'.');
+  const dt=d.dest&&d.wx[d.dest]?decodeTAF(d.wx[d.dest].taf, stdMin(d.sta)):null;
+  if(dt){const hz=dt.segs.filter(s=>(s.active||s.overlap)&&s.hazards.length).flatMap(s=>s.hazards);
+    if(hz.length)b.push('Destination '+esc(d.dest)+' arrival weather: '+esc([...new Set(hz)].join(', '))+' in window — main planning driver.');}
+  if(d.fExtra) b.push('Dispatcher extra fuel '+esc(d.fExtra)+' kg loaded for inflight contingencies.');
+  return b;
+}
+
+function sheet(title,right){return `<div class="sheet"><div class="hd"><h3>${esc(title)}</h3><div class="r">${esc(right)}</div></div>`;}
+function sec(t){return `<div class="sec">${esc(t)}</div>`;}
+function grid(cls,cells){return `<div class="body"><div class="grid ${cls}">${cells.join('')}</div></div>`;}
+function c(label,val,hl){return `<div class="cell"><label>${esc(label)}</label><input class="${hl?'hl':''}" value="${esc(val==null?'':val)}"></div>`;}
+function foot(l,r){return `<div class="foot"><span>${esc(l)}</span><span>${esc(r)}</span></div>`;}
+function fmtHHMM(v){if(!v)return'';v=String(v);if(v.includes(':'))return v;if(v.length<=2)return v;
+  return v.slice(0,-2)+':'+v.slice(-2);}
+function tz(icao){
+  const z={OT:'UTC+3',OE:'UTC+3',OB:'UTC+3',OM:'UTC+4',OO:'UTC+4',OK:'UTC+3',OI:'UTC+3:30',
+    K:'UTC−5/−4',C:'UTC−5/−4',E:'UTC+0/+2',L:'UTC+0/+2',V:'UTC+5:30…+7',W:'UTC+7/+8',
+    R:'UTC+9',Z:'UTC+8',Y:'UTC+8/+11',NZ:'UTC+12',S:'UTC−3/−5',M:'UTC−6/−4',T:'UTC−4'};
+  if(!icao)return''; return z[icao.slice(0,2)]||z[icao[0]]||'';}
+
+/* ============================================================
+   WIRING (briefing)
+   ============================================================ */
+let lastText='';
+const drop=document.getElementById('drop'),file=document.getElementById('file'),
+  paste=document.getElementById('paste'),msg=document.getElementById('msg');
+['dragenter','dragover'].forEach(e=>file.addEventListener(e,()=>drop.classList.add('drag')));
+['dragleave','dragend','drop'].forEach(e=>file.addEventListener(e,()=>drop.classList.remove('drag')));
+file.addEventListener('change',()=>{if(file.files&&file.files[0])loadFile(file.files[0]);});
+
+async function loadFile(f){
+  setMsg('Reading '+f.name+'…','');
+  try{
+    lastText=await readFile(f);
+    if(!lastText||!lastText.trim()) throw new Error('File looks empty after reading.');
+    paste.value=lastText.slice(0,200000);
+    setMsg('Loaded '+f.name+' — generating…','ok');
+    generate();
+  }catch(e){ setMsg('Could not read file: '+e.message+'  (Try pasting the OFP text below instead.)','err'); }
+}
+function setMsg(t,k){msg.textContent=t;msg.className='msg '+(k||'');}
+
+function generate(){
+  const text=(paste.value.trim()||lastText).trim();
+  if(!text){setMsg('Load or paste an OFP first.','err');return;}
+  try{
+    const opts={known:document.getElementById('known').value,qseats:+document.getElementById('qseats').value||16};
+    const data=parseOFP(text,opts);
+    build(data);
+    document.getElementById('tb').style.display='flex';
+    document.getElementById('subnav').style.display='flex';
+    setMsg('Briefing generated. Review fields, then Print / Save as PDF.','ok');
+    window.__OFP=data;
+    window.dispatchEvent(new CustomEvent('ofp-parsed'));
+    const oOfp=document.getElementById('out-ofp');
+    if(oOfp&&oOfp.scrollIntoView) oOfp.scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(e){setMsg('Parse error: '+e.message,'err');console.error(e);}
+}
+document.getElementById('go').onclick=generate;
+document.getElementById('print').onclick=()=>window.print();
+document.getElementById('print2').onclick=()=>window.print();
+document.getElementById('reset').onclick=()=>{location.reload();};
+
+/* sub-tab switching */
+document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#subnav button').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('#view-briefing .subview').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  document.getElementById('out-'+b.dataset.s).classList.add('active');
+}));
+
+/* ============================================================
+   FEATURE TABS  (isolated; reads window.__OFP)
+   ============================================================ */
+(function(){
+  document.querySelectorAll('#topnav button').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('#topnav button').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById('view-'+b.dataset.v).classList.add('active');
+    window.scrollTo({top:0,behavior:'smooth'});
+  }));
+
+  const $=id=>document.getElementById(id);
+  const toM=hhmm=>{if(!hhmm)return null;const p=hhmm.split(':');return (+p[0])*60+(+p[1]);};
+  const toHHMM=mn=>{if(mn==null||isNaN(mn))return'';mn=((mn%1440)+1440)%1440;return String(Math.floor(mn/60)).padStart(2,'0')+':'+String(Math.round(mn%60)).padStart(2,'0');};
+  const fmt=mn=>{if(mn===null||isNaN(mn))return'--:--';mn=((mn%1440)+1440)%1440;let h=Math.floor(mn/60),m=Math.round(mn%60);if(m===60){m=0;h=(h+1)%24;}return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');};
+  const addT=(t,n)=>(t===null||n===null)?null:(((t+n)%1440)+1440)%1440;
+  const subT=(t,n)=>{if(t===null||n===null)return null;let d=t-n;if(d<0)d+=1440;return d;};
+  const locT=(t,off)=>t===null?null:(((t+off)%1440)+1440)%1440;
+  const escF=s=>(s==null?'':String(s)).replace(/[&<>]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[ch]));
+
+  /* ---------- airport DB (lat, lon east+, UTC offset hours for Jun) ---------- */
+  const AP={
+    DOH:{n:'Hamad International, Doha',lat:25.273,lon:51.608,utc:3}, OTHH:{ref:'DOH'},
+    ATH:{n:'Athens Eleftherios Venizelos',lat:37.936,lon:23.945,utc:3}, LGAV:{ref:'ATH'},
+    MIA:{n:'Miami International',lat:25.793,lon:-80.290,utc:-4}, KMIA:{ref:'MIA'},
+    MAN:{n:'Manchester',lat:53.354,lon:-2.275,utc:1}, EGCC:{ref:'MAN'},
+    LHR:{n:'London Heathrow',lat:51.470,lon:-0.454,utc:1}, EGLL:{ref:'LHR'},
+    CDG:{n:'Paris Charles de Gaulle',lat:49.010,lon:2.548,utc:2}, LFPG:{ref:'CDG'},
+    FRA:{n:'Frankfurt',lat:50.033,lon:8.570,utc:2}, EDDF:{ref:'FRA'},
+    MUC:{n:'Munich',lat:48.353,lon:11.786,utc:2}, EDDM:{ref:'MUC'},
+    ZRH:{n:'Zurich',lat:47.464,lon:8.549,utc:2}, LSZH:{ref:'ZRH'},
+    AMS:{n:'Amsterdam Schiphol',lat:52.309,lon:4.764,utc:2}, EHAM:{ref:'AMS'},
+    MAD:{n:'Madrid Barajas',lat:40.472,lon:-3.561,utc:2}, LEMD:{ref:'MAD'},
+    BCN:{n:'Barcelona',lat:41.297,lon:2.078,utc:2}, LEBL:{ref:'BCN'},
+    IST:{n:'Istanbul',lat:41.262,lon:28.742,utc:3}, LTFM:{ref:'IST'},
+    JFK:{n:'New York JFK',lat:40.641,lon:-73.778,utc:-4}, KJFK:{ref:'JFK'},
+    ORD:{n:'Chicago O’Hare',lat:41.978,lon:-87.905,utc:-5}, KORD:{ref:'ORD'},
+    IAD:{n:'Washington Dulles',lat:38.953,lon:-77.456,utc:-4}, KIAD:{ref:'IAD'},
+    LAX:{n:'Los Angeles',lat:33.942,lon:-118.408,utc:-7}, KLAX:{ref:'LAX'},
+    YYZ:{n:'Toronto Pearson',lat:43.677,lon:-79.625,utc:-4}, CYYZ:{ref:'YYZ'},
+    GRU:{n:'São Paulo Guarulhos',lat:-23.432,lon:-46.469,utc:-3}, SBGR:{ref:'GRU'},
+    DXB:{n:'Dubai International',lat:25.253,lon:55.364,utc:4}, OMDB:{ref:'DXB'},
+    DEL:{n:'Delhi Indira Gandhi',lat:28.556,lon:77.100,utc:5.5}, VIDP:{ref:'DEL'},
+    BOM:{n:'Mumbai Chhatrapati Shivaji',lat:19.089,lon:72.868,utc:5.5}, VABB:{ref:'BOM'},
+    KHI:{n:'Karachi Jinnah',lat:24.906,lon:67.161,utc:5}, OPKC:{ref:'KHI'},
+    LHE:{n:'Lahore Allama Iqbal',lat:31.522,lon:74.404,utc:5}, OPLA:{ref:'LHE'},
+    ISB:{n:'Islamabad',lat:33.549,lon:72.826,utc:5}, OPIS:{ref:'ISB'},
+    CMB:{n:'Colombo Bandaranaike',lat:7.181,lon:79.884,utc:5.5}, VCBI:{ref:'CMB'},
+    MLE:{n:'Malé Velana',lat:4.192,lon:73.529,utc:5}, VRMM:{ref:'MLE'},
+    BKK:{n:'Bangkok Suvarnabhumi',lat:13.690,lon:100.750,utc:7}, VTBS:{ref:'BKK'},
+    SIN:{n:'Singapore Changi',lat:1.359,lon:103.989,utc:8}, WSSS:{ref:'SIN'},
+    KUL:{n:'Kuala Lumpur',lat:2.746,lon:101.710,utc:8}, WMKK:{ref:'KUL'},
+    HKG:{n:'Hong Kong',lat:22.308,lon:113.918,utc:8}, VHHH:{ref:'HKG'},
+    NRT:{n:'Tokyo Narita',lat:35.772,lon:140.392,utc:9}, RJAA:{ref:'NRT'},
+    ICN:{n:'Seoul Incheon',lat:37.463,lon:126.440,utc:9}, RKSI:{ref:'ICN'},
+    SYD:{n:'Sydney Kingsford Smith',lat:-33.946,lon:151.177,utc:10}, YSSY:{ref:'SYD'},
+    MEL:{n:'Melbourne',lat:-37.669,lon:144.841,utc:10}, YMML:{ref:'MEL'},
+    JNB:{n:'Johannesburg O.R. Tambo',lat:-26.139,lon:28.246,utc:2}, FAOR:{ref:'JNB'},
+    CPT:{n:'Cape Town',lat:-33.969,lon:18.602,utc:2}, FACT:{ref:'CPT'},
+    DPS:{n:'Bali Ngurah Rai',lat:-8.748,lon:115.167,utc:8}, WADD:{ref:'DPS'}
+  };
+  function airport(code){if(!code)return null;code=code.toUpperCase();let a=AP[code];if(a&&a.ref)a=AP[a.ref];return a&&a.n?a:null;}
+
+  /* ---------- aircraft type friendly names ---------- */
+  function acFriendly(code){
+    if(!code)return'';
+    const c=code.toUpperCase().replace('-','');
+    const map={A35K:'Airbus A350-1000',A359:'Airbus A350-900',A350:'Airbus A350',
+      A332:'Airbus A330',A333:'Airbus A330',A330:'Airbus A330',A320:'Airbus A320',A321:'Airbus A321',A319:'Airbus A319',
+      A388:'Airbus A380',A380:'Airbus A380',B77W:'Boeing 777',B772:'Boeing 777',B773:'Boeing 777','77W':'Boeing 777',B777:'Boeing 777',
+      B788:'Boeing 787',B789:'Boeing 787',B78X:'Boeing 787',B787:'Boeing 787',B738:'Boeing 737',B38M:'Boeing 737 MAX'};
+    return map[c]||('aircraft '+code);
+  }
+
+  /* ---------- NOAA solar ---------- */
+  const d2r=d=>d*Math.PI/180,r2d=r=>r*180/Math.PI;
+  function julianDay(y,m,d){if(m<=2){y-=1;m+=12;}const A=Math.floor(y/100),B=2-A+Math.floor(A/4);return Math.floor(365.25*(y+4716))+Math.floor(30.6001*(m+1))+d+B-1524.5;}
+  function jCent(jd){return (jd-2451545)/36525;}
+  function eqTime(t){const e=23+(26+(21.448-t*(46.815+t*(.00059-t*.001813)))/60)/60;const e0=e+.00256*Math.cos(d2r(125.04-1934.136*t));let l0=280.46646+t*(36000.76983+t*.0003032);l0=((l0%360)+360)%360;const mm=357.52911+t*(35999.05029-.0001537*t);const ecc=.016708634-t*(.000042037+1.267e-7*t);let y=Math.tan(d2r(e0/2));y*=y;const et=y*Math.sin(2*d2r(l0))-2*ecc*Math.sin(d2r(mm))+4*ecc*y*Math.sin(d2r(mm))*Math.cos(2*d2r(l0))-.5*y*y*Math.sin(4*d2r(l0))-1.25*ecc*ecc*Math.sin(2*d2r(mm));return r2d(et)*4;}
+  function sunDecl(t){const e=23+(26+(21.448-t*(46.815+t*(.00059-t*.001813)))/60)/60;const e0=e+.00256*Math.cos(d2r(125.04-1934.136*t));let l0=280.46646+t*(36000.76983+t*.0003032);l0=((l0%360)+360)%360;const mm=357.52911+t*(35999.05029-.0001537*t);const cc=Math.sin(d2r(mm))*(1.914602-t*(.004817+1.4e-5*t))+Math.sin(2*d2r(mm))*(.019993-.000101*t)+Math.sin(3*d2r(mm))*.000289;const stl=l0+cc,sal=stl-.00569-.00478*Math.sin(d2r(125.04-1934.136*t));return r2d(Math.asin(Math.sin(d2r(e0))*Math.sin(d2r(sal))));}
+  function sunEvent(rise,jd,lat,lonE){const t=jCent(jd),eq=eqTime(t),decl=sunDecl(t);const ca=Math.cos(d2r(90.833))/(Math.cos(d2r(lat))*Math.cos(d2r(decl)))-Math.tan(d2r(lat))*Math.tan(d2r(decl));if(ca>1)return{polar:'night'};if(ca<-1)return{polar:'day'};let ha=Math.acos(ca);if(!rise)ha=-ha;const p=(-lonE)-r2d(ha);return{min:720+4*p-eq};}
+  function sunMin(rise,lat,lon,dt){return sunEvent(rise,julianDay(dt.getUTCFullYear(),dt.getUTCMonth()+1,dt.getUTCDate()),lat,lon);}
+  function solarElev(lat,lonE,utcMin,dt){const jd=julianDay(dt.getUTCFullYear(),dt.getUTCMonth()+1,dt.getUTCDate());const t=jCent(jd),eq=eqTime(t),decl=sunDecl(t);const tst=utcMin+eq+4*lonE;let ha=tst/4-180;const el=Math.asin(Math.sin(d2r(lat))*Math.sin(d2r(decl))+Math.cos(d2r(lat))*Math.cos(d2r(decl))*Math.cos(d2r(ha)));return r2d(el);}
+
+  /* ---------- shared OFP-derived state ---------- */
+  let OFP=null;
+  function tripMin(){ if(OFP&&OFP.tripT){const v=String(OFP.tripT).padStart(4,'0');return +v.slice(0,2)*60 + +v.slice(2);} return null; }
+  function stdHHMM(){ if(OFP&&OFP.std){const r=/\d+\/(\d{2})(\d{2})/.exec(OFP.std);if(r)return r[1]+':'+r[2];} return ''; }
+  function destCode(){ const ov=$('d_dest').value.trim().toUpperCase(); if(ov)return ov; return OFP?OFP.dest:''; }
+  function destAirport(){ let a=airport(destCode()); if(a)return a;
+    // fall back to last route point as destination coords
+    if(OFP&&OFP.route&&OFP.route.length){const p=OFP.route[OFP.route.length-1];return{n:(OFP.dest||'destination'),lat:p.lat,lon:p.lon,utc:0};}
+    return null; }
+  function depAirport(){ return airport(OFP?OFP.dep:'') ; }
+  function destFullName(){
+    const code=destCode();
+    if(OFP&&OFP.dest&&OFP.wx&&OFP.wx[OFP.dest]&&OFP.wx[OFP.dest].name) return OFP.wx[OFP.dest].name.replace(/\s{2,}/g,' ').trim();
+    const a=airport(code); if(a)return a.n;
+    return '';
+  }
+
+  function setOfpChips(on){
+    [['dispOfp'],['restOfp'],['paOfp']].forEach(([id])=>{const el=$(id);if(!el)return;
+      el.textContent=on?('OFP '+(OFP.fltCs||OFP.dep+'-'+OFP.dest||'loaded')):'no OFP loaded';
+      el.className='ofpchip'+(on?'':' off');});
+  }
+
+  window.addEventListener('ofp-parsed',()=>{ OFP=window.__OFP||null; refreshFromOFP(); });
+
+  function refreshFromOFP(){
+    if(!OFP)return;
+    setOfpChips(true);
+    // takeoff default (STD) if empty
+    const std=stdHHMM();
+    if(std&&!$('d_to').value){ $('d_to').value=std; $('r_to').value=std; }
+    // trip
+    const tm=tripMin();
+    if(tm!=null && !$('d_trip').value) $('d_trip').value=toHHMM(tm);
+    // dest placeholder
+    if(OFP.dest) $('d_dest').placeholder=OFP.dest;
+    // PA fields
+    if(!$('p_ac').dataset.touched) $('p_ac').value=acFriendly(OFP.acType)||$('p_ac').value;
+    if(!$('p_destn').dataset.touched){const dn=destFullName(); if(dn)$('p_destn').value=dn;}
+    if(!$('p_no').dataset.touched && OFP.fltCs) $('p_no').value=OFP.fltCs;
+    if(!$('p_fl').dataset.touched && OFP.highFL) $('p_fl').value='FL'+OFP.highFL;
+    if(!$('p_dur').dataset.touched && tm!=null) $('p_dur').value=Math.floor(tm/60)+' hours '+(tm%60)+' minutes';
+    autoRest();
+    buildChecks();
+    calcRest(); calcDisplay(); buildPA();
+  }
+
+  /* ================= DANGEROUS GOODS (dropdowns) ================= */
+  const HAZARDS=[
+  {n:"1",title:"Explosive",hazard:"Explosion may cause structural failure",toAircraft:"Fire and/or explosion",toOccupants:"As indicated by drill letter(s)",spill:"Use 100% oxygen; no smoking",fire:"All agents according to availability; use standard fire procedure",add:"Possible abrupt loss of pressurization"},
+  {n:"2",title:"Gas",hazard:"Gas non-flammable, pressure may create hazard in fire",toAircraft:"Minimal",toOccupants:"As indicated by drill letter(s)",spill:'Use 100% oxygen; establish and maintain maximum ventilation for "A", "I" or "P" drill letter',fire:"All agents according to availability; use standard fire procedure",add:"Possible abrupt loss of pressurization"},
+  {n:"3",title:"Flammable Liquid",hazard:"Flammable Liquid",toAircraft:"Fire and/or explosion",toOccupants:"Smoke, fumes and heat and as indicated by drill letter(s)",spill:"Use 100% oxygen; establish and maintain maximum ventilation; no smoking; minimum electrics",fire:'All agents according to availability; no water on "W" drill letter',add:"Possible abrupt loss of pressurization"},
+  {n:"4",title:"Spontaneously Combustible",hazard:"Spontaneously Combustible or pyrophoric when exposed to air",toAircraft:"Fire and/or explosion",toOccupants:"Smoke, fumes and heat, and as indicated by drill letter(s)",spill:"Use 100% oxygen; establish and maintain maximum ventilation",fire:'All agents according to availability; no water on "W" drill letter',add:'Possible abrupt loss of pressurization; minimum electrics if "F" or "H" drill letter'},
+  {n:"5",title:"Oxidizer",hazard:"Oxidizer, may ignite other materials, may explode in heat of a fire",toAircraft:"Fire and/or explosion, possible corrosion damage",toOccupants:"Eye, nose and throat irritation; skin damage on contact",spill:"Use 100% oxygen; establish and maintain maximum ventilation",fire:'All agents according to availability; no water on "W" drill letter',add:"Possible abrupt loss of pressurization"},
+  {n:"6",title:"Toxic",hazard:"Toxic, may be fatal if inhaled, ingested, or absorbed by skin",toAircraft:"Contamination with toxic liquid or solid",toOccupants:"Acute toxicity, effects may be delayed",spill:"Use 100% oxygen; establish and maintain maximum ventilation; do not touch without gloves",fire:'All agents according to availability; no water on "W" drill letter',add:'Possible abrupt loss of pressurization; minimum electrics if "F" or "H" drill letter'},
+  {n:"7",title:"Radioactive",hazard:"Radiation from broken/unshielded packages",toAircraft:"Contamination with spilled radioactive material",toOccupants:"Exposure to radiation, and personnel contamination",spill:"Do not move packages; avoid contact",fire:"All agents according to availability",add:"Call for a qualified person to meet the aircraft"},
+  {n:"8",title:"Corrosive",hazard:"Corrosive, fumes disabling if inhaled or in contact with skin",toAircraft:"Possible corrosion damage",toOccupants:"Eye, nose and throat irritation; skin damage on contact",spill:"Use 100% oxygen; establish and maintain maximum ventilation; do not touch without gloves",fire:'All agents according to availability; no water on "W" drill letter',add:'Possible abrupt loss of pressurization; minimum electrics if "F" or "H" drill letter'},
+  {n:"9",title:"No Risk",hazard:"No general inherent risk",toAircraft:"As indicated by the drill letter",toOccupants:"As indicated by the drill letter",spill:'Use 100% oxygen; establish and maintain maximum ventilation if "A" drill letter',fire:"All agents according to availability",add:"None"},
+  {n:"10",title:"Gas, Flammable",hazard:"Gas, flammable, high fire risk if any ignition source present",toAircraft:"Fire and/or explosion",toOccupants:"Smoke, fumes and heat, and as indicated by drill letter(s)",spill:"Use 100% oxygen; establish and maintain maximum ventilation; no smoking; minimum electrics",fire:"All agents according to availability",add:"Possible abrupt loss of pressurization"},
+  {n:"11",title:"Infectious",hazard:"Infectious substances may affect humans or animals if inhaled, ingested or absorbed through the mucous membrane or an open wound",toAircraft:"Contamination with Infectious substances",toOccupants:"Delayed infection to humans or animals",spill:"Do not touch. Minimum re-circulation and ventilation in affected area",fire:'All agents according to availability. No water on "Y" drill letter',add:"Call for a qualified person to meet the aircraft"},
+  {n:"12",title:"Flammable toxic",hazard:"Fire, heat, smoke, toxic and flammable vapour",toAircraft:"Fire and/or explosion",toOccupants:"Smoke, fumes and heat",spill:"Use 100% oxygen; establish and maintain maximum ventilation",fire:"All agents according to availability. Use water if available",add:"Possible abrupt loss of pressurization; consider landing immediately"}
+  ];
+  const LETTERS=[["A","ANAESTHETIC"],["C","CORROSIVE"],["E","EXPLOSIVE"],["F","FLAMMABLE"],["H","HIGHLY IGNITABLE"],["I","IRRITANT / TEAR PRODUCING"],["L","OTHER RISK LOW OR NONE"],["M","MAGNETIC"],["N","NOXIOUS"],["P","TOXIC* (POISON)"],["S","SPONTANEOUSLY COMBUSTIBLE OR PYROPHORIC"],["W","IF WET GIVES OFF POISONOUS OR FLAMMABLE GAS"],["X","OXIDIZER"]];
+  const dgClass=$('dgClass'),dgLetter=$('dgLetter');
+  HAZARDS.forEach(h=>{const o=document.createElement('option');o.value=h.n;o.textContent=h.n+' — '+h.title;dgClass.appendChild(o);});
+  LETTERS.forEach(l=>{const o=document.createElement('option');o.value=l[0];o.textContent=l[0]+' — '+l[1];dgLetter.appendChild(o);});
+  dgClass.addEventListener('change',()=>{
+    const h=HAZARDS.find(x=>x.n===dgClass.value);
+    if(!h){$('dgClassDetail').innerHTML='';return;}
+    const rows=[["Hazard",h.hazard],["Risk to aircraft",h.toAircraft],["Risk to occupants",h.toOccupants],["Spill / leak procedure",h.spill],["Firefighting",h.fire],["Additional considerations",h.add]];
+    $('dgClassDetail').innerHTML='<div style="margin-top:6px"><div class="dgrow"><div class="k">Class '+h.n+' — '+escF(h.title)+'</div></div>'+
+      rows.map(r=>`<div class="dgrow"><div class="k">${escF(r[0])}</div><div class="v">${escF(r[1]||'—')}</div></div>`).join('')+'</div>';
+  });
+  dgLetter.addEventListener('change',()=>{
+    const l=LETTERS.find(x=>x[0]===dgLetter.value);
+    $('dgLetterDetail').innerHTML=l?`<div class="dgrow"><div class="k">Drill letter ${l[0]}</div><div class="v">${escF(l[1])}</div></div>`:'';
+  });
+
+  /* ================= INFLIGHT REST ================= */
+  function autoRest(){
+    const to=toM($('r_to').value||$('d_to').value);
+    const tm=tripMin();
+    if(to==null)return;
+    $('r_start').value=toHHMM(addT(to,15));
+    if(tm!=null) $('r_end').value=toHHMM(addT(to,tm-60));
+  }
+  function restUnit(total,gaps,start,end,gap){let a=(end||0)-(start||0)-gap*gaps;if(a<0)a+=1440;return Math.floor(a/total);}
+  function calcRest(){
+    const w=$('r_type').value.split(',').map(Number);
+    const start=toM($('r_start').value),end=toM($('r_end').value);
+    const gap=+$('r_gap').value||0;
+    const tb=$('restTable'),sum=$('restSummary');
+    if(start===null||end===null){tb.innerHTML='';sum.textContent='Enter takeoff (with an OFP loaded) or set rest start/end.';return;}
+    const gaps=w.length-1,total=w.reduce((a,b)=>a+b,0),unit=restUnit(total,gaps,start,end,gap);
+    let s=start,rows='';
+    for(let i=0;i<w.length;i++){
+      const dur=unit*w[i],e=s+dur,crew=(i%2===0)?'B':'A';
+      rows+=`<tr><td>${i+1}</td><td class="rest-${crew}">${crew}</td><td class="mono">${fmt(s)}</td><td class="mono">${fmt(e)}</td><td class="mono">${Math.floor(dur/60)}h ${dur%60}m</td></tr>`;
+      s=e+gap;
+    }
+    tb.innerHTML=rows;
+    let totalRest=(end-start)<0?(end-start+1440):(end-start);
+    sum.textContent='Rest window '+fmt(start)+'–'+fmt(end)+' ('+Math.floor(totalRest/60)+'h '+(totalRest%60)+'m) · one R = '+unit+' min · '+gaps+' handover gap(s) of '+gap+' min.';
+  }
+  $('r_to').addEventListener('input',()=>{$('d_to').value=$('r_to').value;autoRest();calcRest();buildChecks();calcDisplay();});
+  ['r_type','r_start','r_end','r_gap'].forEach(id=>$(id).addEventListener('input',()=>{calcRest();calcDisplay();}));
+  $('r_auto').addEventListener('click',()=>{autoRest();calcRest();calcDisplay();});
+
+  /* ================= INFLIGHT DISPLAY ================= */
+  let checks=[];           // {min,label,kind}
+  let ackUntil=-1;         // last acknowledged check time (min)
+  function buildChecks(){
+    checks=[];
+    const to=toM($('d_to').value); const tm=tripMin();
+    if(to==null)return;
+    // top of climb estimate: OFP TOC waypoint elapsed if present, else +20 min
+    let tocOff=20;
+    if(OFP&&OFP.navTime){const k=Object.keys(OFP.navTime).find(w=>/^TOC$|^TC$|TOC/.test(w));if(k){const v=OFP.navTime[k];tocOff=+v.slice(0,2)*60+ +v.slice(2);}}
+    const toc=addT(to,tocOff);
+    checks.push({min:toc,label:'Top of climb — set cruise, CI & fuel check',kind:'ci'});
+    const endRel=tm!=null?tm:600;
+    for(let t=tocOff+30;t<endRel-10;t+=30) checks.push({min:addT(to,t),label:'30-min check — Cost Index & fuel vs plan',kind:'ci'});
+    for(let t=tocOff+60;t<endRel-10;t+=60) checks.push({min:addT(to,t),label:'60-min check — RVSM altimetry cross-check',kind:'rvsm'});
+    checks.sort((a,b)=>a.min-b.min);
+  }
+  function dueCheck(nowMin){
+    // find latest check whose time has passed (within last 25 min) and not yet acknowledged
+    let best=null;
+    checks.forEach(ch=>{
+      let diff=nowMin-ch.min; if(diff<-720)diff+=1440; if(diff>720)diff-=1440;
+      if(diff>=0 && diff<=25 && ch.min!==ackUntil){ if(!best||ch.min>best.min) best=ch; }
+    });
+    return best;
+  }
+  function showBanner(ch){
+    const b=$('bnr');
+    if(!ch){b.style.display='none';return;}
+    b.style.display='flex';
+    b.className='banner'+(ch.kind==='rvsm'?' rvsm':'');
+    $('bnrTxt').textContent='⏰ '+ch.label+'  ('+fmt(ch.min)+'Z)';
+    b._cur=ch.min;
+  }
+  $('bnrAck').addEventListener('click',()=>{ackUntil=$('bnr')._cur;$('bnr').style.display='none';});
+
+  function sunCellRow(label,lat,lon,utc,now){
+    const sr=sunMin(true,lat,lon,now),ss=sunMin(false,lat,lon,now);
+    const nowMin=now.getUTCHours()*60+now.getUTCMinutes();
+    let dn='—';
+    if(sr.polar){dn=sr.polar==='day'?'Day (polar)':'Night (polar)';}
+    else{const a=((sr.min%1440)+1440)%1440,b=((ss.min%1440)+1440)%1440;const day=a<b?(nowMin>=a&&nowMin<b):(nowMin>=a||nowMin<b);dn=day?'Day':'Night';}
+    const srT=sr.polar?'—':fmt(locT(sr.min,utc*60))+' L';
+    const ssT=ss.polar?'—':fmt(locT(ss.min,utc*60))+' L';
+    return `<tr><td class="k" style="color:#cfe">${escF(label)}</td><td class="mono">${srT}</td><td class="mono">${ssT}</td><td>${dn}</td></tr>`;
+  }
+  function routeSunCrossings(now){
+    if(!OFP||!OFP.route)return [];
+    const to=toM($('d_to').value); if(to==null)return [];
+    const pts=OFP.route.filter(p=>p.elapsed!=null);
+    if(pts.length<2)return [];
+    const out=[]; let prev=null;
+    pts.forEach(p=>{
+      const utcMin=addT(to,p.elapsed);
+      const el=solarElev(p.lat,p.lon,utcMin,now);
+      if(prev){
+        if((prev.el<0&&el>=0)||(prev.el>=0&&el<0)){
+          const frac=Math.abs(prev.el)/(Math.abs(prev.el)+Math.abs(el));
+          let tm=prev.utc+frac*((utcMin-prev.utc+1440)%1440); tm=((tm%1440)+1440)%1440;
+          out.push({type:el>=0?'Sunrise':'Sunset',utc:tm,fromTO:Math.round(((tm-to)%1440+1440)%1440)});
+        }
+      }
+      prev={el,utc:utcMin};
+    });
+    return out;
+  }
+
+  function calcDisplay(){
+    const to=toM($('d_to').value), tm=tripMin(), trip=toM($('d_trip').value);
+    const now=new Date(), nowMin=now.getUTCHours()*60+now.getUTCMinutes()+now.getUTCSeconds()/60;
+    $('utcnow').textContent=fmt(nowMin);
+    const tripUse=(trip!=null?trip:tm);
+    const eta=(to!=null&&tripUse!=null)?addT(to,tripUse):null;
+    const elapsed=(to!=null)?subT(nowMin,to):null;
+    const togo=(eta!=null)?subT(eta,nowMin):null;
+    $('d_elapsed').textContent=fmt(elapsed);
+    $('d_togo').textContent=fmt(togo);
+    $('d_eta').textContent=fmt(eta);
+    const dap=destAirport();
+    $('d_etaL').textContent=(eta!=null&&dap)?fmt(locT(eta,dap.utc*60)):'--:--';
+    // rest countdown
+    const rs=toM($('r_start').value), re=toM($('r_end').value);
+    $('d_rest1').textContent=rs!=null?fmt(subT(rs,nowMin)):'--:--';
+    $('d_rest2').textContent=re!=null?fmt(subT(re,nowMin)):'--:--';
+    // dest day/night badge
+    if(dap){
+      const sr=sunMin(true,dap.lat,dap.lon,now),ss=sunMin(false,dap.lat,dap.lon,now);
+      let day=true;
+      if(sr.polar)day=sr.polar==='day'; else{const a=((sr.min%1440)+1440)%1440,b=((ss.min%1440)+1440)%1440;day=a<b?(nowMin>=a&&nowMin<b):(nowMin>=a||nowMin<b);}
+      const dn=$('dn');dn.textContent=day?'DAY at dest':'NIGHT at dest';dn.className='badge '+(day?'day':'night');
+    }
+    // sun table
+    let rows=''; const dep=depAirport();
+    if(dep) rows+=sunCellRow((OFP?OFP.dep:'DEP')+' '+dep.n.split(',')[0],dep.lat,dep.lon,dep.utc,now);
+    if(dap) rows+=sunCellRow((destCode()||'DEST')+' '+dap.n.split(',')[0],dap.lat,dap.lon,dap.utc,now);
+    $('sunTable').innerHTML=rows||'<tr><td colspan="4" style="color:#7e90ad">Load an OFP (or set destination code) to compute sun times.</td></tr>';
+    // route crossings
+    const rc=routeSunCrossings(now);
+    if(rc.length){
+      $('routeSun').innerHTML='<div class="hint" style="margin-bottom:6px;color:#9FB3D1">While flying the OFP route you would see:</div>'+
+        rc.map(x=>`<div class="dgrow"><div class="v"><b style="color:${x.type==='Sunrise'?'#FFD66B':'#7ec8ff'}">${x.type}</b> at ${fmt(x.utc)}Z &mdash; about ${fmt(x.fromTO)} after takeoff</div></div>`).join('');
+    } else {
+      $('routeSun').innerHTML='<div class="hint">En-route sunrise/sunset: none in this route window'+(OFP&&OFP.route&&OFP.route.filter(p=>p.elapsed!=null).length<2?' (route coordinates/times not detected in this OFP — destination & departure sun times shown above)':'')+'.</div>';
+    }
+    // reminder banner
+    if(to!=null){ if(!checks.length)buildChecks(); showBanner(dueCheck(((nowMin%1440)+1440)%1440)); }
+  }
+  $('d_to').addEventListener('input',()=>{$('r_to').value=$('d_to').value;autoRest();buildChecks();calcRest();calcDisplay();});
+  $('d_trip').addEventListener('input',calcDisplay);
+  $('d_dest').addEventListener('input',calcDisplay);
+
+  /* ================= PA GUIDE ================= */
+  let paMode='welcome';
+  document.querySelectorAll('.patabs button').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('.patabs button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');paMode=b.dataset.pa;
+    document.querySelectorAll('.pa-welcome').forEach(e=>e.style.display=paMode==='welcome'?'flex':'none');
+    document.querySelectorAll('.pa-descent').forEach(e=>e.style.display=paMode==='descent'?'flex':'none');
+    buildPA();
+  }));
+  const pv=(id,ph)=>{const x=$(id).value.trim();return x||ph;};
+  function buildPA(){
+    const g=$('p_greet').value;
+    const speaker=$('p_speaker').value; // Captain | First Officer
+    const capt=$('p_capt').value.trim(), fo=$('p_fo').value.trim();
+    const myName=speaker==='Captain'?(capt||'[CAPTAIN]'):(fo||'[FO]');
+    const other=speaker==='Captain'?(fo||'[FO]'):(capt||'[CAPTAIN]');
+    const dest=pv('p_destn','[DESTINATION_NAME]');
+    let t;
+    if(paMode==='welcome'){
+      t=`Good ${g}, ladies and gentlemen.\n\n`+
+      `This is your ${speaker} speaking. My name is ${myName}. On behalf of Qatar Airways and all the crew, I would like to welcome you on board this ${pv('p_ac','[AIRCRAFT]')}, flight ${pv('p_no','[NUMBER]')} to ${dest}.\n\n`+
+      `Beside me here on the Flight Deck is ${other}. And looking after your safety and comfort in the cabin today are CSD / CS ${pv('p_csd','[CSDNAME]')}, and our award-winning team.\n\n`+
+      `Our flight time today is ${pv('p_dur','[DURATION]')}, and we will be cruising at an altitude of ${pv('p_fl','[FL]')}. We're expecting generally good weather en route. (However, we may experience some light turbulence after departure / during the flight).\n\n`+
+      `For your safety, please keep your seatbelt fastened at all times, even when the seatbelt signs are switched off.\n\n`+
+      `Before we begin our descent into ${dest}, I'll update you with the latest weather and arrival information.\n\n`+
+      `Until then, please make yourself comfortable and enjoy our world-class service.\n\n`+
+      `I wish you a very pleasant journey on board this Qatar Airways flight. Thank you.`;
+    }else{
+      t=`Good ${g}, ladies and gentlemen. This is your ${speaker} speaking.\n\n`+
+      `We trust you're having a pleasant flight with us today.\n\n`+
+      `We'll be starting our descent into ${dest} shortly, and should be landing in ${pv('p_ttg','[TIME_TO_GO]')} minutes, approximately ${pv('p_eta','[ETA_LOCAL]')}.\n\n`+
+      `It's a ${pv('p_wx','[WEATHER]')} day today, with a temperature of ${pv('p_tc','[TEMPC]')} Celsius.\n\n`+
+      `The local time now is ${pv('p_tn','[TIME_NOW]')}.\n\n`+
+      `On behalf of all the crew, we wish you a very pleasant stay in ${dest}, or a smooth onward journey.\n\n`+
+      `It's been our pleasure having you on board today.\n\n`+
+      `Thank you for choosing the award-winning Qatar Airways.`;
+    }
+    $('paText').value=t;
+  }
+  ['p_speaker','p_greet','p_capt','p_fo','p_csd','p_ac','p_no','p_destn','p_dur','p_fl','p_ttg','p_eta','p_wx','p_tc','p_tn']
+    .forEach(id=>$(id).addEventListener('input',()=>{ $(id).dataset.touched='1'; buildPA(); }));
+  $('paCopy').addEventListener('click',()=>{
+    const txt=$('paText').value;
+    const done=()=>{const c=$('paCopied');c.textContent='Copied ✓';setTimeout(()=>c.textContent='',1500);};
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(done,done);else done();
+  });
+
+  /* ---- OCR roster screenshot -> crew names ---- */
+  $('p_shot').addEventListener('change',()=>{
+    const f=$('p_shot').files&&$('p_shot').files[0]; if(!f)return;
+    if(!window.Tesseract){$('p_ocr').textContent='OCR library not loaded (needs internet). Type names manually.';return;}
+    $('p_ocr').textContent='Reading screenshot…';
+    Tesseract.recognize(f,'eng').then(({data})=>{
+      const text=data.text||''; const found=parseRoster(text);
+      let msg=[];
+      if(found.capt){$('p_capt').value=found.capt;$('p_capt').dataset.touched='1';msg.push('Captain: '+found.capt);}
+      if(found.fo){$('p_fo').value=found.fo;$('p_fo').dataset.touched='1';msg.push('FO: '+found.fo);}
+      if(found.csd){$('p_csd').value=found.csd;$('p_csd').dataset.touched='1';msg.push('CSD/CS: '+found.csd);}
+      buildPA();
+      $('p_ocr').textContent=msg.length?('Read — '+msg.join(' · ')+'. Check & edit if needed.'):'Could not detect crew names — type them manually.';
+    }).catch(e=>{$('p_ocr').textContent='OCR failed: '+e.message+'. Type names manually.';});
+  });
+  function tidyName(s){return s.replace(/\s*\(\d+\).*/,'').replace(/\s{2,}/g,' ').trim();}
+  function parseRoster(text){
+    const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
+    const res={capt:'',fo:'',csd:''};
+    for(let i=0;i<lines.length;i++){
+      const nm=/^([A-Z][A-Za-z'’\- ]+?)\s*\((\d{3,6})\)/.exec(lines[i]);
+      if(!nm)continue;
+      const name=tidyName(nm[1]);
+      // role often on same or next line
+      const ctx=(lines[i]+' '+(lines[i+1]||'')).toUpperCase();
+      if(!res.capt && /\bCP\b|\bPIC\b|CAPTAIN/.test(ctx)) res.capt=name;
+      else if(!res.fo && /\bFO\b|FIRST OFFICER/.test(ctx)) res.fo=name;
+      else if(!res.csd && /\bCSD\b|\bCS\b|\bCD\b|CABIN/.test(ctx)) res.csd=name;
+    }
+    return res;
+  }
+
+  /* ---- init ---- */
+  calcRest(); buildPA();
+  calcDisplay();
+  setInterval(calcDisplay,1000);
+})();
+</script>
+</body>
+</html>
