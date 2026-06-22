@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>OFP Briefing Tool</title>
+<title>Sky Matrix</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="OFP Bag">
+<meta name="apple-mobile-web-app-title" content="Sky Matrix">
 <meta name="theme-color" content="#5A1846">
 <script>
 /* PWA install scaffolding: apple-touch-icon + web manifest, built at load. */
@@ -20,7 +20,7 @@
   function addLink(rel,href){var l=document.createElement('link');l.setAttribute('rel',rel);l.setAttribute('href',href);document.head.appendChild(l);}
   addLink('apple-touch-icon',uri); addLink('icon',uri);
   try{
-    var mani={name:"OFP Briefing Tool",short_name:"OFP Bag",display:"standalone",orientation:"any",
+    var mani={name:"Sky Matrix",short_name:"Sky Matrix",display:"standalone",orientation:"any",
       background_color:"#0E1726",theme_color:"#5A1846",start_url:"./",scope:"./",
       icons:[{src:uri,sizes:"any",type:"image/svg+xml",purpose:"any"}]};
     var b=new Blob([JSON.stringify(mani)],{type:'application/manifest+json'});
@@ -153,12 +153,56 @@
   .identbar b{color:#fff}
   .identbar.empty{color:#7e90ad}
   @media print{ .identbar{display:none!important} }
+  .warnbar{background:#3a1414;border-bottom:1px solid #6b2020;color:#ffd2d2;font-size:11.5px;padding:8px 14px;text-align:center;line-height:1.5}
+  .warnbar b{color:#ff8a8a}
+  .credit{background:#0b1322;border-top:1px solid #20304f;color:#9FB3D1;font-size:11.5px;padding:12px 14px;text-align:center;line-height:1.6}
+  .credit a{color:#7ec8ff;text-decoration:none}
+  .credit b{color:#fff}
+  #lockScreen{position:fixed;inset:0;background:#0E1726;z-index:100;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}
+  #lockScreen .box{max-width:440px;width:100%}
+  #lockScreen h1{color:#fff;font-size:30px;letter-spacing:1px;margin:0 0 4px}
+  #lockScreen .tag{color:#7ec8ff;font-size:12px;margin:0 0 22px;font-family:var(--mono)}
+  #lockScreen input{width:100%;background:#13203A;border:1px solid #2a3c5e;color:#fff;border-radius:8px;padding:12px;font-size:16px;text-align:center;margin-bottom:10px}
+  #lockScreen button{width:100%;padding:12px;font-size:15px}
+  #lockMsg{color:#ff9aa2;font-size:12px;min-height:18px;margin-top:8px}
+  #lockScreen .warn{margin-top:22px;font-size:11px;color:#ffb3b3;background:#2a1414;border:1px solid #5a2222;border-radius:8px;padding:10px;line-height:1.5}
+  #lockScreen .by{margin-top:14px;font-size:11px;color:#7e90ad}
+  #lockScreen .by a{color:#7ec8ff;text-decoration:none}
+  .modalwrap{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:90;align-items:flex-start;justify-content:center;padding:30px 16px;overflow:auto}
+  .modalwrap.open{display:flex}
+  .modalbox{background:#13203A;border:1px solid #20304f;border-radius:12px;max-width:560px;width:100%;padding:18px}
+  .modalbox h2{color:#fff;margin:0;font-size:16px}
+  .docrow{display:flex;align-items:center;gap:8px;border-bottom:1px solid #1b2942;padding:9px 0;font-size:13px}
+  .docrow .nm{flex:1;color:#E6ECF5;word-break:break-word}
+  .docrow .nm.sel{color:#7be0a4;font-weight:700}
+  .docrow button{padding:5px 10px;font-size:11px}
+  .docrow button.del{background:#7a2222}
+  #docCurrent{margin-top:6px}
+  #docCurrent a{color:#7be0a4;text-decoration:none;font-weight:600}
 </style>
 </head>
 <body>
+<div id="lockScreen">
+  <div class="box">
+    <img src="logo.png" alt="Sky Matrix" style="max-width:240px;width:62%;margin:0 auto 12px;display:block" onerror="this.style.display='none'">
+    <h1>Sky Matrix</h1>
+    <div class="tag">Flight briefing assistant</div>
+    <input id="lockPw" type="password" placeholder="Enter password" autocomplete="off">
+    <button id="lockBtn">Unlock</button>
+    <div id="lockMsg"></div>
+    <a href="#" id="lockSet" style="color:#7ec8ff;font-size:11px;display:inline-block;margin-top:8px">Set / change password</a>
+    <div id="lockHashWrap" style="display:none;margin-top:10px;font-size:10.5px;color:#9FB3D1;text-align:left;background:#13203A;border:1px solid #2a3c5e;border-radius:8px;padding:10px">
+      Password set on this device. To make it permanent and used on every device, paste the value below into <b>APP_PASSWORD_HASH<cCaptainMiranda@401*#> near the top of <b>index.html</b>, then re-upload to GitHub:
+      <div id="lockHash" style="word-break:break-all;color:#7be0a4;font-family:var(--mono);margin-top:6px"></div>
+    </div>
+    <div class="warn"><b>FOR REFERENCE ONLY.</b> This tool must NOT be used for operational purposes. The official hard copy of the OFP must be used for flight operations. For individual use only.</div>
+    <div class="by">Prepared by Sky Matrix &middot; <a href="mailto:skymatrix401@gmail.com">skymatrix401@gmail.com</a></div>
+  </div>
+</div>
+
 <header class="app">
-  <div><h1>OFP Briefing Tool</h1><div class="sub">Parse a LIDO / Qatar-style Operational Flight Plan into a fillable briefing card &amp; hazard supplement</div></div>
-  <div class="sub mono">A350 long-haul &middot; offline-capable</div>
+  <div><h1>Sky Matrix</h1></div>
+  <div class="sub mono">Flight briefing assistant</div>
 </header>
 
 <nav class="topnav" id="topnav">
@@ -169,6 +213,7 @@
   <button data-v="pa">&#128226; PA Guide</button>
 </nav>
 <div class="identbar empty" id="identbar"><span>No flight loaded — open an OFP in the Briefing tab</span></div>
+<div class="warnbar"><b>For reference only — not for operational use.</b> Use the official hard-copy OFP for flight operations. Individual use only.</div>
 
 <div class="wrap view active" id="view-briefing">
   <div id="io">
@@ -182,14 +227,6 @@
       <div class="row">
         <label class="fld" style="flex:1 1 100%">Or paste OFP text
           <textarea id="paste" placeholder="Paste the full OFP text here…"></textarea>
-        </label>
-      </div>
-      <div class="row">
-        <label class="fld">Standard crew items to ignore (comma-separated)
-          <input id="known" type="text" value="CO2/26,CB01,CB18/19,CB18/23,CB58/24">
-        </label>
-        <label class="fld">Qsuite trigger (flight-attendant seats =)
-          <input id="qseats" type="text" value="16">
         </label>
       </div>
       <div class="row">
@@ -251,7 +288,7 @@
       <div class="feat-field"><label class="lab">Takeoff (UTC HH:MM)</label>
         <div style="display:flex;gap:6px"><input id="d_to" type="time" style="flex:1"><button id="d_toStart" type="button" style="padding:8px 14px">START</button></div></div>
       <div class="feat-field"><label class="lab">Trip time (HH:MM, from OFP)</label><input id="d_trip" type="time"></div>
-      <div class="feat-field"><label class="lab">DOCS</label><button id="d_docs" type="button" class="ghost" style="width:100%" title="Reserved for future use">DOCS</button></div>
+      <div class="feat-field"><label class="lab">DOCS</label><button id="d_docs" type="button" class="ghost" style="width:100%">DOCS</button><div id="docCurrent" class="hint"></div></div>
     </div>
     <p class="hint">Tap START at takeoff to capture the airborne time (uses internet UTC). Destination resolves automatically from the OFP. DOCS is reserved for future use.</p>
   </div>
@@ -390,7 +427,7 @@
     </div>
     <div class="fgrid">
       <div class="feat-field"><label class="lab">CSD / CS name</label><input id="p_csd" type="text" placeholder="[CSDNAME]"></div>
-      <div class="feat-field"><label class="lab">Aircraft type (from OFP)</label><input id="p_ac" type="text" value="Airbus A350"></div>
+      <div class="feat-field"><label class="lab">Aircraft type (from OFP)</label><input id="p_ac" type="text" placeholder="from OFP"></div>
     </div>
     <div class="fgrid">
       <div class="feat-field"><label class="lab">Flight number</label><input id="p_no" type="text" placeholder="[NUMBER]"></div>
@@ -426,7 +463,66 @@
   </div>
 </div>
 
+<div class="modalwrap" id="docsModal">
+  <div class="modalbox">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <h2>Documents</h2><button id="docsClose" class="ghost">Close</button></div>
+    <p class="hint">Add your reference documents (PDF, images, etc.). They are stored on this device only and stay until you remove them. Tap a document name to set it as the current document; use Open to view it.</p>
+    <input id="docsAdd" type="file" multiple style="margin-top:6px">
+    <div id="docsList" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<div class="credit">
+  <img src="logo.png" alt="" style="height:42px;width:auto;margin-bottom:8px;display:inline-block" onerror="this.style.display='none'"><br>
+  Prepared by <b>Sky Matrix</b> &middot; for queries &amp; feedback contact <a href="mailto:skymatrix401@gmail.com">skymatrix401@gmail.com</a><br>
+  For reference only — not for operational use. Use the official hard-copy OFP for flight operations. Individual use only.
+</div>
+
 <script>
+/* ============================================================
+   PASSWORD — paste the SHA-256 hash of YOUR chosen password
+   between the quotes below. Only you can edit this file in your
+   GitHub repo, so only you control it; and the hash never reveals
+   the actual password to anyone who views the page source.
+   To get the hash: open the app, tap "Set / change password",
+   type your password, and copy the value it shows here.
+   Leave it "" to set a per-device password on first use instead.
+   (Still a client-side gate: deters casual access, not strong security.)
+   ============================================================ */
+var APP_PASSWORD_HASH = "";
+(function(){
+  var lock=document.getElementById('lockScreen');
+  function unlock(){lock.style.display='none';}
+  if(sessionStorage.getItem('sm_unlocked')==='1') unlock();
+  async function sha256hex(s){
+    try{const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
+      return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');}catch(e){return null;}
+  }
+  function deviceHash(){try{return localStorage.getItem('sm_pwhash')||'';}catch(e){return '';}}
+  async function tryUnlock(){
+    var pw=document.getElementById('lockPw').value;
+    var target=APP_PASSWORD_HASH||deviceHash();
+    if(!target){document.getElementById('lockMsg').textContent='No password set yet — tap “Set / change password”.';return;}
+    var h=await sha256hex(pw);
+    if(h && h===target){sessionStorage.setItem('sm_unlocked','1');unlock();}
+    else{document.getElementById('lockMsg').textContent='Incorrect password.';document.getElementById('lockPw').value='';}
+  }
+  document.getElementById('lockBtn').addEventListener('click',tryUnlock);
+  document.getElementById('lockPw').addEventListener('keydown',function(e){if(e.key==='Enter')tryUnlock();});
+  document.getElementById('lockSet').addEventListener('click',async function(e){
+    e.preventDefault();
+    var np=prompt('Choose a password for Sky Matrix:');
+    if(!np)return;
+    var h=await sha256hex(np);
+    if(!h){alert('Secure hashing is unavailable in this browser/mode (needs https).');return;}
+    try{localStorage.setItem('sm_pwhash',h);}catch(e2){}
+    document.getElementById('lockHash').textContent=h;
+    document.getElementById('lockHashWrap').style.display='block';
+    document.getElementById('lockMsg').textContent='Password set on this device. You can unlock now.';
+  });
+})();
+
 if (window.pdfjsLib) { try { pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch(e){} }
 
@@ -831,7 +927,7 @@ function build(data){
   oOfp.innerHTML=''; oRoute.innerHTML=''; oWx.innerHTML=''; oNotam.innerHTML='';
   const ident=`${esc(data.fltCs||'')} ${esc(data.date||'')} ${esc(data.dep||'')}–${esc(data.dest||'')} • OFP ${esc(data.ofpNo||'')} • ${esc(data.tail||'')}`;
 
-  let s1=sheet('OFP QUICK-EXTRACT CARD','Airbus A350 — planning summary');
+  let s1=sheet('OFP QUICK-EXTRACT CARD',(data.acType?data.acType+' — planning summary':'Planning summary'));
   s1+=sec('Flight identification');
   s1+=grid('g4',[c('Date of dep',data.date),c('Flight callsign',data.fltCs),c('ATC callsign',data.atcCs),c('OFP number',data.ofpNo)]);
   s1+=grid('g3',[c('Dep (ICAO)',data.dep),c('Dest (ICAO)',data.dest),c('Dest time zone',tz(data.dest))]);
@@ -852,6 +948,7 @@ function build(data){
     const over=data.elwOver; const marg=(data.mlwt&&data.elwt)?Math.abs(+data.mlwt-+data.elwt):'';
     s1+=`<div class="flag"><span class="chip ${over?'r':'g'}">${over?'YES — OVWT':'NO — within limit'}</span>
       ELW ${esc(data.elwt)} vs MLWT ${esc(data.mlwt)} &mdash; margin ${esc(marg)} kg ${over?'OVER':'under'} limit.</div>`;
+    if(over) s1+=`<div class="flag" style="background:#fbe0e0;border-color:#d9433f;color:#7a1414"><b>&#9888; CAUTION</b> — estimated landing weight is ABOVE MLWT. Re-check arrival fuel / loadsheet.</div>`;
   }
   s1+=sec('Times (UTC)');
   s1+=grid('g4',[c('STD / dep',data.std),c('STA / arr',data.sta),c('Block time',fmtHHMM(data.blk)),c('Trip time',fmtHHMM(data.tripT))]);
@@ -894,24 +991,17 @@ function build(data){
 
   const roles=airportRoles(data);
   let s3=sheet('CREW ALERTS • SIGMET • TAF DECODE',ident);
-  s3+=sec('Cabin & non-standard crew items');
-  s3+=`<div class="body"><p class="item"><b>Flight attendant seats: ${esc(data.faSeats||'?')}</b> ${data.qsuite?'&rarr; <b>QSUITE</b> aircraft':''} ${data.seatCfg?('('+esc(data.seatCfg)+')'):''}</p>`;
-  if(data.coCbNonStd.length) data.coCbNonStd.forEach(x=>{
-    s3+=`<div class="item"><h4>${esc(x.code)} &nbsp; ${esc(x.subj)}</h4></div>`;});
-  else s3+=`<p class="item">No non-standard CO/CB items beyond the configured list.</p>`;
-  s3+=`</div>`;
-  s3+=sec('All CO / CB crew alerts (concise)');
+  s3+=sec('CREW INFO');
   s3+=`<div class="body">`;
+  s3+=`<p class="item"><b>Flight attendant seats: ${esc(data.faSeats||'?')}</b> ${data.seatCfg?('('+esc(data.seatCfg)+')'):''}</p>`;
   if(data.coCb && data.coCb.length){
-    const nonStd=new Set(data.coCbNonStd.map(x=>x.code.toUpperCase()));
+    s3+=`<p class="item" style="margin-top:8px"><b>Crew Orders &amp; Bulletins — summary (${data.coCb.length} item(s)):</b></p>`;
     data.coCb.forEach(x=>{
       let subj=(x.subj||'').replace(/\s+/g,' ').trim();
-      if(subj.length>120) subj=subj.slice(0,120)+'…';
-      const isNew=nonStd.has(x.code.toUpperCase());
-      s3+=`<p class="item" style="margin:0 0 5px"><span class="chip ${isNew?'a':'n'}">${esc(x.code)}</span>${esc(subj||'(no subject text)')}</p>`;
+      if(subj.length>160) subj=subj.slice(0,160)+'…';
+      s3+=`<p class="item" style="margin:0 0 5px"><span class="chip n">${esc(x.code)}</span>${esc(subj||'(no subject text)')}</p>`;
     });
-    s3+=`<p class="fl n" style="margin-top:6px">Amber = non-standard for this flight; grey = routine standing item. ${data.coCb.length} item(s) total.</p>`;
-  } else s3+=`<p class="item">No CO/CB crew alert items detected in the OFP (check the OFP has a CREW ALERT / BULLETIN section).</p>`;
+  } else s3+=`<p class="item" style="margin-top:6px">No Crew Orders / Crew Bulletins detected in the OFP (check the OFP has a CREW ALERT / BULLETIN section).</p>`;
   s3+=`</div>`;
   s3+=sec('SIGMET / AIRMET');
   s3+=`<div class="body">`;
@@ -1044,7 +1134,7 @@ function generate(){
   const text=(paste.value.trim()||lastText).trim();
   if(!text){setMsg('Load or paste an OFP first.','err');return;}
   try{
-    const opts={known:document.getElementById('known').value,qseats:+document.getElementById('qseats').value||16};
+    const opts={known:'',qseats:0};
     const data=parseOFP(text,opts);
     build(data);
     const ib=document.getElementById('identbar');
@@ -1088,6 +1178,7 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
   const addT=(t,n)=>(t===null||n===null)?null:(((t+n)%1440)+1440)%1440;
   const subT=(t,n)=>{if(t===null||n===null)return null;let d=t-n;if(d<0)d+=1440;return d;};
   const locT=(t,off)=>t===null?null:(((t+off)%1440)+1440)%1440;
+  const signed=(ev,now)=>{if(ev==null||now==null)return null;let d=now-ev;while(d>720)d-=1440;while(d<-720)d+=1440;return d;};
   const escF=s=>(s==null?'':String(s)).replace(/[&<>]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[ch]));
   const fv=(a,b)=>a!=null?a:b;
   const rawHHMM=v=>{if(v==null||v==='')return'';v=String(v);if(v.includes(':'))return v;v=v.replace(/\D/g,'').padStart(4,'0');return v.slice(0,2)+':'+v.slice(2,4);};
@@ -1281,7 +1372,7 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
     $('r_start').value=toHHMM(addT(to,15));
     if(tm!=null) $('r_end').value=toHHMM(addT(to,tm-60));
   }
-  function restUnit(total,gaps,start,end,gap){let a=(end||0)-(start||0)-gap*gaps;if(a<0)a+=1440;return Math.floor(a/total);}
+  function restUnit(total,gaps,start,end,gap){let a=((end-start)%1440+1440)%1440 - gap*gaps;if(a<0)a=0;return total?Math.floor(a/total):0;}
   function calcRest(){
     const w=$('r_type').value.split(',').map(Number);
     const start=toM($('r_start').value),end=toM($('r_end').value);
@@ -1371,16 +1462,18 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
     $('utcnow').textContent=fmt(nowMin);
     const tripUse=(trip!=null?trip:tm);
     const eta=(to!=null&&tripUse!=null)?addT(to,tripUse):null;
-    const elapsed=(to!=null)?subT(nowMin,to):null;
-    const togo=(eta!=null)?subT(eta,nowMin):null;
-    $('d_elapsed').textContent=fmt(elapsed);
-    $('d_togo').textContent=fmt(togo);
+    const eSig=(to!=null)?signed(to,nowMin):null;        // + after takeoff, - before
+    $('d_elapsed').textContent=(eSig!=null&&eSig>=0)?fmt(eSig):'--:--';
+    const tgSig=(eta!=null)?-signed(eta,nowMin):null;    // + remaining, <=0 past ETA
+    $('d_togo').textContent=(tgSig!=null)?(tgSig>0?fmt(tgSig):'00:00'):'--:--';
     $('d_eta').textContent=fmt(eta);
     const dap=destAirport();
     $('d_etaL').textContent=(eta!=null&&dap)?fmt(locT(eta,dap.utc*60)):'--:--';
     const rs=toM($('r_start').value), re=toM($('r_end').value);
-    $('d_rest1').textContent=rs!=null?fmt(subT(rs,nowMin)):'--:--';
-    $('d_rest2').textContent=re!=null?fmt(subT(re,nowMin)):'--:--';
+    const r1=(rs!=null)?-signed(rs,nowMin):null;
+    const r2=(re!=null)?-signed(re,nowMin):null;
+    $('d_rest1').textContent=(r1!=null&&r1>0)?fmt(r1):'--:--';
+    $('d_rest2').textContent=(r2!=null&&r2>0)?fmt(r2):'--:--';
     if(dap){
       const sr=sunMin(true,dap.lat,dap.lon,now),ss=sunMin(false,dap.lat,dap.lon,now);
       let day=true;
@@ -1403,7 +1496,56 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
   }
   $('d_to').addEventListener('input',()=>{$('r_to').value=$('d_to').value;autoRest();buildChecks();calcRest();calcDisplay();});
   $('d_toStart').addEventListener('click',()=>{const n=utcNow();$('d_to').value=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes());$('r_to').value=$('d_to').value;autoRest();buildChecks();calcRest();calcDisplay();});
-  $('d_docs').addEventListener('click',()=>{ /* reserved for future use */ });
+  /* ---- DOCS: documents stored on-device (IndexedDB), persist until removed ---- */
+  let DOCDB=null;
+  function docOpen(cb){
+    if(DOCDB){cb(DOCDB);return;}
+    try{
+      const rq=indexedDB.open('skymatrix_docs',1);
+      rq.onupgradeneeded=()=>{const db=rq.result;if(!db.objectStoreNames.contains('docs'))db.createObjectStore('docs',{keyPath:'id',autoIncrement:true});};
+      rq.onsuccess=()=>{DOCDB=rq.result;cb(DOCDB);};
+      rq.onerror=()=>{$('docsList').innerHTML='<p class="hint">Document storage is unavailable in this browser/mode.</p>';};
+    }catch(e){$('docsList').innerHTML='<p class="hint">Document storage is unavailable.</p>';}
+  }
+  function docAdd(files){
+    docOpen(db=>{const tx=db.transaction('docs','readwrite');const st=tx.objectStore('docs');
+      [...files].forEach(f=>st.add({name:f.name,type:f.type,blob:f}));
+      tx.oncomplete=docRender;});
+  }
+  function docAll(cb){
+    docOpen(db=>{const out=[];const st=db.transaction('docs','readonly').objectStore('docs');
+      st.openCursor().onsuccess=e=>{const cur=e.target.result;if(cur){out.push(Object.assign({id:cur.key},cur.value));cur.continue();}else cb(out);};});
+  }
+  function docGet(id,cb){docOpen(db=>{const rq=db.transaction('docs','readonly').objectStore('docs').get(id);rq.onsuccess=()=>cb(rq.result);});}
+  function docDelete(id){
+    docOpen(db=>{const tx=db.transaction('docs','readwrite');tx.objectStore('docs').delete(id);
+      tx.oncomplete=()=>{if(+localStorage.getItem('sm_selDoc')===id)localStorage.removeItem('sm_selDoc');docRender();updateDocCurrent();};});
+  }
+  function docOpenView(id){docGet(id,d=>{if(!d)return;const url=URL.createObjectURL(d.blob);window.open(url,'_blank');setTimeout(()=>URL.revokeObjectURL(url),60000);});}
+  function docSelect(id){localStorage.setItem('sm_selDoc',id);docRender();updateDocCurrent();}
+  function docRender(){
+    docAll(list=>{
+      const sel=+localStorage.getItem('sm_selDoc');
+      if(!list.length){$('docsList').innerHTML='<p class="hint">No documents yet. Add one above.</p>';return;}
+      $('docsList').innerHTML=list.map(d=>`<div class="docrow"><span class="nm ${d.id===sel?'sel':''}" data-sel="${d.id}">${escF(d.name)}${d.id===sel?' ✓':''}</span>`+
+        `<button data-open="${d.id}">Open</button><button class="del" data-del="${d.id}">Delete</button></div>`).join('');
+      $('docsList').querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>docOpenView(+b.dataset.open));
+      $('docsList').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(confirm('Remove this document permanently?'))docDelete(+b.dataset.del);});
+      $('docsList').querySelectorAll('[data-sel]').forEach(b=>b.onclick=()=>docSelect(+b.dataset.sel));
+    });
+  }
+  function updateDocCurrent(){
+    const sel=+localStorage.getItem('sm_selDoc');
+    if(!sel){$('docCurrent').innerHTML='No document selected.';return;}
+    docGet(sel,d=>{ if(!d){$('docCurrent').innerHTML='No document selected.';return;}
+      $('docCurrent').innerHTML='Current: <a href="#" id="docOpenCur">'+escF(d.name)+'</a>';
+      const oc=$('docOpenCur');if(oc)oc.onclick=ev=>{ev.preventDefault();docOpenView(sel);};});
+  }
+  $('d_docs').addEventListener('click',()=>{$('docsModal').classList.add('open');docRender();});
+  $('docsClose').addEventListener('click',()=>$('docsModal').classList.remove('open'));
+  $('docsModal').addEventListener('click',e=>{if(e.target===$('docsModal'))$('docsModal').classList.remove('open');});
+  $('docsAdd').addEventListener('change',()=>{if($('docsAdd').files.length){docAdd($('docsAdd').files);$('docsAdd').value='';}});
+  updateDocCurrent();
   $('d_trip').addEventListener('input',calcDisplay);
 
   function syncATD(hhmmv){
