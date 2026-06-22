@@ -184,7 +184,7 @@
 <body>
 <div id="lockScreen">
   <div class="box">
-    <img src="logo.png" alt="Sky Matrix" style="max-width:240px;width:62%;margin:0 auto 12px;display:block" onerror="this.style.display='none'">
+    <img src="Logo.png" alt="Sky Matrix" style="max-width:240px;width:62%;margin:0 auto 12px;display:block" onerror="this.style.display='none'">
     <h1>Sky Matrix</h1>
     <div class="tag">Flight briefing assistant</div>
     <input id="lockPw" type="password" placeholder="Enter password" autocomplete="off">
@@ -192,7 +192,7 @@
     <div id="lockMsg"></div>
     <a href="#" id="lockSet" style="color:#7ec8ff;font-size:11px;display:inline-block;margin-top:8px">Set / change password</a>
     <div id="lockHashWrap" style="display:none;margin-top:10px;font-size:10.5px;color:#9FB3D1;text-align:left;background:#13203A;border:1px solid #2a3c5e;border-radius:8px;padding:10px">
-      Password set on this device. To make it permanent and used on every device, paste the value below into <b>APP_PASSWORD_HASH<cCaptainMiranda@401*#> near the top of <b>index.html</b>, then re-upload to GitHub:
+      Password set on this device. To make it permanent and used on every device, paste the value below into <b>APP_PASSWORD_HASH</b> near the top of <b>index.html</b>, then re-upload to GitHub:
       <div id="lockHash" style="word-break:break-all;color:#7be0a4;font-family:var(--mono);margin-top:6px"></div>
     </div>
     <div class="warn"><b>FOR REFERENCE ONLY.</b> This tool must NOT be used for operational purposes. The official hard copy of the OFP must be used for flight operations. For individual use only.</div>
@@ -474,7 +474,7 @@
 </div>
 
 <div class="credit">
-  <img src="logo.png" alt="" style="height:42px;width:auto;margin-bottom:8px;display:inline-block" onerror="this.style.display='none'"><br>
+  <img src="Logo.png" alt="" style="height:42px;width:auto;margin-bottom:8px;display:inline-block" onerror="this.style.display='none'"><br>
   Prepared by <b>Sky Matrix</b> &middot; for queries &amp; feedback contact <a href="mailto:skymatrix401@gmail.com">skymatrix401@gmail.com</a><br>
   For reference only — not for operational use. Use the official hard-copy OFP for flight operations. Individual use only.
 </div>
@@ -490,7 +490,7 @@
    Leave it "" to set a per-device password on first use instead.
    (Still a client-side gate: deters casual access, not strong security.)
    ============================================================ */
-var APP_PASSWORD_HASH = "";
+var APP_PASSWORD_HASH = "eca009a403a67ca3f6bb840b281e8d3b67340a16f81580c57559818aa694481d";
 (function(){
   var lock=document.getElementById('lockScreen');
   function unlock(){lock.style.display='none';}
