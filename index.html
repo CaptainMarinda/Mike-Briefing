@@ -13,9 +13,12 @@
 /* PWA install scaffolding: apple-touch-icon + web manifest, built at load. */
 (function(){
   var svg="<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'>"+
-    "<rect width='180' height='180' rx='40' fill='#5A1846'/>"+
-    "<polygon points='34,99 152,57 152,72 74,103 152,108 152,123' fill='white'/>"+
-    "<text x='90' y='154' font-family='Arial,Helvetica,sans-serif' font-size='32' font-weight='bold' text-anchor='middle' fill='white'>OFP</text></svg>";
+    "<rect width='180' height='180' rx='40' fill='#0c1f3d'/>"+
+    "<g stroke='#2f8bff' stroke-width='2' fill='none' stroke-opacity='.5'><circle cx='90' cy='90' r='54'/>"+
+    "<path d='M90 36 L137 63 L137 117 L90 144 L43 117 L43 63 Z'/>"+
+    "<path d='M90 36 L90 90 M137 63 L90 90 M137 117 L90 90 M90 144 L90 90 M43 117 L90 90 M43 63 L90 90'/></g>"+
+    "<g fill='#7fd8ff'><circle cx='90' cy='36' r='4.5'/><circle cx='137' cy='63' r='4.5'/><circle cx='137' cy='117' r='4.5'/><circle cx='90' cy='144' r='4.5'/><circle cx='43' cy='117' r='4.5'/><circle cx='43' cy='63' r='4.5'/></g>"+
+    "<g transform='rotate(-16 90 90)'><path d='M90 54 L118 124 L90 108 L62 124 Z' fill='#5fd0ff'/><path d='M90 72 L104 116 L90 108 Z' fill='#e3f4ff' opacity='.5'/></g></svg>";
   var uri="data:image/svg+xml,"+encodeURIComponent(svg);
   function addLink(rel,href){var l=document.createElement('link');l.setAttribute('rel',rel);l.setAttribute('href',href);document.head.appendChild(l);}
   addLink('apple-touch-icon',uri); addLink('icon',uri);
@@ -40,7 +43,11 @@
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:#E6ECF5;font-family:var(--sans);font-size:14px;line-height:1.45}
-  header.app{padding:18px 22px;padding-top:max(18px,env(safe-area-inset-top));background:linear-gradient(90deg,var(--plum),var(--plum2));display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
+  header.app{padding:12px 18px;padding-top:max(12px,env(safe-area-inset-top));background:#0b1322;border-bottom:1px solid #20304f;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+  .hdrlogo{display:flex;align-items:center}
+  .hdrlogo svg{height:56px;width:auto;display:block;overflow:visible}
+  .creditlogo{display:inline-block;margin-bottom:6px}
+  .creditlogo svg{height:50px;width:auto;display:block;overflow:visible}
   header.app h1{margin:0;font-size:18px;letter-spacing:.4px;font-weight:700}
   header.app .sub{font-size:12px;color:#E8C9DD}
   .wrap{max-width:980px;margin:0 auto;padding:20px}
@@ -152,13 +159,17 @@
   .identbar{background:#11203a;border-bottom:1px solid #20304f;padding:7px 14px;font-family:var(--mono);font-size:12.5px;color:#cfe;display:flex;gap:16px;flex-wrap:wrap;justify-content:center;align-items:center}
   .identbar b{color:#fff}
   .identbar.empty{color:#7e90ad}
+  .identbar .iclk{color:#fff;font-weight:700}
+  .identbar #identInfo{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
   @media print{ .identbar{display:none!important} }
   .warnbar{background:#3a1414;border-bottom:1px solid #6b2020;color:#ffd2d2;font-size:11.5px;padding:8px 14px;text-align:center;line-height:1.5}
   .warnbar b{color:#ff8a8a}
   .credit{background:#0b1322;border-top:1px solid #20304f;color:#9FB3D1;font-size:11.5px;padding:12px 14px;text-align:center;line-height:1.6}
   .credit a{color:#7ec8ff;text-decoration:none}
   .credit b{color:#fff}
-  #lockScreen{position:fixed;inset:0;background:#0E1726;z-index:100;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}
+  #lockScreen{position:fixed;inset:0;background:#0E1726;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;overflow:auto}
+  #lockScreen .locklogo{width:min(480px,86%);max-width:480px;margin:0 auto 20px;display:block}
+  #lockScreen .locklogo svg{width:100%;height:auto;display:block;overflow:visible}
   #lockScreen .box{max-width:440px;width:100%}
   #lockScreen h1{color:#fff;font-size:30px;letter-spacing:1px;margin:0 0 4px}
   #lockScreen .tag{color:#7ec8ff;font-size:12px;margin:0 0 22px;font-family:var(--mono)}
@@ -183,9 +194,8 @@
 </head>
 <body>
 <div id="lockScreen">
+  <div class="locklogo" id="lockLogo"></div>
   <div class="box">
-    <img src="Logo.png" alt="Sky Matrix" style="max-width:240px;width:62%;margin:0 auto 12px;display:block" onerror="this.style.display='none'">
-    <h1>Sky Matrix</h1>
     <div class="tag">Flight briefing assistant</div>
     <input id="lockPw" type="password" placeholder="Enter password" autocomplete="off">
     <button id="lockBtn">Unlock</button>
@@ -201,7 +211,7 @@
 </div>
 
 <header class="app">
-  <div><h1>Sky Matrix</h1></div>
+  <div class="hdrlogo" id="hdrLogo"></div>
   <div class="sub mono">Flight briefing assistant</div>
 </header>
 
@@ -212,7 +222,7 @@
   <button data-v="rest">&#128719; Inflight Rest</button>
   <button data-v="pa">&#128226; PA Guide</button>
 </nav>
-<div class="identbar empty" id="identbar"><span>No flight loaded — open an OFP in the Briefing tab</span></div>
+<div class="identbar empty" id="identbar"><span id="identClock" class="iclk">--:--:--Z</span><span id="identInfo">No flight loaded — open an OFP in the Briefing tab</span></div>
 <div class="warnbar"><b>For reference only — not for operational use.</b> Use the official hard-copy OFP for flight operations. Individual use only.</div>
 
 <div class="wrap view active" id="view-briefing">
@@ -291,6 +301,12 @@
       <div class="feat-field"><label class="lab">DOCS</label><button id="d_docs" type="button" class="ghost" style="width:100%">DOCS</button><div id="docCurrent" class="hint"></div></div>
     </div>
     <p class="hint">Tap START at takeoff to capture the airborne time (uses internet UTC). Destination resolves automatically from the OFP. DOCS is reserved for future use.</p>
+    <div class="fgrid">
+      <div class="feat-field"><label class="lab">GPS auto T/O &amp; LDG</label><button id="gpsArm" type="button" class="ghost" style="width:100%">Arm GPS</button></div>
+      <div class="feat-field"><label class="lab">Ground speed</label><input id="gpsSpd" type="text" readonly value="—"></div>
+      <div class="feat-field"><label class="lab">Landing (UTC)</label><div style="display:flex;gap:6px"><input id="gpsLdg" type="text" style="flex:1" placeholder="--:--"><button id="gpsLdgStart" type="button" style="padding:8px 12px">LDG</button></div></div>
+    </div>
+    <p class="hint" id="gpsHint">GPS auto-capture stamps takeoff when ground speed first exceeds 100 kt, and landing when it drops below 100 kt. Needs location permission and a GPS fix (works on cellular/GPS iPads; Wi-Fi-only devices have no speed).</p>
   </div>
   <div class="fcard">
     <div style="text-align:center;margin-bottom:14px">
@@ -352,6 +368,11 @@
   <div class="subview2" id="disp-arr">
     <div class="fcard">
       <div class="flhdr"><span>Arrival</span><span>At <b id="ah_to">—</b> &middot; LT <b id="ah_lt">--:--</b></span></div>
+      <div class="fgrid">
+        <div class="feat-field"><label class="lab">Block timer</label><button id="ar_blockStop" type="button" style="width:100%">STOP — on-blocks</button></div>
+        <div class="feat-field"><label class="lab">ATA (on-blocks, UTC)</label><input id="ar_ata" type="text" placeholder="--:--"></div>
+        <div class="feat-field"><label class="lab">Total block time</label><input id="ar_block" type="text" readonly></div>
+      </div>
       <div class="fgrid">
         <div class="feat-field"><label class="lab">ETA (UTC)</label><input id="ar_eta" type="text" readonly></div>
         <div class="feat-field"><label class="lab">ETA (local)</label><input id="ar_etal" type="text" readonly></div>
@@ -474,7 +495,7 @@
 </div>
 
 <div class="credit">
-  <img src="Logo.png" alt="" style="height:42px;width:auto;margin-bottom:8px;display:inline-block" onerror="this.style.display='none'"><br>
+  <span class="creditlogo" id="footLogo"></span><br>
   Prepared by <b>Sky Matrix</b> &middot; for queries &amp; feedback contact <a href="mailto:skymatrix401@gmail.com">skymatrix401@gmail.com</a><br>
   For reference only — not for operational use. Use the official hard-copy OFP for flight operations. Individual use only.
 </div>
@@ -493,7 +514,7 @@
 var APP_PASSWORD_HASH = "eca009a403a67ca3f6bb840b281e8d3b67340a16f81580c57559818aa694481d";
 (function(){
   var lock=document.getElementById('lockScreen');
-  function unlock(){lock.style.display='none';}
+  function unlock(){lock.style.display='none';if(typeof requestWake==='function')requestWake();}
   if(sessionStorage.getItem('sm_unlocked')==='1') unlock();
   async function sha256hex(s){
     try{const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
@@ -522,6 +543,27 @@ var APP_PASSWORD_HASH = "eca009a403a67ca3f6bb840b281e8d3b67340a16f81580c57559818
     document.getElementById('lockMsg').textContent='Password set on this device. You can unlock now.';
   });
 })();
+
+/* ---- Sky Matrix animated SVG logo (inline; no external image needed) ---- */
+function smLogoSVG(u){return '<svg viewBox="0 0 620 200" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Sky Matrix">'
++'<defs>'
++'<linearGradient id="pl'+u+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#cdebff"/><stop offset=".5" stop-color="#39b4ff"/><stop offset="1" stop-color="#1f6dff"/></linearGradient>'
++'<linearGradient id="tx'+u+'" gradientUnits="userSpaceOnUse" x1="206" y1="40" x2="600" y2="180"><stop offset="0" stop-color="#9fe8ff"/><stop offset=".5" stop-color="#2f8bff"/><stop offset="1" stop-color="#7fe0ff"/></linearGradient>'
++'<linearGradient id="sh'+u+'" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="130" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".85"/><stop offset="1" stop-color="#fff" stop-opacity="0"/><animateTransform attributeName="gradientTransform" type="translate" from="-220 0" to="680 0" dur="3.6s" repeatCount="indefinite"/></linearGradient>'
++'<filter id="gl'+u+'" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
++'<clipPath id="cp'+u+'"><text x="206" y="96" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="72" letter-spacing="3">SKY</text><text x="206" y="172" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="72" letter-spacing="3">MATRIX</text></clipPath>'
++'</defs>'
++'<g stroke="#2f8bff">'
++'<circle cx="100" cy="100" r="80" fill="none" stroke="#1f6dff" stroke-opacity=".30" stroke-width="2"/>'
++'<g stroke-opacity=".45" stroke-width="1.5"><line x1="100" y1="20" x2="169" y2="60"/><line x1="169" y1="60" x2="169" y2="140"/><line x1="169" y1="140" x2="100" y2="180"/><line x1="100" y1="180" x2="31" y2="140"/><line x1="31" y1="140" x2="31" y2="60"/><line x1="31" y1="60" x2="100" y2="20"/><line x1="100" y1="20" x2="100" y2="100"/><line x1="169" y1="60" x2="100" y2="100"/><line x1="169" y1="140" x2="100" y2="100"/><line x1="100" y1="180" x2="100" y2="100"/><line x1="31" y1="140" x2="100" y2="100"/><line x1="31" y1="60" x2="100" y2="100"/></g>'
++'<g fill="#7fd8ff" stroke="none"><circle cx="100" cy="20" r="4"><animate attributeName="r" values="3;5.5;3" dur="2.4s" repeatCount="indefinite"/></circle><circle cx="169" cy="60" r="4"><animate attributeName="r" values="5.5;3;5.5" dur="2.8s" repeatCount="indefinite"/></circle><circle cx="169" cy="140" r="4"><animate attributeName="r" values="3;5.5;3" dur="2.1s" repeatCount="indefinite"/></circle><circle cx="100" cy="180" r="4"><animate attributeName="r" values="5.5;3;5.5" dur="2.7s" repeatCount="indefinite"/></circle><circle cx="31" cy="140" r="4"><animate attributeName="r" values="3;5.5;3" dur="3.1s" repeatCount="indefinite"/></circle><circle cx="31" cy="60" r="4"><animate attributeName="r" values="5.5;3;5.5" dur="2.5s" repeatCount="indefinite"/></circle></g>'
++'</g>'
++'<g transform="rotate(-16 100 100)" filter="url(#gl'+u+')"><path d="M100 36 L150 158 L100 132 L50 158 Z" fill="url(#pl'+u+')"/><path d="M100 60 L122 140 L100 128 Z" fill="#e3f4ff" opacity=".55"/></g>'
++'<text x="206" y="96" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="72" letter-spacing="3" fill="url(#tx'+u+')">SKY</text>'
++'<text x="206" y="172" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="72" letter-spacing="3" fill="url(#tx'+u+')">MATRIX</text>'
++'<g clip-path="url(#cp'+u+')"><rect x="0" y="0" width="620" height="200" fill="url(#sh'+u+')"/></g>'
++'</svg>';}
+(function(){var i=0;['hdrLogo','lockLogo','footLogo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=smLogoSVG('L'+(i++));});})();
 
 if (window.pdfjsLib) { try { pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch(e){} }
@@ -1106,10 +1148,24 @@ function foot(l,r){return `<div class="foot"><span>${esc(l)}</span><span>${esc(r
 function fmtHHMM(v){if(!v)return'';v=String(v);if(v.includes(':'))return v;if(v.length<=2)return v;
   return v.slice(0,-2)+':'+v.slice(-2);}
 function tz(icao){
-  const z={OT:'UTC+3',OE:'UTC+3',OB:'UTC+3',OM:'UTC+4',OO:'UTC+4',OK:'UTC+3',OI:'UTC+3:30',
-    K:'UTC−5/−4',C:'UTC−5/−4',E:'UTC+0/+2',L:'UTC+0/+2',V:'UTC+5:30…+7',W:'UTC+7/+8',
-    R:'UTC+9',Z:'UTC+8',Y:'UTC+8/+11',NZ:'UTC+12',S:'UTC−3/−5',M:'UTC−6/−4',T:'UTC−4'};
-  if(!icao)return''; return z[icao.slice(0,2)]||z[icao[0]]||'';}
+  if(!icao)return'';
+  const z={
+    OT:'UTC+3',OE:'UTC+3',OB:'UTC+3',OM:'UTC+4',OO:'UTC+4',OK:'UTC+3',OI:'UTC+3:30',OP:'UTC+5',OR:'UTC+3',OS:'UTC+3',OJ:'UTC+3',OL:'UTC+2',OY:'UTC+3',OA:'UTC+4:30',
+    HE:'UTC+2',HL:'UTC+2',HS:'UTC+2',HA:'UTC+3',HK:'UTC+3',HT:'UTC+3',HH:'UTC+3',HU:'UTC+3',HR:'UTC+2',HC:'UTC+3',HD:'UTC+3',
+    LG:'UTC+3',LM:'UTC+2',LI:'UTC+2',LE:'UTC+2',LP:'UTC+1',LF:'UTC+2',LS:'UTC+2',LT:'UTC+3',LC:'UTC+3',LR:'UTC+3',LB:'UTC+3',LD:'UTC+2',LH:'UTC+2',LO:'UTC+2',LK:'UTC+2',LZ:'UTC+2',LW:'UTC+2',LA:'UTC+2',LQ:'UTC+2',LJ:'UTC+2',
+    DA:'UTC+1',DT:'UTC+1',GM:'UTC+1',GC:'UTC+1',
+    ED:'UTC+2',ET:'UTC+2',EH:'UTC+2',EB:'UTC+2',EG:'UTC+1',EI:'UTC+1',EK:'UTC+2',EN:'UTC+2',ES:'UTC+2',EF:'UTC+3',EP:'UTC+2',EV:'UTC+3',EE:'UTC+3',EY:'UTC+3',EL:'UTC+2',BI:'UTC+0',
+    UU:'UTC+3',UL:'UTC+3',UE:'UTC+3',UW:'UTC+4',UK:'UTC+3',UG:'UTC+4',UD:'UTC+4',UB:'UTC+4',UM:'UTC+3',UA:'UTC+5',UT:'UTC+5',UC:'UTC+6',
+    VA:'UTC+5:30',VE:'UTC+5:30',VI:'UTC+5:30',VO:'UTC+5:30',VC:'UTC+5:30',VR:'UTC+5',VT:'UTC+7',VV:'UTC+7',VD:'UTC+7',VL:'UTC+7',VY:'UTC+6:30',VG:'UTC+6',VN:'UTC+5:45',VH:'UTC+8',VM:'UTC+8',VQ:'UTC+6',
+    WM:'UTC+8',WB:'UTC+8',WA:'UTC+7',WI:'UTC+7',WR:'UTC+8',WS:'UTC+8',
+    RJ:'UTC+9',RO:'UTC+9',RK:'UTC+9',RC:'UTC+8',RP:'UTC+8',
+    ZB:'UTC+8',ZG:'UTC+8',ZS:'UTC+8',ZY:'UTC+8',ZP:'UTC+8',ZL:'UTC+8',ZH:'UTC+8',ZU:'UTC+8',ZW:'UTC+8',ZK:'UTC+9',ZM:'UTC+8',
+    YB:'UTC+10',YM:'UTC+10',YS:'UTC+10',YP:'UTC+8',NZ:'UTC+12',
+    FA:'UTC+2',FB:'UTC+2',FC:'UTC+1',FL:'UTC+2',FM:'UTC+3',FN:'UTC+1',FO:'UTC+1',FQ:'UTC+2',FS:'UTC+4',FV:'UTC+2',FW:'UTC+2',FY:'UTC+2',FZ:'UTC+1',
+    CY:'UTC−4',MM:'UTC−6',MU:'UTC−5',MD:'UTC−4',MK:'UTC−5',MR:'UTC−6',MP:'UTC−5',
+    SA:'UTC−3',SB:'UTC−3',SC:'UTC−4',SK:'UTC−5',SP:'UTC−5',SU:'UTC−3',SV:'UTC−4',SE:'UTC−5',SL:'UTC−4',
+    K:'UTC−5/−8',C:'UTC−5/−8',E:'UTC+0/+2',L:'UTC+0/+3',V:'UTC+5:30…+8',W:'UTC+7/+8',R:'UTC+8/+9',Z:'UTC+8',Y:'UTC+8/+11',S:'UTC−3/−5',M:'UTC−6/−4',T:'UTC−4',O:'UTC+3/+5',H:'UTC+2/+3',D:'UTC+0/+1',G:'UTC+0/+1',F:'UTC+1/+4',U:'UTC+3/+5',N:'UTC+12',B:'UTC+0',P:'UTC−10/−6',A:'UTC+10'};
+  return z[icao.slice(0,2)]||z[icao[0]]||'';}
 
 let lastText='';
 const drop=document.getElementById('drop'),file=document.getElementById('file'),
@@ -1137,10 +1193,11 @@ function generate(){
     const opts={known:'',qseats:0};
     const data=parseOFP(text,opts);
     build(data);
-    const ib=document.getElementById('identbar');
-    if(ib){ ib.classList.remove('empty');
-      ib.innerHTML=`<span>ATC <b>${esc(data.atcCs||'—')}</b></span><span>Flt <b>${esc(data.fltCs||'—')}</b></span>`+
+    const ib=document.getElementById('identbar'), ii=document.getElementById('identInfo');
+    if(ib&&ii){ ib.classList.remove('empty');
+      ii.innerHTML=`<span>ATC <b>${esc(data.atcCs||'—')}</b></span><span>Flt <b>${esc(data.fltCs||'—')}</b></span>`+
         `<span><b>${esc(data.dep||'?')}</b> &rarr; <b>${esc(data.dest||'?')}</b></span><span>${esc(data.date||'')}</span><span>OFP ${esc(data.ofpNo||'')}</span>`; }
+    try{localStorage.setItem('sm_ofptext',text);}catch(e){}
     document.getElementById('tb').style.display='flex';
     document.getElementById('subnav').style.display='flex';
     setMsg('Briefing generated. Review fields, then Print / Save as PDF.','ok');
@@ -1153,7 +1210,13 @@ function generate(){
 document.getElementById('go').onclick=generate;
 document.getElementById('print').onclick=()=>window.print();
 document.getElementById('print2').onclick=()=>window.print();
-document.getElementById('reset').onclick=()=>{location.reload();};
+document.getElementById('reset').onclick=()=>{try{localStorage.removeItem('sm_ofptext');localStorage.removeItem('sm_fields');}catch(e){}location.reload();};
+
+/* keep the screen awake while the app is in front */
+var __wakeLock=null;
+async function requestWake(){try{if('wakeLock' in navigator){__wakeLock=await navigator.wakeLock.request('screen');}}catch(e){}}
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')requestWake();});
+requestWake();
 
 document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('#subnav button').forEach(x=>x.classList.remove('active'));
@@ -1198,6 +1261,7 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
     const n=utcNow(),el=$('clkTime'); if(!el)return;
     el.textContent=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes())+':'+pad2(n.getUTCSeconds())+'Z';
     $('clkDate').textContent=DOW[n.getUTCDay()]+' '+pad2(n.getUTCDate())+' '+MON3[n.getUTCMonth()]+' '+n.getUTCFullYear()+' (UTC)';
+    const ic=$('identClock'); if(ic) ic.textContent=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes())+':'+pad2(n.getUTCSeconds())+'Z';
     const s=$('clkSrc'); if(s){s.textContent=netSrc==='internet'?'internet time ✓':'device clock (offline)'; s.className='src'+(netSrc==='internet'?' net':'');}
   }
   fetchNetTime(); setInterval(fetchNetTime,600000);
@@ -1224,7 +1288,8 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
     syncATD($('ofp_atd')?$('ofp_atd').value:($('dep_chocks')?$('dep_chocks').value:''));
   }
   function computeFlightCards(nowMin){
-    const dap=destAirport(), du=dap?dap.utc*60:0, dep=depAirport(), pu=dep?dep.utc*60:0;
+    const nowD=utcNow();
+    const dap=destAirport(), du=dap?effOffset(dap,destCode(),nowD)*60:0, dep=depAirport(), pu=dep?effOffset(dep,OFP?OFP.dep:'',nowD)*60:0;
     const tko=toM($('d_to').value);
     const trp=fv(toM($('d_trip').value),tripMin());
     const eta=(tko!=null&&trp!=null)?addT(tko,trp):null;
@@ -1277,6 +1342,21 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
     DPS:{n:'Bali Ngurah Rai',lat:-8.748,lon:115.167,utc:8}, WADD:{ref:'DPS'}
   };
   function airport(code){if(!code)return null;code=code.toUpperCase();let a=AP[code];if(a&&a.ref)a=AP[a.ref];return a&&a.n?a:null;}
+
+  /* ---- daylight-saving correction (airport UTC offsets in AP are summer/standard as noted) ---- */
+  const DST_EU=new Set(['ATH','LGAV','MAN','EGCC','LHR','EGLL','CDG','LFPG','FRA','EDDF','MUC','EDDM','ZRH','LSZH','AMS','EHAM','MAD','LEMD','BCN','LEBL']);
+  const DST_US=new Set(['MIA','KMIA','JFK','KJFK','ORD','KORD','IAD','KIAD','LAX','KLAX','YYZ','CYYZ']);
+  const DST_AU=new Set(['SYD','YSSY','MEL','YMML']);
+  function dstRegion(code){code=(code||'').toUpperCase();if(DST_EU.has(code))return'EU';if(DST_US.has(code))return'US';if(DST_AU.has(code))return'AU';return null;}
+  function nthSun(y,mon,n){const d=new Date(Date.UTC(y,mon,1));const add=(7-d.getUTCDay())%7;d.setUTCDate(1+add+(n-1)*7);return d;}
+  function lastSun(y,mon){const d=new Date(Date.UTC(y,mon+1,0));d.setUTCDate(d.getUTCDate()-d.getUTCDay());return d;}
+  function dstNH(region,date){const y=date.getUTCFullYear();let s,e;
+    if(region==='EU'){s=lastSun(y,2);s.setUTCHours(1);e=lastSun(y,9);e.setUTCHours(1);}
+    else{s=nthSun(y,2,2);s.setUTCHours(7);e=nthSun(y,10,1);e.setUTCHours(6);}
+    return date>=s&&date<e;}
+  function dstAU(date){const y=date.getUTCFullYear();const s=nthSun(y,9,1);s.setUTCHours(16);const e=nthSun(y,3,1);e.setUTCHours(16);return date>=s||date<e;}
+  /* AP offsets: EU/US entries are SUMMER (subtract 1 in winter); AU entries are STANDARD (add 1 in their summer). */
+  function effOffset(ap,code,date){if(!ap)return 0;const r=dstRegion(code);if(!r)return ap.utc;if(r==='AU')return ap.utc+(dstAU(date)?1:0);return ap.utc-(dstNH(r,date)?0:1);}
 
   function acFriendly(code){
     if(!code)return'';
@@ -1468,7 +1548,7 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
     $('d_togo').textContent=(tgSig!=null)?(tgSig>0?fmt(tgSig):'00:00'):'--:--';
     $('d_eta').textContent=fmt(eta);
     const dap=destAirport();
-    $('d_etaL').textContent=(eta!=null&&dap)?fmt(locT(eta,dap.utc*60)):'--:--';
+    $('d_etaL').textContent=(eta!=null&&dap)?fmt(locT(eta,effOffset(dap,destCode(),now)*60)):'--:--';
     const rs=toM($('r_start').value), re=toM($('r_end').value);
     const r1=(rs!=null)?-signed(rs,nowMin):null;
     const r2=(re!=null)?-signed(re,nowMin):null;
@@ -1481,8 +1561,8 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
       const dn=$('dn');dn.textContent=day?'DAY at dest':'NIGHT at dest';dn.className='badge '+(day?'day':'night');
     }
     let rows=''; const dep=depAirport();
-    if(dep) rows+=sunCellRow((OFP?OFP.dep:'DEP')+' '+dep.n.split(',')[0],dep.lat,dep.lon,dep.utc,now);
-    if(dap) rows+=sunCellRow((destCode()||'DEST')+' '+dap.n.split(',')[0],dap.lat,dap.lon,dap.utc,now);
+    if(dep) rows+=sunCellRow((OFP?OFP.dep:'DEP')+' '+dep.n.split(',')[0],dep.lat,dep.lon,effOffset(dep,OFP?OFP.dep:'',now),now);
+    if(dap) rows+=sunCellRow((destCode()||'DEST')+' '+dap.n.split(',')[0],dap.lat,dap.lon,effOffset(dap,destCode(),now),now);
     $('sunTable').innerHTML=rows||'<tr><td colspan="4" style="color:#7e90ad">Load an OFP to compute sun times.</td></tr>';
     const rc=routeSunCrossings(now);
     if(rc.length){
@@ -1496,6 +1576,33 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
   }
   $('d_to').addEventListener('input',()=>{$('r_to').value=$('d_to').value;autoRest();buildChecks();calcRest();calcDisplay();});
   $('d_toStart').addEventListener('click',()=>{const n=utcNow();$('d_to').value=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes());$('r_to').value=$('d_to').value;autoRest();buildChecks();calcRest();calcDisplay();});
+
+  /* GPS auto-capture: takeoff when ground speed >100 kt, landing when <100 kt */
+  let gpsWatch=null,gpsPhase='ground',gpsArmed=false,gpsSeenSlow=false;
+  function setGpsHint(t){const e=$('gpsHint');if(e)e.textContent=t;}
+  function gpsTick(pos){
+    const sp=pos.coords.speed;
+    if(sp==null||isNaN(sp)){$('gpsSpd').value='no speed fix';return;}
+    const kt=sp*1.94384; $('gpsSpd').value=Math.round(kt)+' kt';
+    if(kt<100)gpsSeenSlow=true;
+    if(gpsPhase==='ground'&&gpsSeenSlow&&kt>100){
+      const n=utcNow();$('d_to').value=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes());$('r_to').value=$('d_to').value;
+      gpsPhase='air';autoRest();buildChecks();calcRest();calcDisplay();if(typeof saveState==='function')saveState();
+      setGpsHint('Takeoff captured '+$('d_to').value+'Z (>100 kt). Watching for landing.');
+    } else if(gpsPhase==='air'&&kt<100){
+      const n=utcNow();$('gpsLdg').value=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes());
+      gpsPhase='landed';if(typeof saveState==='function')saveState();
+      setGpsHint('Landing captured '+$('gpsLdg').value+'Z (<100 kt).');
+    }
+  }
+  function gpsErr(e){setGpsHint('GPS error: '+(e&&e.message?e.message:'no fix')+'. Use the manual START / LDG buttons instead.');}
+  $('gpsLdgStart').addEventListener('click',()=>{const n=utcNow();$('gpsLdg').value=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes());if(typeof saveState==='function')saveState();});
+  $('gpsArm').addEventListener('click',()=>{
+    if(gpsArmed){ if(gpsWatch!=null&&navigator.geolocation)navigator.geolocation.clearWatch(gpsWatch); gpsWatch=null;gpsArmed=false;$('gpsArm').textContent='Arm GPS';setGpsHint('GPS auto-capture off.'); return; }
+    if(!navigator.geolocation){setGpsHint('Geolocation not available in this browser.');return;}
+    gpsArmed=true;gpsPhase='ground';gpsSeenSlow=false;$('gpsArm').textContent='Disarm GPS';setGpsHint('GPS armed — waiting for a fix… stamps T/O >100 kt, LDG <100 kt.');
+    gpsWatch=navigator.geolocation.watchPosition(gpsTick,gpsErr,{enableHighAccuracy:true,maximumAge:1000,timeout:30000});
+  });
   /* ---- DOCS: documents stored on-device (IndexedDB), persist until removed ---- */
   let DOCDB=null;
   function docOpen(cb){
@@ -1642,12 +1749,48 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
   $('r_auto').addEventListener('click',()=>{autoRest();calcRest();calcDisplay();});
 
   $('ar_tempc').addEventListener('input',()=>{const cC=parseFloat($('ar_tempc').value);$('ar_tempf').value=isNaN(cC)?'':Math.round(cC*9/5+32);});
+  /* Arrival block timer: on-blocks (ATA) minus off-blocks (ATD/chocks) = total block time */
+  function recalcBlock(){
+    const ata=toM($('ar_ata').value);
+    let off=toM($('dep_chocks').value); if(off==null&&$('ofp_atd'))off=toM($('ofp_atd').value);
+    if(ata!=null&&off!=null){let b=ata-off;if(b<0)b+=1440;$('ar_block').value=Math.floor(b/60)+'h '+pad2(b%60)+'m';}
+    else $('ar_block').value='';
+  }
+  $('ar_blockStop').addEventListener('click',()=>{const n=utcNow();$('ar_ata').value=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes());recalcBlock();if(typeof saveState==='function')saveState();});
+  $('ar_ata').addEventListener('input',recalcBlock);
   ['dep_date','dep_fnum','dep_from','dep_to','dep_block','dep_ft','dep_fl','dep_std','dep_delay','dep_chocks','dep_zfw','dep_tow','dep_lwt','dep_atis','dep_rwy','dep_intx','dep_notes','ar_atis','ar_stand','ar_arrfuel','ar_freq','ar_mlwt','ar_lwt','ar_dispatch','ar_notes'].forEach(id=>{const e=$(id);if(e)e.addEventListener('input',()=>{e.dataset.touched='1';});});
+
+  /* ---- persist all typed field values (survive restart/purge) ---- */
+  const PERSIST_IDS=['d_to','d_trip','gpsLdg','r_to','r_type','r_start','r_end','r_gap',
+    'dep_date','dep_fnum','dep_from','dep_to','dep_block','dep_ft','dep_fl','dep_std','dep_delay','dep_chocks','dep_zfw','dep_tow','dep_lwt','dep_atis','dep_rwy','dep_intx','dep_notes',
+    'ar_atis','ar_tempc','ar_stand','ar_arrfuel','ar_freq','ar_mlwt','ar_lwt','ar_dispatch','ar_notes','ar_ata','ar_block',
+    'p_speaker','p_greet','p_capt','p_fo','p_csd','p_ac','p_no','p_destn','p_dur','p_fl','p_ttg','p_eta','p_wx','p_tc','p_tn'];
+  let saveTimer=null;
+  function saveState(){clearTimeout(saveTimer);saveTimer=setTimeout(function(){
+    try{const o={};PERSIST_IDS.forEach(id=>{const e=$(id);if(e&&e.value!=='')o[id]=e.value;});
+      const a=$('ofp_atd'); if(a&&a.value)o['ofp_atd']=a.value;
+      localStorage.setItem('sm_fields',JSON.stringify(o));}catch(e){}
+  },300);}
+  function restoreState(){
+    try{const o=JSON.parse(localStorage.getItem('sm_fields')||'{}');
+      Object.keys(o).forEach(id=>{const e=$(id);if(e){e.value=o[id];e.dataset.touched='1';}});
+      if(o.ofp_atd&&typeof syncATD==='function')syncATD(o.ofp_atd);
+      const tc=$('ar_tempc'); if(tc&&tc.value!==''){const cC=parseFloat(tc.value);$('ar_tempf').value=isNaN(cC)?'':Math.round(cC*9/5+32);}
+      calcRest(); buildPA(); calcDisplay();
+    }catch(e){}
+  }
+  window.__restoreState=restoreState;
+  document.addEventListener('input',saveState,true);
+  document.addEventListener('change',saveState,true);
 
   calcRest(); buildPA();
   calcDisplay();
   setInterval(calcDisplay,1000);
 })();
+
+/* restore the last loaded OFP so it survives app restarts / storage purges */
+try{var __savedOfp=localStorage.getItem('sm_ofptext'); if(__savedOfp && __savedOfp.trim()){ document.getElementById('paste').value=__savedOfp; generate(); }}catch(e){}
+try{ if(window.__restoreState) window.__restoreState(); }catch(e){}
 </script>
 </body>
 </html>
