@@ -113,6 +113,9 @@
   nav.topnav button{background:transparent;border:0;border-bottom:3px solid transparent;color:#9FB3D1;padding:12px 14px;font-size:12.5px;font-weight:600;border-radius:0;white-space:nowrap}
   nav.topnav button:hover{background:#13203A;color:#cfe}
   nav.topnav button.active{color:#fff;border-bottom-color:var(--plum2)}
+  .nico{width:16px;height:16px;vertical-align:-3px;margin-right:6px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .nico.fill{fill:currentColor;stroke:none}
+  .bnico{width:18px;height:18px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-right:4px}
   nav.subnav{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 16px}
   nav.subnav button{background:#0f1b31;border:1px solid #2a3c5e;color:#9FB3D1;border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:600}
   nav.subnav button.active{background:var(--plum);border-color:var(--plum);color:#fff}
@@ -216,11 +219,11 @@
 </header>
 
 <nav class="topnav" id="topnav">
-  <button data-v="briefing" class="active">OFP Briefing</button>
-  <button data-v="dg">&#9888; Dangerous Goods</button>
-  <button data-v="disp">&#9992; Inflight Display</button>
-  <button data-v="rest">&#128719; Inflight Rest</button>
-  <button data-v="pa">&#128226; PA Guide</button>
+  <button data-v="briefing" class="active"><svg class="nico" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></svg>OFP Briefing</button>
+  <button data-v="dg"><svg class="nico" viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><circle cx="12" cy="17.4" r="1" fill="currentColor" stroke="none"/></svg>Dangerous Goods</button>
+  <button data-v="disp"><svg class="nico fill" viewBox="0 0 24 24"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>Inflight Display</button>
+  <button data-v="rest"><svg class="nico" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>Inflight Rest</button>
+  <button data-v="pa"><svg class="nico" viewBox="0 0 24 24"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>PA Guide</button>
 </nav>
 <div class="identbar empty" id="identbar"><span id="identClock" class="iclk">--:--:--Z</span><span id="identInfo">No flight loaded — open an OFP in the Briefing tab</span></div>
 <div class="warnbar"><b>For reference only — not for operational use.</b> Use the official hard-copy OFP for flight operations. Individual use only.</div>
@@ -284,7 +287,7 @@
     <div><div class="t" id="clkTime">--:--:--Z</div><div class="d" id="clkDate">—</div></div>
     <div class="src" id="clkSrc">syncing internet time…</div>
   </div>
-  <div class="banner" id="bnr"><span id="bnrTxt"></span><button id="bnrAck">Acknowledge</button></div>
+  <div class="banner" id="bnr"><svg class="bnico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="bnrTxt"></span><button id="bnrAck">Acknowledge</button></div>
   <nav class="subnav" id="dispnav">
     <button data-d="dep">Departure</button>
     <button data-d="live" class="active">Live</button>
@@ -512,6 +515,9 @@
    (Still a client-side gate: deters casual access, not strong security.)
    ============================================================ */
 var APP_PASSWORD_HASH = "eca009a403a67ca3f6bb840b281e8d3b67340a16f81580c57559818aa694481d";
+/* Live password: read the current hash from pw.json (updated by the Password Manager
+   tool, no HTML re-upload). Falls back to the baked-in hash above if offline/missing. */
+try{fetch('pw.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(j){if(j&&j.hash)APP_PASSWORD_HASH=j.hash;}).catch(function(){});}catch(e){}
 (function(){
   var lock=document.getElementById('lockScreen');
   function unlock(){lock.style.display='none';if(typeof requestWake==='function')requestWake();}
@@ -984,13 +990,13 @@ function build(data){
     const over=data.towOver; const marg=(data.mtow&&data.etow)?Math.abs(+data.mtow-+data.etow):'';
     s1+=`<div class="flag"><span class="chip ${over?'r':'g'}">${over?'YES — OVER MTOW':'NO — within MTOW'}</span>
       ETOW ${esc(data.etow)} vs MTOW ${esc(data.mtow)} &mdash; margin ${esc(marg)} kg ${over?'OVER':'under'} limit.</div>`;
-    if(over) s1+=`<div class="flag" style="background:#fbe0e0;border-color:#d9433f;color:#7a1414"><b>&#9888; CAUTION</b> — estimated take-off weight is ABOVE MTOW. Re-check loadsheet / fuel before departure.</div>`;
+    if(over) s1+=`<div class="flag" style="background:#fbe0e0;border-color:#d9433f;color:#7a1414"><b><svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px;fill:none;stroke:#7a1414;stroke-width:2.2;stroke-linejoin:round"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><circle cx="12" cy="17.4" r="1" fill="#7a1414" stroke="none"/></svg> CAUTION</b> — estimated take-off weight is ABOVE MTOW. Re-check loadsheet / fuel before departure.</div>`;
   }
   if(data.elwOver!==null){
     const over=data.elwOver; const marg=(data.mlwt&&data.elwt)?Math.abs(+data.mlwt-+data.elwt):'';
     s1+=`<div class="flag"><span class="chip ${over?'r':'g'}">${over?'YES — OVWT':'NO — within limit'}</span>
       ELW ${esc(data.elwt)} vs MLWT ${esc(data.mlwt)} &mdash; margin ${esc(marg)} kg ${over?'OVER':'under'} limit.</div>`;
-    if(over) s1+=`<div class="flag" style="background:#fbe0e0;border-color:#d9433f;color:#7a1414"><b>&#9888; CAUTION</b> — estimated landing weight is ABOVE MLWT. Re-check arrival fuel / loadsheet.</div>`;
+    if(over) s1+=`<div class="flag" style="background:#fbe0e0;border-color:#d9433f;color:#7a1414"><b><svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px;fill:none;stroke:#7a1414;stroke-width:2.2;stroke-linejoin:round"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><circle cx="12" cy="17.4" r="1" fill="#7a1414" stroke="none"/></svg> CAUTION</b> — estimated landing weight is ABOVE MLWT. Re-check arrival fuel / loadsheet.</div>`;
   }
   s1+=sec('Times (UTC)');
   s1+=grid('g4',[c('STD / dep',data.std),c('STA / arr',data.sta),c('Block time',fmtHHMM(data.blk)),c('Trip time',fmtHHMM(data.tripT))]);
@@ -1499,7 +1505,7 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
     if(!ch){b.style.display='none';return;}
     b.style.display='flex';
     b.className='banner'+(ch.kind==='rvsm'?' rvsm':'');
-    $('bnrTxt').textContent='⏰ '+ch.label+'  ('+fmt(ch.min)+'Z)';
+    $('bnrTxt').textContent=ch.label+'  ('+fmt(ch.min)+'Z)';
     b._cur=ch.min;
   }
   $('bnrAck').addEventListener('click',()=>{ackUntil=$('bnr')._cur;$('bnr').style.display='none';});
@@ -1549,6 +1555,12 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
     $('d_eta').textContent=fmt(eta);
     const dap=destAirport();
     $('d_etaL').textContent=(eta!=null&&dap)?fmt(locT(eta,effOffset(dap,destCode(),now)*60)):'--:--';
+    // auto-capture PA descent time fields from the live computation (unless edited)
+    if(dap){const duP=effOffset(dap,destCode(),now)*60;
+      if(eta!=null && !$('p_eta').dataset.touched) $('p_eta').value=fmt(locT(eta,duP));
+      if(!$('p_tn').dataset.touched) $('p_tn').value=fmt(locT(nowMin,duP));}
+    {const tgP=(eta!=null)?-signed(eta,nowMin):null; if(tgP!=null && tgP>0 && !$('p_ttg').dataset.touched) $('p_ttg').value=Math.round(tgP);}
+    buildPA();
     const rs=toM($('r_start').value), re=toM($('r_end').value);
     const r1=(rs!=null)?-signed(rs,nowMin):null;
     const r2=(re!=null)?-signed(re,nowMin):null;
@@ -1764,7 +1776,7 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
   const PERSIST_IDS=['d_to','d_trip','gpsLdg','r_to','r_type','r_start','r_end','r_gap',
     'dep_date','dep_fnum','dep_from','dep_to','dep_block','dep_ft','dep_fl','dep_std','dep_delay','dep_chocks','dep_zfw','dep_tow','dep_lwt','dep_atis','dep_rwy','dep_intx','dep_notes',
     'ar_atis','ar_tempc','ar_stand','ar_arrfuel','ar_freq','ar_mlwt','ar_lwt','ar_dispatch','ar_notes','ar_ata','ar_block',
-    'p_speaker','p_greet','p_capt','p_fo','p_csd','p_ac','p_no','p_destn','p_dur','p_fl','p_ttg','p_eta','p_wx','p_tc','p_tn'];
+    'p_speaker','p_greet','p_capt','p_fo','p_csd','p_ac','p_no','p_destn','p_dur','p_fl','p_wx','p_tc'];
   let saveTimer=null;
   function saveState(){clearTimeout(saveTimer);saveTimer=setTimeout(function(){
     try{const o={};PERSIST_IDS.forEach(id=>{const e=$(id);if(e&&e.value!=='')o[id]=e.value;});
