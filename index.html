@@ -880,12 +880,37 @@ function parseOFP(text, opts){
       const after=blk.slice(r.index+r[0].length);
       const nx=after.search(/^(?:CO\d+\/\d+|CB\d+(?:\/\d+)?)\b/m);
       const body=nx>=0?after.slice(0,nx):after;
-      if(/EFB|OIS VERSION/i.test(entry.subj+' '+body)){
+      // EFB/OIS version: only for the EFB-update bulletin — code CO2/<year> (CO2/25, CO2/26, …) or subject "QR AIRBUS EFB UPDATE"
+      const isEfb=/^CO2\/\d{2}$/i.test(entry.code)||/QR\s*AIRBUS\s*EFB\s*UPDATE/i.test(entry.subj+' '+body);
+      if(isEfb){
         const vm=/OIS VERSION[^\n]*?(\d{1,2}\.\d{1,2})/i.exec(body)||/VERSION[^\n]*?\bIS\b\s*(\d{1,2}\.\d{1,2})/i.exec(body)||/\b(\d{1,2}\.\d{2})\b/.exec(body);
         if(vm) entry.efb=vm[1];
       }
       data.coCb.push(entry);
     }
+  }
+  // ---- Active Special Crew Briefings (SCB) matched to this flight's airports / FIRs ----
+  data.scb=[];
+  const scbIx=T.search(/ACTIVE SPECIAL CREW BRIEFINGS/);
+  if(scbIx>=0){
+    const ends=[T.indexOf('CREW INFO',scbIx+10),T.indexOf('WX FORECAST',scbIx+10),T.indexOf('DISPATCH BRIEFING',scbIx+10)].filter(x=>x>0);
+    const scbEnd=ends.length?Math.min(...ends):scbIx+3000;
+    const REG=new Set(['GENERAL','AFRICA','ASIA','EUROPE','MID EAST','MIDEAST','MIDDLE EAST','OCEANIA','AMERICAS','NORTH AMERICA','SOUTH AMERICA','OPERATIONAL TRIAL','CIS','CARIBBEAN']);
+    const rawLines=T.slice(scbIx,scbEnd).split('\n').map(l=>l.trim()).filter(l=>l && !/^(Page \d+ of|QR \d+\/|ACTIVE SPECIAL)/.test(l));
+    const entries=[];
+    rawLines.forEach(l=>{ if(/\bSCB[\s-]*\d+/.test(l)) entries.push(l); else if(entries.length && !REG.has(l.toUpperCase())) entries[entries.length-1]+=' '+l; });
+    const keys=new Set(); const addK=v=>{if(v)keys.add(String(v).toUpperCase());};
+    [data.dep,data.dest,data.altnIcao].forEach(a=>{addK(a);const c=country(a);if(c)addK(c);});
+    (data.etopsPts||[]).forEach(p=>{(p.altn||'').split(/[ /]+/).forEach(a=>{if(/^[A-Z]{4}$/.test(a)){addK(a);const c=country(a);if(c)addK(c);}});});
+    (data.firs||[]).forEach(f=>{addK(f.code); addK(f.country||country(f.code));});
+    entries.forEach(e=>{
+      const mm=/\bSCB[\s-]*(\d+)\s*-\s*(.+)/.exec(e); if(!mm)return;
+      const num=mm[1], desc=mm[2].replace(/\s+/g,' ').trim();
+      const prefix=e.slice(0,mm.index).toUpperCase(); const general=prefix.trim()==='';
+      let why=[];
+      if(!general) keys.forEach(k=>{ if(k && new RegExp('\\b'+k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b').test(prefix)) why.push(k); });
+      if(general||why.length) data.scb.push({num,desc,why:general?'General':why.join(', ')});
+    });
   }
   const known=(opts.known||'').split(',').map(s=>s.trim().toUpperCase()).filter(Boolean);
   data.coCbNonStd=data.coCb.filter(x=>!known.includes(x.code.toUpperCase()));
@@ -1099,6 +1124,12 @@ function build(data){
       s3+=`<p class="item" style="margin:0 0 5px"><span class="chip n">${esc(x.code)}</span>${esc(subj||'(no subject text)')}${efb}</p>`;
     });
   } else s3+=`<p class="item" style="margin-top:6px">No Crew Orders / Crew Bulletins detected in the OFP (check the OFP has a CREW ALERT / BULLETIN section).</p>`;
+  if(data.scb && data.scb.length){
+    s3+=`<p class="item" style="margin-top:10px"><b>Active Special Crew Briefings — matched to this route (${data.scb.length}):</b></p>`;
+    data.scb.forEach(x=>{
+      s3+=`<p class="item" style="margin:0 0 5px"><span class="chip a">SCB ${esc(x.num)}</span>${esc(x.desc)} <span style="color:#6B7280">— ${esc(x.why)}</span></p>`;
+    });
+  }
   s3+=`</div>`;
   s3+=sec('SIGMET / AIRMET');
   s3+=`<div class="body">`;
