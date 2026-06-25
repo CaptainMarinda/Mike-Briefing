@@ -186,6 +186,11 @@
   .modalwrap.open{display:flex}
   .modalbox{background:#13203A;border:1px solid #20304f;border-radius:12px;max-width:560px;width:100%;padding:18px}
   .modalbox h2{color:#fff;margin:0;font-size:16px}
+  .modalbox h3{color:#fff;font-size:13px;text-transform:uppercase;letter-spacing:.5px;margin:16px 0 6px}
+  .modalbox input,.modalbox select{width:100%;background:#0f1b31;border:1px solid #2a3c5e;color:#E6ECF5;border-radius:6px;padding:9px 10px;font-size:14px;margin-bottom:4px}
+  .modalbox label.lab{display:block;font-size:11px;color:#9FB3D1;margin:8px 0 4px;font-weight:600}
+  .gearbtn{background:transparent;border:0;color:#9FB3D1;padding:6px;cursor:pointer;border-radius:8px;display:flex;align-items:center}
+  .gearbtn:hover{color:#fff;background:#13203A}
   .docrow{display:flex;align-items:center;gap:8px;border-bottom:1px solid #1b2942;padding:9px 0;font-size:13px}
   .docrow .nm{flex:1;color:#E6ECF5;word-break:break-word}
   .docrow .nm.sel{color:#7be0a4;font-weight:700}
@@ -215,7 +220,10 @@
 
 <header class="app">
   <div class="hdrlogo" id="hdrLogo"></div>
-  <div class="sub mono">Flight briefing assistant</div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span class="sub mono">Flight briefing assistant</span>
+    <button id="settingsBtn" class="gearbtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+  </div>
 </header>
 
 <nav class="topnav" id="topnav">
@@ -494,6 +502,21 @@
     <p class="hint">Add your reference documents (PDF, images, etc.). They are stored on this device only and stay until you remove them. Tap a document name to set it as the current document; use Open to view it.</p>
     <input id="docsAdd" type="file" multiple style="margin-top:6px">
     <div id="docsList" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<div class="modalwrap" id="setModal">
+  <div class="modalbox">
+    <div style="display:flex;justify-content:space-between;align-items:center"><h2>Settings</h2><button id="setClose" class="ghost">Close</button></div>
+    <h3>OFP by email</h3>
+    <p class="hint">Tell Sky Matrix where your OFPs arrive (forward them to this inbox if needed). Tap <b>Open my OFP emails</b> to jump straight to them — then open the OFP PDF and load it into the app.</p>
+    <label class="lab">Mail provider</label>
+    <select id="set_prov"><option value="gmail">Gmail</option><option value="yahoo">Yahoo Mail</option><option value="custom">Custom link</option></select>
+    <div id="set_fromwrap"><label class="lab">From (sender)</label><input id="set_from" type="text" placeholder="dispatch@yourairline.com (optional)"></div>
+    <div id="set_subjwrap"><label class="lab">Subject contains</label><input id="set_subj" type="text" placeholder="OFP (optional)"></div>
+    <div id="set_urlwrap" style="display:none"><label class="lab">Custom mailbox URL</label><input id="set_url" type="text" placeholder="https://..."></div>
+    <button id="set_open" style="margin-top:12px;width:100%">Open my OFP emails</button>
+    <p class="hint" id="set_help" style="margin-top:12px"></p>
   </div>
 </div>
 
@@ -1667,6 +1690,20 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
   $('docsClose').addEventListener('click',()=>$('docsModal').classList.remove('open'));
   $('docsModal').addEventListener('click',e=>{if(e.target===$('docsModal'))$('docsModal').classList.remove('open');});
   $('docsAdd').addEventListener('change',()=>{if($('docsAdd').files.length){docAdd($('docsAdd').files);$('docsAdd').value='';}});
+
+  /* ---- Settings: OFP-by-email shortcut ---- */
+  (function(){try{const S=JSON.parse(localStorage.getItem('sm_email')||'{}');if(S.prov)$('set_prov').value=S.prov;if(S.from)$('set_from').value=S.from;if(S.subj)$('set_subj').value=S.subj;if(S.url)$('set_url').value=S.url;}catch(e){}})();
+  function setProvUI(){const p=$('set_prov').value;$('set_urlwrap').style.display=p==='custom'?'block':'none';$('set_fromwrap').style.display=p==='custom'?'none':'block';$('set_subjwrap').style.display=p==='custom'?'none':'block';
+    $('set_help').innerHTML='After it opens, tap the OFP <b>PDF</b> &rarr; Share &rarr; <b>Save to Files</b> (iPad) or download it, then open <b>OFP Briefing &rarr; Load an OFP</b> and pick the file — it extracts automatically.';}
+  function emailQuery(){const f=$('set_from').value.trim(),s=$('set_subj').value.trim();const q=[];if(f)q.push('from:('+f+')');if(s)q.push('subject:('+s+')');q.push('has:attachment');return q.join(' ');}
+  function emailURL(){const p=$('set_prov').value;if(p==='custom')return $('set_url').value.trim();const q=encodeURIComponent(emailQuery());if(p==='yahoo')return 'https://mail.yahoo.com/d/search/keyword='+q;return 'https://mail.google.com/mail/u/0/#search/'+q;}
+  function saveEmailSettings(){try{localStorage.setItem('sm_email',JSON.stringify({prov:$('set_prov').value,from:$('set_from').value,subj:$('set_subj').value,url:$('set_url').value}));}catch(e){}}
+  $('settingsBtn').addEventListener('click',()=>{$('setModal').classList.add('open');setProvUI();});
+  $('setClose').addEventListener('click',()=>$('setModal').classList.remove('open'));
+  $('setModal').addEventListener('click',e=>{if(e.target===$('setModal'))$('setModal').classList.remove('open');});
+  $('set_prov').addEventListener('change',()=>{setProvUI();saveEmailSettings();});
+  ['set_from','set_subj','set_url'].forEach(id=>$(id).addEventListener('input',saveEmailSettings));
+  $('set_open').addEventListener('click',()=>{const u=emailURL();if(u){window.open(u,'_blank');}else{$('set_help').textContent='Enter a sender/subject, or pick Custom and paste your mailbox link.';}});
   updateDocCurrent();
   $('d_trip').addEventListener('input',calcDisplay);
 
