@@ -190,8 +190,6 @@
   .modalbox h3{color:#fff;font-size:13px;text-transform:uppercase;letter-spacing:.5px;margin:16px 0 6px}
   .modalbox input,.modalbox select{width:100%;background:#0f1b31;border:1px solid #2a3c5e;color:#E6ECF5;border-radius:6px;padding:9px 10px;font-size:14px;margin-bottom:4px}
   .modalbox label.lab{display:block;font-size:11px;color:#9FB3D1;margin:8px 0 4px;font-weight:600}
-  .gearbtn{background:transparent;border:0;color:#9FB3D1;padding:6px;cursor:pointer;border-radius:8px;display:flex;align-items:center}
-  .gearbtn:hover{color:#fff;background:#13203A}
   .docrow{display:flex;align-items:center;gap:8px;border-bottom:1px solid #1b2942;padding:9px 0;font-size:13px}
   .docrow .nm{flex:1;color:#E6ECF5;word-break:break-word}
   .docrow .nm.sel{color:#7be0a4;font-weight:700}
@@ -223,7 +221,6 @@
   <div class="hdrlogo" id="hdrLogo"></div>
   <div style="display:flex;align-items:center;gap:10px">
     <span class="sub mono">Flight briefing assistant</span>
-    <button id="settingsBtn" class="gearbtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
   </div>
 </header>
 
@@ -245,12 +242,8 @@
         <b>Drop an OFP file here</b> or click to choose &nbsp;<span style="color:#7e90ad">(.pdf or .txt)</span>
         <input id="file" type="file" accept=".pdf,.txt,.text,application/pdf,text/plain">
       </div>
-      <div class="hint">PDF text is extracted in-browser via PDF.js (needs internet the first time). If you have the OFP as text, paste it below instead &mdash; that always works offline.</div>
-      <div class="row">
-        <label class="fld" style="flex:1 1 100%">Or paste OFP text
-          <textarea id="paste" placeholder="Paste the full OFP text here…"></textarea>
-        </label>
-      </div>
+      <div class="hint">PDF text is extracted in-browser via PDF.js (needs internet the first time). Your last OFP is remembered until you load another.</div>
+      <textarea id="paste" style="display:none"></textarea>
       <div class="row">
         <button id="go">Generate briefing</button>
         <button id="print" class="ghost">Print / Save as PDF</button>
@@ -503,27 +496,6 @@
     <p class="hint">Add your reference documents (PDF, images, etc.). They are stored on this device only and stay until you remove them. Tap a document name to set it as the current document; use Open to view it.</p>
     <input id="docsAdd" type="file" multiple style="margin-top:6px">
     <div id="docsList" style="margin-top:12px"></div>
-  </div>
-</div>
-
-<div class="modalwrap" id="setModal">
-  <div class="modalbox">
-    <div style="display:flex;justify-content:space-between;align-items:center"><h2>Settings</h2><button id="setClose" class="ghost">Close</button></div>
-    <h3>OFP by email</h3>
-    <p class="hint">Tell Sky Matrix where your OFPs arrive (forward them to this inbox if needed). Tap <b>Open my OFP emails</b> to jump straight to them — then open the OFP PDF and load it into the app.</p>
-    <label class="lab">Mail provider</label>
-    <select id="set_prov"><option value="gmail">Gmail</option><option value="yahoo">Yahoo Mail</option><option value="custom">Custom link</option></select>
-    <div id="set_fromwrap"><label class="lab">From (sender)</label><input id="set_from" type="text" placeholder="dispatch@yourairline.com (optional)"></div>
-    <div id="set_subjwrap"><label class="lab">Subject contains</label><input id="set_subj" type="text" placeholder="OFP (optional)"></div>
-    <div id="set_urlwrap" style="display:none"><label class="lab">Custom mailbox URL</label><input id="set_url" type="text" placeholder="https://..."></div>
-    <button id="set_open" style="margin-top:12px;width:100%">Open my OFP emails</button>
-    <p class="hint" id="set_help" style="margin-top:12px"></p>
-    <h3>Gmail auto-fetch (API)</h3>
-    <p class="hint">Fully automatic: sign in once and it pulls the latest OFP PDF straight in (uses the From/Subject above). Needs a one-time Google setup — see <b>Gmail API Setup Guide.md</b>. Paste your OAuth Client ID:</p>
-    <label class="lab">Google OAuth Client ID</label>
-    <input id="set_gcid" type="text" placeholder="xxxxxxxx.apps.googleusercontent.com">
-    <button id="set_gfetch" style="margin-top:10px;width:100%">Sign in with Google &amp; fetch latest OFP</button>
-    <p class="hint" id="set_gstatus"></p>
   </div>
 </div>
 
@@ -1718,81 +1690,6 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
   $('docsModal').addEventListener('click',e=>{if(e.target===$('docsModal'))$('docsModal').classList.remove('open');});
   $('docsAdd').addEventListener('change',()=>{if($('docsAdd').files.length){docAdd($('docsAdd').files);$('docsAdd').value='';}});
 
-  /* ---- Settings: OFP-by-email shortcut ---- */
-  (function(){try{const S=JSON.parse(localStorage.getItem('sm_email')||'{}');if(S.prov)$('set_prov').value=S.prov;if(S.from)$('set_from').value=S.from;if(S.subj)$('set_subj').value=S.subj;if(S.url)$('set_url').value=S.url;}catch(e){}})();
-  function setProvUI(){const p=$('set_prov').value;$('set_urlwrap').style.display=p==='custom'?'block':'none';$('set_fromwrap').style.display=p==='custom'?'none':'block';$('set_subjwrap').style.display=p==='custom'?'none':'block';
-    $('set_help').innerHTML='After it opens, tap the OFP <b>PDF</b> &rarr; Share &rarr; <b>Save to Files</b> (iPad) or download it, then open <b>OFP Briefing &rarr; Load an OFP</b> and pick the file — it extracts automatically.';}
-  function emailQuery(){const f=$('set_from').value.trim(),s=$('set_subj').value.trim();const q=[];if(f)q.push('from:('+f+')');if(s)q.push('subject:('+s+')');q.push('has:attachment');return q.join(' ');}
-  function emailURL(){const p=$('set_prov').value;if(p==='custom')return $('set_url').value.trim();const q=encodeURIComponent(emailQuery());if(p==='yahoo')return 'https://mail.yahoo.com/d/search/keyword='+q;return 'https://mail.google.com/mail/u/0/#search/'+q;}
-  function saveEmailSettings(){try{localStorage.setItem('sm_email',JSON.stringify({prov:$('set_prov').value,from:$('set_from').value,subj:$('set_subj').value,url:$('set_url').value}));}catch(e){}}
-  $('settingsBtn').addEventListener('click',()=>{$('setModal').classList.add('open');setProvUI();});
-  $('setClose').addEventListener('click',()=>$('setModal').classList.remove('open'));
-  $('setModal').addEventListener('click',e=>{if(e.target===$('setModal'))$('setModal').classList.remove('open');});
-  $('set_prov').addEventListener('change',()=>{setProvUI();saveEmailSettings();});
-  ['set_from','set_subj','set_url'].forEach(id=>$(id).addEventListener('input',saveEmailSettings));
-  $('set_open').addEventListener('click',()=>{const u=emailURL();if(u){window.open(u,'_blank');}else{$('set_help').textContent='Enter a sender/subject, or pick Custom and paste your mailbox link.';}});
-
-  /* ---- Settings: Gmail auto-fetch (Gmail API + Google sign-in) ---- */
-  try{const c=localStorage.getItem('sm_gcid');if(c)$('set_gcid').value=c;}catch(e){}
-  function gstat(t){$('set_gstatus').textContent=t;}
-  function loadGIS(cb){
-    if(window.google&&google.accounts&&google.accounts.oauth2){cb();return;}
-    const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';
-    s.onload=cb;s.onerror=()=>gstat('Could not load Google sign-in (needs internet).');
-    document.head.appendChild(s);
-  }
-  function b64urlBytes(d){d=String(d||'').replace(/-/g,'+').replace(/_/g,'/');const bin=atob(d);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
-  function gGet(url,token){return fetch(url,{headers:{Authorization:'Bearer '+token}}).then(async r=>{if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error('Gmail API '+r.status+(e.error&&e.error.message?': '+e.error.message:''));}return r.json();});}
-  function findPdfPart(p){
-    if(!p)return null;
-    const isPdf=(p.mimeType==='application/pdf')||(p.filename&&/\.pdf$/i.test(p.filename));
-    if(isPdf&&p.body&&p.body.attachmentId)return p;
-    if(p.parts)for(const c of p.parts){const f=findPdfPart(c);if(f)return f;}
-    return null;
-  }
-  async function gmailFetchOFP(token){
-    const q=emailQuery();
-    gstat('Searching your mail…');
-    const list=await gGet('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=8&q='+encodeURIComponent(q),token);
-    if(!list.messages||!list.messages.length){gstat('No matching OFP emails found — check the From/Subject above.');return;}
-    for(const ref of list.messages){
-      const msg=await gGet('https://gmail.googleapis.com/gmail/v1/users/me/messages/'+ref.id+'?format=full',token);
-      const part=findPdfPart(msg.payload);
-      if(part){
-        gstat('Downloading the OFP PDF…');
-        const att=await gGet('https://gmail.googleapis.com/gmail/v1/users/me/messages/'+ref.id+'/attachments/'+part.body.attachmentId,token);
-        const blob=new Blob([b64urlBytes(att.data)],{type:'application/pdf'});
-        gstat('Extracting text…');
-        lastText=await readFile(blob);
-        if(!lastText||!lastText.trim()){gstat('PDF read but no text found — it may be a scan. Try the OCR path.');return;}
-        paste.value=lastText.slice(0,200000);
-        generate();
-        gstat('✓ Loaded the latest OFP ('+(part.filename||'attachment.pdf')+').');
-        setTimeout(()=>$('setModal').classList.remove('open'),900);
-        return;
-      }
-    }
-    gstat('Found matching emails but no PDF attachment in the latest 8. Open it manually instead.');
-  }
-  $('set_gfetch').addEventListener('click',()=>{
-    const cid=$('set_gcid').value.trim();
-    if(!cid){gstat('Paste your Google OAuth Client ID first (see the setup guide).');return;}
-    try{localStorage.setItem('sm_gcid',cid);}catch(e){}
-    gstat('Loading Google sign-in…');
-    loadGIS(()=>{
-      try{
-        const tc=google.accounts.oauth2.initTokenClient({
-          client_id:cid,
-          scope:'https://www.googleapis.com/auth/gmail.readonly',
-          callback:resp=>{
-            if(resp&&resp.access_token){gmailFetchOFP(resp.access_token).catch(e=>gstat('Error: '+e.message));}
-            else gstat('Sign-in cancelled or failed.');
-          }
-        });
-        tc.requestAccessToken();
-      }catch(e){gstat('Google sign-in error: '+e.message);}
-    });
-  });
   updateDocCurrent();
   $('d_trip').addEventListener('input',calcDisplay);
 
