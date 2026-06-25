@@ -77,7 +77,8 @@
   .body{padding:12px 16px}
   .grid{display:grid;gap:8px}
   .g4{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:repeat(3,1fr)}
-  .g5{grid-template-columns:repeat(5,1fr)}.g6{grid-template-columns:repeat(6,1fr)}.g2{grid-template-columns:repeat(2,1fr)}
+  /* auto-fit + min cell width so 6-digit fuel/weights (777-size) always fit and wrap instead of clipping */
+  .g5{grid-template-columns:repeat(auto-fit,minmax(96px,1fr))}.g6{grid-template-columns:repeat(auto-fit,minmax(96px,1fr))}.g2{grid-template-columns:repeat(2,1fr)}
   .cell label{display:block;font-size:8.5px;color:var(--grey);font-weight:700;letter-spacing:.4px;text-transform:uppercase;margin-bottom:2px}
   .cell input{width:100%;background:#fff;border:1px solid var(--line);border-radius:3px;padding:5px 6px;font-family:var(--mono);font-weight:600;font-size:12px;color:var(--ink)}
   .cell input.hl{background:var(--light)}
@@ -517,6 +518,12 @@
     <div id="set_urlwrap" style="display:none"><label class="lab">Custom mailbox URL</label><input id="set_url" type="text" placeholder="https://..."></div>
     <button id="set_open" style="margin-top:12px;width:100%">Open my OFP emails</button>
     <p class="hint" id="set_help" style="margin-top:12px"></p>
+    <h3>Gmail auto-fetch (API)</h3>
+    <p class="hint">Fully automatic: sign in once and it pulls the latest OFP PDF straight in (uses the From/Subject above). Needs a one-time Google setup — see <b>Gmail API Setup Guide.md</b>. Paste your OAuth Client ID:</p>
+    <label class="lab">Google OAuth Client ID</label>
+    <input id="set_gcid" type="text" placeholder="xxxxxxxx.apps.googleusercontent.com">
+    <button id="set_gfetch" style="margin-top:10px;width:100%">Sign in with Google &amp; fetch latest OFP</button>
+    <p class="hint" id="set_gstatus"></p>
   </div>
 </div>
 
@@ -795,6 +802,12 @@ function parseOFP(text, opts){
   data.altnIcao = altn?altn[1]:''; data.fAltn = altn?altn[2]:'';
   data.fExtra= m(/\bEXTRA\s+\S*\s*(\d+)\s+\d{4}/,T);
   data.fRamp = m(/\bRAMP FUEL\s+(\d+)/,T);
+  const rmM=/\bREMARKS:\s*([\s\S]*?)(?=\n\s*FUEL\s+TIME\b|\n\s*FUEL\b|\n\s*\*{3,})/i.exec(T);
+  data.remarks = rmM ? rmM[1].replace(/[ \t]+\n/g,'\n').replace(/\n{2,}/g,'\n').trim() : '';
+  const exM=/\bEXTRA\s+([A-Z]{1,5})\s+(\d+)\s+(\d{4})\b/.exec(T);
+  data.extraFuel = exM ? {code:exM[1].toUpperCase(), kg:exM[2], time:exM[3]} : null;
+  const mfr=/\bMIN FUEL REQ\s+(\d+)\s+(\d{4})/.exec(T);
+  data.minFuelReq = mfr ? {kg:mfr[1], time:mfr[2]} : null;
   data.mzfw=m(/\bMZFW\s+(\d+)/,T); data.ezfw=m(/\bEZFW\s+(\d+)/,T);
   data.mtow=m(/\bMTOW\s+(\d+)/,T); data.etow=m(/\bETOW\s+(\d+)/,T);
   data.mlwt=m(/\bMLWT\s+(\d+)/,T); data.elwt=m(/\bELWT\s+(\d+)/,T);
@@ -826,7 +839,8 @@ function parseOFP(text, opts){
   if(eb){
     const lines=eb[0].split('\n');
     // label-driven: any row whose first token is an ETOPS point label (time/EET is optional)
-    const labRe=/^\s*(ENTRY\s?\d*|EXIT\s?\d*|ETP\s?\d*|EEP\s?\d*|EXP\s?\d*|OEP\s?\d*|OXP\s?\d*)\b\s*(.*)$/i;
+    // Attached digit/(..) is a genuine label number (ENTRY1, ETP(1D)); a SPACED number (ENTRY 2.11) is the EET column, not part of the label.
+    const labRe=/^\s*((?:ENTRY|EXIT|ETP|EEP|EXP|OEP|OXP)(?:\d+|\(\d+[A-Z]?\))?)(?=\s|$)\s*(.*)$/i;
     for(let k=0;k<lines.length;k++){
       const lm=labRe.exec(lines[k]);
       if(!lm) continue;
@@ -1008,8 +1022,29 @@ function build(data){
   s1+=grid('g3',[c('Aircraft type',data.acType),c('Aircraft tail',data.tail),c('Dep time zone',tz(data.dep))]);
   s1+=sec('Levels & performance');
   s1+=grid('g5',[c('Initial FL','FL'+(data.initFL||'')),c('Highest FL','FL'+(data.highFL||'')),c('Gnd dist (NM)',data.gndDist),c('Speed / CI','CI '+(data.speedCI||'')),c('TOC temp',data.tocTemp)]);
+  s1+=sec('Wind shear — cruise-level SR > 4');
+  const sw=data.shearWin;
+  if(sw && !sw.none && sw.onset){
+    s1+=grid('g3',[c('Onset (SR>4)',`${sw.onset} ${sw.onsetT} SR${sw.onsetSR}`),
+      c('Falls below 4',sw.offset?`${sw.offset} ${sw.offsetT} SR${sw.offsetSR}`:'(end of cruise)'),
+      c('Duration > SR4',sw.dur)]);
+  } else s1+=`<div class="body"><p class="item">No cruise-level shear above SR4 detected.</p></div>`;
+  if(data.shearMax) s1+=grid('g2',[c('Highest SR (OFP)',`SR${data.shearMax.sr} @ ${data.shearMax.fl}`),c('At waypoint',data.shearMax.wpt)]);
   s1+=sec('Fuel (kg)');
   s1+=grid('g6',[c('Taxi',data.fTaxi),c('Trip',data.fTrip),c('Contingency',data.fCont),c('Alternate',data.fAltn),c('Extra',data.fExtra),c('Ramp',data.fRamp,true)]);
+  if(data.remarks){
+    s1+=sec('Remarks (OFP)');
+    s1+=`<div class="body"><p class="item">${esc(data.remarks).replace(/\n/g,'<br>')}</p></div>`;
+  }
+  if(data.extraFuel && data.extraFuel.code){
+    const EC={E:'ETOPS additional fuel',A:'Minimum fuel at departure',N:'No alternate planned',R:'Re-clearance additional fuel',M:'MEL/CDL additional fuel'};
+    const ef=data.extraFuel;
+    const parts=ef.code.split('').map(ch=>EC[ch]?(ch+' — '+EC[ch]):(ch+' — code not in standard ADD/EXTRA legend (see Remarks / dispatch)'));
+    s1+=sec('Extra fuel — reason code '+ef.code);
+    s1+=grid('g3',[c('Extra fuel',ef.kg+' kg'),c('Burn time',fmtHHMM(ef.time)),c('Code',ef.code)]);
+    s1+=`<div class="body"><p class="item">${parts.map(esc).join('<br>')}</p>`+
+      (ef.code.length>1?`<p class="item" style="color:#6b7a90">Combination of labels — the ${esc(ef.kg)} kg covers all the reasons above.</p>`:'')+`</div>`;
+  }
   s1+=sec('Weights (kg) — estimated vs limit');
   s1+=grid('g3',[c('EZFW / MZFW '+(data.mzfw||''),data.ezfw),c('ETOW / MTOW '+(data.mtow||''),data.etow),c('ELW / MLWT '+(data.mlwt||''),data.elwt)]);
   if(data.towOver!==null){
@@ -1045,14 +1080,6 @@ function build(data){
   } else s2+=`<div class="body"><p class="item">No ETOPS table found.</p></div>`;
   s2+=sec('Departure / arrival — SID • STAR • runways');
   s2+=grid('g4',[c('Dep RWY',data.depRwy),c('SID / dep',data.sid),c('STAR / arrival',data.star),c('Arr RWY',data.arrRwy)]);
-  s2+=sec('Wind shear — cruise-level SR > 4');
-  const sw=data.shearWin;
-  if(sw && !sw.none && sw.onset){
-    s2+=grid('g3',[c('Onset (SR>4)',`${sw.onset} ${sw.onsetT} SR${sw.onsetSR}`),
-      c('Falls below 4',sw.offset?`${sw.offset} ${sw.offsetT} SR${sw.offsetSR}`:'(end of cruise)'),
-      c('Duration > SR4',sw.dur)]);
-  } else s2+=`<div class="body"><p class="item">No cruise-level shear above SR4 detected.</p></div>`;
-  if(data.shearMax) s2+=grid('g2',[c('Highest SR (OFP)',`SR${data.shearMax.sr} @ ${data.shearMax.fl}`),c('At waypoint',data.shearMax.wpt)]);
   s2+=sec('Tropopause');
   if(data.tropo) s2+=grid('g3',[c('Lowest tropo',data.tropo.fl),c('At waypoint',data.tropo.wpt),c('Elapsed',fmtHHMM(data.tropo.elapsed))]);
   s2+=sec('FIR / UIR crossings (in sequence)');
@@ -1704,6 +1731,68 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
   $('set_prov').addEventListener('change',()=>{setProvUI();saveEmailSettings();});
   ['set_from','set_subj','set_url'].forEach(id=>$(id).addEventListener('input',saveEmailSettings));
   $('set_open').addEventListener('click',()=>{const u=emailURL();if(u){window.open(u,'_blank');}else{$('set_help').textContent='Enter a sender/subject, or pick Custom and paste your mailbox link.';}});
+
+  /* ---- Settings: Gmail auto-fetch (Gmail API + Google sign-in) ---- */
+  try{const c=localStorage.getItem('sm_gcid');if(c)$('set_gcid').value=c;}catch(e){}
+  function gstat(t){$('set_gstatus').textContent=t;}
+  function loadGIS(cb){
+    if(window.google&&google.accounts&&google.accounts.oauth2){cb();return;}
+    const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';
+    s.onload=cb;s.onerror=()=>gstat('Could not load Google sign-in (needs internet).');
+    document.head.appendChild(s);
+  }
+  function b64urlBytes(d){d=String(d||'').replace(/-/g,'+').replace(/_/g,'/');const bin=atob(d);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
+  function gGet(url,token){return fetch(url,{headers:{Authorization:'Bearer '+token}}).then(async r=>{if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error('Gmail API '+r.status+(e.error&&e.error.message?': '+e.error.message:''));}return r.json();});}
+  function findPdfPart(p){
+    if(!p)return null;
+    const isPdf=(p.mimeType==='application/pdf')||(p.filename&&/\.pdf$/i.test(p.filename));
+    if(isPdf&&p.body&&p.body.attachmentId)return p;
+    if(p.parts)for(const c of p.parts){const f=findPdfPart(c);if(f)return f;}
+    return null;
+  }
+  async function gmailFetchOFP(token){
+    const q=emailQuery();
+    gstat('Searching your mail…');
+    const list=await gGet('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=8&q='+encodeURIComponent(q),token);
+    if(!list.messages||!list.messages.length){gstat('No matching OFP emails found — check the From/Subject above.');return;}
+    for(const ref of list.messages){
+      const msg=await gGet('https://gmail.googleapis.com/gmail/v1/users/me/messages/'+ref.id+'?format=full',token);
+      const part=findPdfPart(msg.payload);
+      if(part){
+        gstat('Downloading the OFP PDF…');
+        const att=await gGet('https://gmail.googleapis.com/gmail/v1/users/me/messages/'+ref.id+'/attachments/'+part.body.attachmentId,token);
+        const blob=new Blob([b64urlBytes(att.data)],{type:'application/pdf'});
+        gstat('Extracting text…');
+        lastText=await readFile(blob);
+        if(!lastText||!lastText.trim()){gstat('PDF read but no text found — it may be a scan. Try the OCR path.');return;}
+        paste.value=lastText.slice(0,200000);
+        generate();
+        gstat('✓ Loaded the latest OFP ('+(part.filename||'attachment.pdf')+').');
+        setTimeout(()=>$('setModal').classList.remove('open'),900);
+        return;
+      }
+    }
+    gstat('Found matching emails but no PDF attachment in the latest 8. Open it manually instead.');
+  }
+  $('set_gfetch').addEventListener('click',()=>{
+    const cid=$('set_gcid').value.trim();
+    if(!cid){gstat('Paste your Google OAuth Client ID first (see the setup guide).');return;}
+    try{localStorage.setItem('sm_gcid',cid);}catch(e){}
+    gstat('Loading Google sign-in…');
+    loadGIS(()=>{
+      try{
+        const tc=google.accounts.oauth2.initTokenClient({
+          client_id:cid,
+          scope:'https://www.googleapis.com/auth/gmail.readonly',
+          callback:resp=>{
+            if(resp&&resp.access_token){gmailFetchOFP(resp.access_token).catch(e=>gstat('Error: '+e.message));}
+            else gstat('Sign-in cancelled or failed.');
+          }
+        });
+        tc.requestAccessToken();
+      }catch(e){gstat('Google sign-in error: '+e.message);}
+    });
+  });
   updateDocCurrent();
   $('d_trip').addEventListener('input',calcDisplay);
 
