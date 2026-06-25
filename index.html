@@ -157,6 +157,9 @@
   .clockbar .d{font-family:var(--mono);font-size:12px;color:#9FB3D1}
   .clockbar .src{font-size:10.5px;color:#7e90ad;text-align:right}
   .clockbar .src.net{color:#7be0a4}
+  .clockbar .t.clkbad{color:#ff5a5a !important;animation:clkflash 1s steps(1,end) infinite}
+  @keyframes clkflash{0%,50%{opacity:1}51%,100%{opacity:.2}}
+  #clkWarn{display:none;background:#3a1414;border:1px solid #7a2222;color:#ffb3b3;border-radius:8px;padding:8px 12px;font-size:12px;line-height:1.5;font-weight:600;margin:0 0 12px}
   .flhdr{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:12.5px;color:#9FB3D1;margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid #20304f}
   .flhdr b{color:#fff}
   .view input[readonly]{background:#0c1424;color:#9fd4ff}
@@ -287,8 +290,13 @@
 <div class="wrap view" id="view-disp">
   <div class="clockbar">
     <div><div class="t" id="clkTime">--:--:--Z</div><div class="d" id="clkDate">—</div></div>
-    <div class="src" id="clkSrc">syncing internet time…</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <button id="d_docs" type="button" class="ghost" style="padding:7px 13px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>DOCS</button>
+      <div class="src" id="clkSrc">syncing internet time…</div>
+    </div>
   </div>
+  <div id="docCurrent" class="hint" style="margin:-4px 0 10px;text-align:right"></div>
+  <div id="clkWarn"></div>
   <div class="banner" id="bnr"><svg class="bnico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="bnrTxt"></span><button id="bnrAck">Acknowledge</button></div>
   <nav class="subnav" id="dispnav">
     <button data-d="dep">Departure</button>
@@ -303,9 +311,8 @@
       <div class="feat-field"><label class="lab">Takeoff (UTC HH:MM)</label>
         <div style="display:flex;gap:6px"><input id="d_to" type="time" style="flex:1"><button id="d_toStart" type="button" style="padding:8px 14px">START</button></div></div>
       <div class="feat-field"><label class="lab">Trip time (HH:MM, from OFP)</label><input id="d_trip" type="time"></div>
-      <div class="feat-field"><label class="lab">DOCS</label><button id="d_docs" type="button" class="ghost" style="width:100%">DOCS</button><div id="docCurrent" class="hint"></div></div>
     </div>
-    <p class="hint">Tap START at takeoff to capture the airborne time (uses internet UTC). Destination resolves automatically from the OFP. DOCS is reserved for future use.</p>
+    <p class="hint">Tap START at takeoff to capture the airborne time (uses internet UTC). Destination resolves automatically from the OFP. Your saved documents are under the <b>DOCS</b> button in the clock bar.</p>
     <div class="fgrid">
       <div class="feat-field"><label class="lab">GPS auto T/O &amp; LDG</label><button id="gpsArm" type="button" class="ghost" style="width:100%">Arm GPS</button></div>
       <div class="feat-field"><label class="lab">Ground speed</label><input id="gpsSpd" type="text" readonly value="—"></div>
@@ -800,6 +807,15 @@ function parseOFP(text, opts){
   data.sid   = m(new RegExp(data.dep+'\\s+\\d{2}[LRC]?\\s+(\\S+)'),T);
   let endm=new RegExp('(\\S+)\\s+'+data.dest+'\\s+(\\d{2}[LRC]?)').exec(T);
   data.star  = endm?endm[1]:''; data.arrRwy = endm?endm[2]:'';
+  // Resolve a bare SID/STAR fix to its full procedure designator (ALVEN -> ALVEN4E, TOVOX -> TOVOX2R, RIMTI -> RIMTI1B, FOWEE2 stays FOWEE2)
+  const fullProc=(fix)=>{
+    if(!fix||!/^[A-Z]{2,6}\d?[A-Z]?$/.test(fix)) return fix||'';
+    const base=fix.replace(/\d[A-Z]?$/,'');
+    if(base.length<2) return fix;
+    const mm=new RegExp('\\b'+base+'\\d[A-Z]?\\b').exec(T);
+    return mm?mm[0]:fix;
+  };
+  data.sid=fullProc(data.sid); data.star=fullProc(data.star);
   data.navTime={};
   T.split('\n').forEach(ln=>{
     const r=/^\s*([A-Z][A-Z0-9]{1,5})\b.*?\b(\d{4})\s+\.{3,}\s+\.{3,}/.exec(ln);
@@ -859,7 +875,17 @@ function parseOFP(text, opts){
   if(caIx>=0){
     const blk=T.slice(caIx, wxIx>caIx?wxIx:caIx+4000);
     const re=/^(CO\d+\/\d+|CB\d+(?:\/\d+)?)\s*(?:-\s*|SUBJECT\s*:?\s*)?(.*)$/gm; let r;
-    while((r=re.exec(blk))){ data.coCb.push({code:r[1],subj:(r[2]||'').trim()}); }
+    while((r=re.exec(blk))){
+      const entry={code:r[1],subj:(r[2]||'').trim()};
+      const after=blk.slice(r.index+r[0].length);
+      const nx=after.search(/^(?:CO\d+\/\d+|CB\d+(?:\/\d+)?)\b/m);
+      const body=nx>=0?after.slice(0,nx):after;
+      if(/EFB|OIS VERSION/i.test(entry.subj+' '+body)){
+        const vm=/OIS VERSION[^\n]*?(\d{1,2}\.\d{1,2})/i.exec(body)||/VERSION[^\n]*?\bIS\b\s*(\d{1,2}\.\d{1,2})/i.exec(body)||/\b(\d{1,2}\.\d{2})\b/.exec(body);
+        if(vm) entry.efb=vm[1];
+      }
+      data.coCb.push(entry);
+    }
   }
   const known=(opts.known||'').split(',').map(s=>s.trim().toUpperCase()).filter(Boolean);
   data.coCbNonStd=data.coCb.filter(x=>!known.includes(x.code.toUpperCase()));
@@ -1004,18 +1030,15 @@ function build(data){
   if(data.shearMax) s1+=grid('g2',[c('Highest SR (OFP)',`SR${data.shearMax.sr} @ ${data.shearMax.fl}`),c('At waypoint',data.shearMax.wpt)]);
   s1+=sec('Fuel (kg)');
   s1+=grid('g6',[c('Taxi',data.fTaxi),c('Trip',data.fTrip),c('Contingency',data.fCont),c('Alternate',data.fAltn),c('Extra',data.fExtra),c('Ramp',data.fRamp,true)]);
+  if(data.extraFuel && data.extraFuel.code){
+    const EC={E:'ETOPS additional fuel',A:'Minimum fuel at departure',N:'No alternate planned',R:'Re-clearance additional fuel',M:'MEL/CDL additional fuel',H:'Holding fuel'};
+    const ef=data.extraFuel;
+    const parts=ef.code.split('').map(ch=>EC[ch]||(ch+' (see Remarks/dispatch)'));
+    s1+=`<div class="body"><p class="item"><b>Extra fuel — ${esc(parts.join(' + '))}:</b> ${esc(ef.kg)} kg / ${esc(fmtHHMM(ef.time))} &nbsp;<span style="color:#6B7280">(code ${esc(ef.code)})</span></p></div>`;
+  }
   if(data.remarks){
     s1+=sec('Remarks (OFP)');
     s1+=`<div class="body"><p class="item">${esc(data.remarks).replace(/\n/g,'<br>')}</p></div>`;
-  }
-  if(data.extraFuel && data.extraFuel.code){
-    const EC={E:'ETOPS additional fuel',A:'Minimum fuel at departure',N:'No alternate planned',R:'Re-clearance additional fuel',M:'MEL/CDL additional fuel'};
-    const ef=data.extraFuel;
-    const parts=ef.code.split('').map(ch=>EC[ch]?(ch+' — '+EC[ch]):(ch+' — code not in standard ADD/EXTRA legend (see Remarks / dispatch)'));
-    s1+=sec('Extra fuel — reason code '+ef.code);
-    s1+=grid('g3',[c('Extra fuel',ef.kg+' kg'),c('Burn time',fmtHHMM(ef.time)),c('Code',ef.code)]);
-    s1+=`<div class="body"><p class="item">${parts.map(esc).join('<br>')}</p>`+
-      (ef.code.length>1?`<p class="item" style="color:#6b7a90">Combination of labels — the ${esc(ef.kg)} kg covers all the reasons above.</p>`:'')+`</div>`;
   }
   s1+=sec('Weights (kg) — estimated vs limit');
   s1+=grid('g3',[c('EZFW / MZFW '+(data.mzfw||''),data.ezfw),c('ETOW / MTOW '+(data.mtow||''),data.etow),c('ELW / MLWT '+(data.mlwt||''),data.elwt)]);
@@ -1072,7 +1095,8 @@ function build(data){
     data.coCb.forEach(x=>{
       let subj=(x.subj||'').replace(/\s+/g,' ').trim();
       if(subj.length>160) subj=subj.slice(0,160)+'…';
-      s3+=`<p class="item" style="margin:0 0 5px"><span class="chip n">${esc(x.code)}</span>${esc(subj||'(no subject text)')}</p>`;
+      const efb=x.efb?` <b style="color:#1f6dff">— EFB / OIS v${esc(x.efb)}</b>`:'';
+      s3+=`<p class="item" style="margin:0 0 5px"><span class="chip n">${esc(x.code)}</span>${esc(subj||'(no subject text)')}${efb}</p>`;
     });
   } else s3+=`<p class="item" style="margin-top:6px">No Crew Orders / Crew Bulletins detected in the OFP (check the OFP has a CREW ALERT / BULLETIN section).</p>`;
   s3+=`</div>`;
@@ -1293,6 +1317,21 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
     el.textContent=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes())+':'+pad2(n.getUTCSeconds())+'Z';
     $('clkDate').textContent=DOW[n.getUTCDay()]+' '+pad2(n.getUTCDate())+' '+MON3[n.getUTCMonth()]+' '+n.getUTCFullYear()+' (UTC)';
     const ic=$('identClock'); if(ic) ic.textContent=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes())+':'+pad2(n.getUTCSeconds())+'Z';
+    // Internet-vs-device divergence: flash red + warn if off by >1 min or the date differs
+    const dev=new Date();
+    const diffMs=Math.abs(netOffset);
+    const dateDiff=(n.getUTCFullYear()!==dev.getUTCFullYear()||n.getUTCMonth()!==dev.getUTCMonth()||n.getUTCDate()!==dev.getUTCDate());
+    const diverged=(netSrc==='internet')&&(diffMs>60000||dateDiff);
+    el.classList.toggle('clkbad',diverged);
+    const w=$('clkWarn');
+    if(w){
+      if(diverged){
+        const secs=Math.round(diffMs/1000), mins=Math.floor(secs/60);
+        const off=mins>=1?(mins+' min'+(secs%60?(' '+(secs%60)+'s'):'')):(secs+'s');
+        w.style.display='block';
+        w.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><circle cx="12" cy="17.4" r="1" fill="currentColor" stroke="none"/></svg> Your device clock is off by '+off+(dateDiff?' and the DATE differs':'')+' from internet UTC. The time shown is internet UTC — fix your device date &amp; time to keep captured takeoff/landing times accurate.';
+      } else { w.style.display='none'; }
+    }
     const s=$('clkSrc'); if(s){s.textContent=netSrc==='internet'?'internet time ✓':'device clock (offline)'; s.className='src'+(netSrc==='internet'?' net':'');}
   }
   fetchNetTime(); setInterval(fetchNetTime,600000);
