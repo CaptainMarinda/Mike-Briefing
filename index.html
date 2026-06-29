@@ -187,6 +187,9 @@
   #lockScreen .warn{margin-top:22px;font-size:11px;color:#ffb3b3;background:#2a1414;border:1px solid #5a2222;border-radius:8px;padding:10px;line-height:1.5}
   #lockScreen .by{margin-top:14px;font-size:11px;color:#7e90ad}
   #lockScreen .by a{color:#7ec8ff;text-decoration:none}
+  .clrow{display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid #20304f;font-size:14px}
+  #almPop{display:none;position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:95;max-width:92%;background:#3a2412;border:1px solid #d99a1f;color:#ffe8c2;border-radius:10px;padding:12px 16px;box-shadow:0 8px 30px rgba(0,0,0,.5);font-weight:600;display:none;align-items:center;gap:12px}
+  #almPop.show{display:flex}
   .fab{position:fixed;right:16px;bottom:16px;z-index:80;background:#1f6dff;color:#fff;border:0;border-radius:50%;width:52px;height:52px;box-shadow:0 6px 18px rgba(0,0,0,.4);cursor:pointer;display:flex;align-items:center;justify-content:center}
   .fab svg{width:24px;height:24px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   @media print{.fab{display:none!important}}
@@ -232,16 +235,24 @@
 </header>
 
 <nav class="topnav" id="topnav">
-  <button data-v="briefing" class="active"><svg class="nico" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></svg>OFP Briefing</button>
+  <button data-v="load" class="active"><svg class="nico" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>Load</button>
+  <button data-v="cl"><svg class="nico" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>C/L</button>
+  <button data-v="briefing"><svg class="nico" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></svg>OFP Briefing</button>
   <button data-v="dg"><svg class="nico" viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><circle cx="12" cy="17.4" r="1" fill="currentColor" stroke="none"/></svg>Dangerous Goods</button>
   <button data-v="disp"><svg class="nico fill" viewBox="0 0 24 24"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>Inflight Display</button>
   <button data-v="rest"><svg class="nico" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>Inflight Rest</button>
   <button data-v="pa"><svg class="nico" viewBox="0 0 24 24"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>PA Guide</button>
 </nav>
+<nav class="subnav" id="subnav" style="display:none">
+  <button data-s="ofp" class="active">OFP</button>
+  <button data-s="route">Route</button>
+  <button data-s="wx">Weather Alerts</button>
+  <button data-s="notam">NOTAMs &amp; Enroute</button>
+</nav>
 <div class="identbar empty" id="identbar"><span id="identClock" class="iclk">--:--:--Z</span><span id="identInfo">No flight loaded — open an OFP in the Briefing tab</span></div>
 <div class="warnbar"><b>For reference only — not for operational use.</b> Use the official hard-copy OFP for flight operations. Individual use only.</div>
 
-<div class="wrap view active" id="view-briefing">
+<div class="wrap view active" id="view-load">
   <div id="io">
     <div class="panel">
       <h2>1 &mdash; Load an OFP</h2>
@@ -258,18 +269,26 @@
       </div>
     </div>
   </div>
-
   <div class="toolbar" id="tb" style="display:none">
     <button id="print2">Print / Save as PDF</button>
     <button id="reset" class="ghost">Load another OFP</button>
   </div>
+</div>
 
-  <nav class="subnav" id="subnav" style="display:none">
-    <button data-s="ofp" class="active">OFP</button>
-    <button data-s="route">Route</button>
-    <button data-s="wx">Weather Alerts</button>
-    <button data-s="notam">NOTAMs &amp; Enroute</button>
-  </nav>
+<div class="wrap view" id="view-cl">
+  <div class="fcard">
+    <h2>Checklist</h2>
+    <p class="fsub">Your own checklist — add items, tick them off. Saved on this device. Use <b>Reset ticks</b> before each flight.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+      <input id="cl_new" type="text" placeholder="Add a checklist item…" style="flex:1;min-width:180px">
+      <button id="cl_add" type="button">Add</button>
+      <button id="cl_reset" type="button" class="ghost">Reset ticks</button>
+    </div>
+    <div id="cl_list"></div>
+  </div>
+</div>
+
+<div class="wrap view" id="view-briefing">
   <div id="out-ofp" class="subview active"></div>
   <div id="out-route" class="subview"></div>
   <div id="out-wx" class="subview"></div>
@@ -375,6 +394,33 @@
       <div class="feat-field"><label class="lab">Landing (UTC)</label><div style="display:flex;gap:6px"><input id="gpsLdg" type="text" style="flex:1" placeholder="--:--"><button id="gpsLdgStart" type="button" style="padding:8px 12px">LDG</button></div></div>
     </div>
     <p class="hint" id="gpsHint">GPS auto-capture stamps takeoff when ground speed first exceeds 100 kt, and landing when it drops below 100 kt. Needs location permission and a GPS fix (works on cellular/GPS iPads; Wi-Fi-only devices have no speed).</p>
+  </div>
+  <div class="fcard">
+    <h2>Engine warm-up / cool-down</h2>
+    <div class="dispgrid">
+      <div class="dispbox"><div class="v" id="warmTtg">--:--</div><div class="l">Warm-up left (from off-blocks)</div></div>
+      <div class="dispbox"><div class="v" id="coolTtg">--:--</div><div class="l">Cool-down left (from landing)</div></div>
+    </div>
+    <p class="hint">A 5-minute count starts automatically at off-blocks (warm-up) and at landing (cool-down). You get a sound + pop-up when each completes.</p>
+  </div>
+  <div class="fcard">
+    <h2>Reminder</h2>
+    <p class="fsub">Get a sound + alert when you reach a waypoint, a lat/long, or a UTC time. Acknowledge to clear.</p>
+    <div class="fgrid">
+      <div class="feat-field"><label class="lab">Type</label>
+        <select id="rm_type"><option value="wpt">Waypoint (from OFP route)</option><option value="ll">Lat / Long</option><option value="time">UTC time</option></select></div>
+      <div class="feat-field" id="rm_wptWrap"><label class="lab">Waypoint</label><select id="rm_wpt"></select></div>
+      <div class="feat-field" id="rm_llWrap" style="display:none"><label class="lab">Lat, Long (+N/−S, +E/−W)</label><input id="rm_ll" type="text" placeholder="e.g. 25.27, 51.61"></div>
+      <div class="feat-field" id="rm_timeWrap" style="display:none"><label class="lab">UTC time (HH:MM)</label><input id="rm_time" type="time"></div>
+    </div>
+    <div class="fgrid">
+      <div class="feat-field"><label class="lab">Trigger range (NM, for position)</label><input id="rm_range" type="number" value="5" min="1" step="1"></div>
+      <div class="feat-field" style="display:flex;align-items:flex-end;gap:8px"><button id="rm_set" type="button" style="flex:1">Set reminder</button><button id="rm_clear" type="button" class="ghost">Clear</button></div>
+    </div>
+    <div class="dispgrid" style="margin-top:6px">
+      <div class="dispbox"><div class="v" id="rm_target">--</div><div class="l">Reminder</div></div>
+      <div class="dispbox"><div class="v" id="rm_ttg">--:--</div><div class="l">Time to go</div></div>
+    </div>
   </div>
   </div><!-- /disp-nav -->
 
@@ -553,13 +599,23 @@
 </div>
 
 <button id="wbFab" class="fab" type="button" title="Whiteboard / notes" aria-label="Whiteboard"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+<div id="almPop"><svg width="18" height="18" viewBox="0 0 24 24" style="flex:0 0 auto;fill:none;stroke:#ffcf7a;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span id="almTxt" style="flex:1">Alert</span><button id="almAck" type="button" style="padding:6px 14px">OK</button></div>
 <div class="modalwrap" id="wbModal">
-  <div class="modalbox">
+  <div class="modalbox" style="max-width:780px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
       <h2>Whiteboard</h2><button id="wbClose" class="ghost">Close</button></div>
-    <p class="hint">Shared scratch-pad for this flight — jot anything (clearances, frequencies, reminders). It stays saved on this device and is available from every page.</p>
-    <textarea id="wbText" placeholder="Type or paste notes…" style="width:100%;min-height:300px;background:#0f1b31;border:1px solid #2a3c5e;color:#dce8ff;border-radius:8px;padding:10px;font-family:var(--mono);font-size:13px"></textarea>
-    <p class="hint" id="wbMsg" style="margin-top:8px"></p>
+    <p class="hint">Write or draw with your finger or Apple Pencil — kept <b>exactly as drawn</b> (no text conversion), saved on this device, available from every page.</p>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+      <button id="wbPen" type="button">Pen</button>
+      <button id="wbErase" type="button" class="ghost">Eraser</button>
+      <input id="wbColor" type="color" value="#16335c" title="Pen colour" style="width:40px;height:34px;padding:0;border:1px solid #2a3c5e;border-radius:6px;background:none">
+      <button id="wbClear" type="button" class="ghost">Clear</button>
+      <span class="hint" id="wbMsg" style="margin:0"></span>
+    </div>
+    <canvas id="wbCanvas" style="width:100%;height:58vh;background:#fff;border:1px solid #2a3c5e;border-radius:8px;touch-action:none;display:block"></canvas>
+    <details style="margin-top:8px"><summary style="cursor:pointer;color:#7ec8ff;font-size:12px">Typed notes (optional)</summary>
+      <textarea id="wbText" placeholder="Typed notes…" style="width:100%;min-height:120px;background:#0f1b31;border:1px solid #2a3c5e;color:#dce8ff;border-radius:8px;padding:10px;font-family:var(--mono);font-size:13px;margin-top:6px"></textarea>
+    </details>
   </div>
 </div>
 
@@ -838,7 +894,10 @@ function parseOFP(text, opts){
   data.altnIcao = altn?altn[1]:''; data.fAltn = altn?altn[2]:'';
   data.fExtra= m(/\bEXTRA\s+\S*\s*(\d+)\s+\d{4}/,T);
   data.fRamp = m(/\bRAMP FUEL\s+(\d+)/,T);
-  const rmM=/\bREMARKS:\s*([\s\S]*?)(?=\n\s*FUEL\s+TIME\b|\n\s*FUEL\b|\n\s*\*{3,})/i.exec(T);
+  // REMARKS only from the OFP HEADER (between the PIC/OFP line and "FUEL TIME"). Prevents grabbing a stray "REMARKS:" buried in the NOTAM section (e.g. QR056 has no header remarks).
+  const _headEnd=T.search(/\n\s*FUEL\s+TIME\b/i);
+  const _head=_headEnd>0?T.slice(0,_headEnd):T.slice(0,1500);
+  const rmM=/\bREMARKS:\s*([\s\S]*)$/i.exec(_head);
   data.remarks = rmM ? rmM[1].replace(/[ \t]+\n/g,'\n').replace(/\n{2,}/g,'\n').trim() : '';
   const exM=/\bEXTRA\s+([A-Z]{1,5})\s+(\d+)\s+(\d{4})\b/.exec(T);
   data.extraFuel = exM ? {code:exM[1].toUpperCase(), kg:exM[2], time:exM[3]} : null;
@@ -1358,7 +1417,7 @@ async function loadFile(f){
 }
 function setMsg(t,k){msg.textContent=t;msg.className='msg '+(k||'');}
 
-function generate(){
+function generate(ev){
   const text=(paste.value.trim()||lastText).trim();
   if(!text){setMsg('Load or paste an OFP first.','err');return;}
   try{
@@ -1371,6 +1430,7 @@ function generate(){
     setMsg('Briefing generated. Review fields, then Print / Save as PDF.','ok');
     window.__OFP=data;
     if(window.__renderIdent)window.__renderIdent();
+    if(window.__goView && ev!==false)window.__goView('briefing');
     window.dispatchEvent(new CustomEvent('ofp-parsed'));
     const oOfp=document.getElementById('out-ofp');
     if(oOfp&&oOfp.scrollIntoView) oOfp.scrollIntoView({behavior:'smooth',block:'start'});
@@ -1404,16 +1464,59 @@ requestWake();
 /* Ask the browser to keep our data (localStorage + IndexedDB) even under storage pressure / after the app is killed. */
 try{ if(navigator.storage && navigator.storage.persist){ navigator.storage.persisted().then(function(p){ if(!p) navigator.storage.persist(); }).catch(function(){}); } }catch(e){}
 
-/* Shared whiteboard — accessible from every page, saved on this device */
+/* Shared whiteboard — freehand drawing (pen/finger) kept exactly as drawn, plus optional typed notes. Saved on this device. */
 (function(){
-  var fab=document.getElementById('wbFab'), modal=document.getElementById('wbModal'),
-      ta=document.getElementById('wbText'), close=document.getElementById('wbClose'), msg=document.getElementById('wbMsg');
-  if(!fab||!modal||!ta) return;
-  try{var v=localStorage.getItem('sm_wb'); if(v)ta.value=v;}catch(e){}
-  fab.addEventListener('click',function(){modal.classList.add('open');setTimeout(function(){ta.focus();},50);});
+  var $=function(id){return document.getElementById(id);};
+  var fab=$('wbFab'), modal=$('wbModal'), close=$('wbClose'), msg=$('wbMsg'), cv=$('wbCanvas'), ta=$('wbText');
+  if(!fab||!modal||!cv) return;
+  var ctx=cv.getContext('2d'), drawing=false, mode='pen', last=null, sized=false;
+  try{var t=localStorage.getItem('sm_wb'); if(t&&ta)ta.value=t;}catch(e){}
+  function flash(s){if(msg){msg.textContent=s;setTimeout(function(){if(msg.textContent===s)msg.textContent='';},1200);}}
+  function restore(){var d;try{d=localStorage.getItem('sm_wb_draw');}catch(e){} if(d){var img=new Image();img.onload=function(){ctx.clearRect(0,0,cv.clientWidth,cv.clientHeight);ctx.drawImage(img,0,0,cv.clientWidth,cv.clientHeight);};img.src=d;}}
+  function fit(){var dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight; if(!w||!h)return; cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);ctx.lineCap='round';ctx.lineJoin='round'; sized=true; restore();}
+  function save(){try{localStorage.setItem('sm_wb_draw',cv.toDataURL('image/png'));flash('Saved ✓');}catch(e){flash('Storage full — clear some space');}}
+  function pos(e){var r=cv.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top};}
+  cv.addEventListener('pointerdown',function(e){if(!sized)fit();drawing=true;last=pos(e);if(cv.setPointerCapture)try{cv.setPointerCapture(e.pointerId);}catch(_){} e.preventDefault();});
+  cv.addEventListener('pointermove',function(e){if(!drawing)return;var p=pos(e);ctx.globalCompositeOperation=mode==='erase'?'destination-out':'source-over';ctx.strokeStyle=$('wbColor').value;ctx.lineWidth=mode==='erase'?20:2.6;ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(p.x,p.y);ctx.stroke();last=p;e.preventDefault();});
+  function end(){if(drawing){drawing=false;save();}}
+  cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);cv.addEventListener('pointerleave',end);
+  $('wbPen').addEventListener('click',function(){mode='pen';});
+  $('wbErase').addEventListener('click',function(){mode='erase';});
+  $('wbClear').addEventListener('click',function(){ctx.clearRect(0,0,cv.clientWidth,cv.clientHeight);try{localStorage.removeItem('sm_wb_draw');}catch(e){}flash('Cleared');});
+  if(ta) ta.addEventListener('input',function(){try{localStorage.setItem('sm_wb',ta.value);}catch(e){}flash('Saved ✓');});
+  fab.addEventListener('click',function(){modal.classList.add('open');sized=false;setTimeout(fit,80);});
   close.addEventListener('click',function(){modal.classList.remove('open');});
   modal.addEventListener('click',function(e){if(e.target===modal)modal.classList.remove('open');});
-  ta.addEventListener('input',function(){try{localStorage.setItem('sm_wb',ta.value);}catch(e){} if(msg){msg.textContent='Saved ✓';setTimeout(function(){if(msg.textContent==='Saved ✓')msg.textContent='';},1200);}});
+})();
+
+/* Checklist (C/L) tab — manual items, tick to complete, saved on this device */
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  var listEl=$('cl_list'), input=$('cl_new'), add=$('cl_add'), reset=$('cl_reset');
+  if(!listEl||!input||!add) return;
+  var items=[];
+  try{items=JSON.parse(localStorage.getItem('sm_cl')||'[]');}catch(e){items=[];}
+  function save(){try{localStorage.setItem('sm_cl',JSON.stringify(items));}catch(e){}}
+  function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function render(){
+    if(!items.length){listEl.innerHTML='<p class="hint">No items yet. Add your checklist items above.</p>';return;}
+    listEl.innerHTML=items.map(function(it,i){
+      return '<div class="clrow" data-i="'+i+'"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;flex:1">'+
+        '<input type="checkbox" class="clchk" '+(it.done?'checked':'')+' style="width:20px;height:20px;flex:0 0 auto">'+
+        '<span style="'+(it.done?'text-decoration:line-through;color:#7e90ad':'')+'">'+esc(it.text)+'</span></label>'+
+        '<button class="cldel ghost" type="button" style="padding:4px 10px">✕</button></div>';
+    }).join('');
+    listEl.querySelectorAll('.clrow').forEach(function(row){
+      var i=+row.dataset.i;
+      row.querySelector('.clchk').addEventListener('change',function(e){items[i].done=e.target.checked;save();render();});
+      row.querySelector('.cldel').addEventListener('click',function(){items.splice(i,1);save();render();});
+    });
+  }
+  function addItem(){var v=input.value.trim();if(!v)return;items.push({text:v,done:false});input.value='';save();render();}
+  add.addEventListener('click',addItem);
+  input.addEventListener('keydown',function(e){if(e.key==='Enter')addItem();});
+  reset.addEventListener('click',function(){items.forEach(function(it){it.done=false;});save();render();});
+  render();
 })();
 
 document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click',()=>{
@@ -1424,13 +1527,14 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
 }));
 
 (function(){
-  const VIEWS=['briefing','dg','disp','rest','pa'];
+  const VIEWS=['load','cl','briefing','dg','disp','rest','pa'];
   function goView(v){
     const btn=document.querySelector('#topnav button[data-v="'+v+'"]'); if(!btn)return;
     document.querySelectorAll('#topnav button').forEach(x=>x.classList.remove('active'));
     document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('view-'+v).classList.add('active');
+    const sn=document.getElementById('subnav'); if(sn) sn.style.display=(v==='briefing' && window.__OFP)?'flex':'none';
     window.scrollTo({top:0,behavior:'smooth'});
     if(window.__renderIdent)window.__renderIdent();
     try{localStorage.setItem('sm_view',v);}catch(e){}
@@ -1471,13 +1575,13 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
   // serverMs = server's UTC at the moment it answered; t0 = local time just before the request. Compensate for ~half the round-trip and reject absurd values.
   function setNet(serverMs,t0){ if(serverMs&&!isNaN(serverMs)){ const mid=t0+(Date.now()-t0)/2; const off=serverMs-mid; if(Math.abs(off)<12*3600*1000){ netOffset=off; netSrc='internet'; } } }
   function fetchNetTime(){
-    // Try several CORS-friendly sources; the first to answer wins. Independent of the (possibly wrong) device clock.
+    // Use the CORS-proxy chain (tryFetch) so the time sources load even when they block cross-origin directly. First to answer wins. Independent of the (possibly wrong) device clock.
     let t0=Date.now();
-    fetch('https://www.cloudflare.com/cdn-cgi/trace',{cache:'no-store'}).then(r=>r.text()).then(t=>{
+    tryFetch('https://www.cloudflare.com/cdn-cgi/trace').then(r=>r.text()).then(t=>{
       const m=/ts=([0-9.]+)/.exec(t); if(m){setNet(Math.round(parseFloat(m[1])*1000),t0);return;} throw 0;
-    }).catch(()=>{ t0=Date.now(); return fetch('https://timeapi.io/api/Time/current/zone?timeZone=UTC',{cache:'no-store'}).then(r=>r.json()).then(j=>{
+    }).catch(()=>{ t0=Date.now(); return tryFetch('https://timeapi.io/api/Time/current/zone?timeZone=UTC').then(r=>r.json()).then(j=>{
       const ms=j&&j.dateTime?Date.parse(j.dateTime+(/[Zz]$/.test(j.dateTime)?'':'Z')):NaN; if(!isNaN(ms))setNet(ms,t0); else throw 0;
-    }); }).catch(()=>{ t0=Date.now(); return fetch('https://worldtimeapi.org/api/timezone/Etc/UTC',{cache:'no-store'}).then(r=>r.json()).then(j=>{
+    }); }).catch(()=>{ t0=Date.now(); return tryFetch('https://worldtimeapi.org/api/timezone/Etc/UTC').then(r=>r.json()).then(j=>{
       const ms=j&&(j.unixtime?j.unixtime*1000:(j.utc_datetime?Date.parse(j.utc_datetime):NaN)); if(ms&&!isNaN(ms))setNet(ms,t0);
     }); }).catch(()=>{});
   }
@@ -1785,6 +1889,8 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
   function calcDisplay(){
     updateClock();
     try{updateNav();}catch(e){}
+    try{checkWarmCool();}catch(e){}
+    try{checkReminder();}catch(e){}
     const to=toM($('d_to').value), tm=tripMin(), trip=toM($('d_trip').value);
     const now=utcNow(), nowMin=now.getUTCHours()*60+now.getUTCMinutes()+now.getUTCSeconds()/60;
     $('utcnow').textContent=fmt(nowMin);
@@ -1832,11 +1938,12 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
   $('d_toStart').addEventListener('click',()=>{const n=utcNow();$('d_to').value=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes());$('r_to').value=$('d_to').value;autoRest();buildChecks();calcRest();calcDisplay();});
 
   /* GPS auto-capture: T/O when ground speed >100 kt, LDG when <100 kt. Armed by default; survives backgrounding; LDG fires even if takeoff was set manually. */
-  let gpsWatch=null,gpsPhase='ground',gpsArmed=false,gpsSeenSlow=false,gpsPos=null;
+  let gpsWatch=null,gpsPhase='ground',gpsArmed=false,gpsSeenSlow=false,gpsPos=null,gpsKt=0;
   function setGpsHint(t){const e=$('gpsHint');if(e)e.textContent=t;}
   function gpsTick(pos){
     if(pos.coords && pos.coords.latitude!=null && !isNaN(pos.coords.latitude)) gpsPos={lat:pos.coords.latitude,lon:pos.coords.longitude};
     const sp=pos.coords.speed;
+    if(sp!=null && !isNaN(sp)) gpsKt=sp*1.94384;
     const spd=$('gpsSpd');
     if(sp==null||isNaN(sp)){if(spd)spd.value='no speed fix';return;}
     const kt=sp*1.94384; if(spd)spd.value=Math.round(kt)+' kt';
@@ -1897,6 +2004,56 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
     set('n_flown',Math.round(flown)); set('n_togo',Math.round(toGo)); set('n_next',nx.name||'--');
     set('n_nextd',Math.round(distNext)); set('n_eta',etaTxt); set('n_fuel',fuelTxt); set('n_sked',skedTxt);
     const nh=$('navHint'); if(nh) nh.textContent='Live GPS vs OFP plan. Planned ETA & fuel interpolated from OFP totals by distance.';
+  }
+
+  /* ---- Alerts (sound + pop-up): warm-up / cool-down + reminders ---- */
+  var __ac=null;
+  function beep(n){
+    try{ if(!__ac)__ac=new (window.AudioContext||window.webkitAudioContext)(); if(__ac.state==='suspended')__ac.resume(); n=n||3;
+      for(let i=0;i<n;i++){ const o=__ac.createOscillator(),g=__ac.createGain(); o.type='sine'; o.frequency.value=880;
+        const t0=__ac.currentTime+i*0.35; g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(0.3,t0+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t0+0.28);
+        o.connect(g); g.connect(__ac.destination); o.start(t0); o.stop(t0+0.3); }
+    }catch(e){}
+  }
+  ['pointerdown','touchend','keydown'].forEach(ev=>document.addEventListener(ev,function(){try{if(!__ac)__ac=new (window.AudioContext||window.webkitAudioContext)();if(__ac&&__ac.resume)__ac.resume();}catch(e){}},{once:true,passive:true}));
+  function fireAlert(msg){ const p=$('almPop'),t=$('almTxt'); if(p&&t){t.textContent=msg;p.classList.add('show');} beep(4); }
+  if($('almAck'))$('almAck').addEventListener('click',function(){const p=$('almPop');if(p)p.classList.remove('show');});
+
+  var __warmFor=null,__coolFor=null;
+  function mmss(remSec){return Math.floor(remSec/60)+':'+pad2(remSec%60);}
+  function checkWarmCool(){
+    const now=utcNow(); const nowM=now.getUTCHours()*60+now.getUTCMinutes()+now.getUTCSeconds()/60;
+    const atdEl=$('ofp_atd'); const atd=toM((atdEl&&atdEl.value)||($('dep_chocks')?$('dep_chocks').value:''));
+    const ldg=toM($('gpsLdg')?$('gpsLdg').value:'');
+    if(atd!=null){ let e=nowM-atd; if(e<-720)e+=1440; if($('warmTtg'))$('warmTtg').textContent=e<0?'--:--':(e>=5?'done':mmss(Math.max(0,Math.round((5-e)*60)))); if(e>=5&&e<60&&__warmFor!==atd){__warmFor=atd;fireAlert('Warm-up time (5 min from off-blocks) completed.');} }
+    else if($('warmTtg'))$('warmTtg').textContent='--:--';
+    if(ldg!=null){ let e=nowM-ldg; if(e<-720)e+=1440; if($('coolTtg'))$('coolTtg').textContent=e<0?'--:--':(e>=5?'done':mmss(Math.max(0,Math.round((5-e)*60)))); if(e>=5&&e<60&&__coolFor!==ldg){__coolFor=ldg;fireAlert('Cool-down time (5 min from landing) completed.');} }
+    else if($('coolTtg'))$('coolTtg').textContent='--:--';
+  }
+
+  var reminder=null;
+  function populateWpts(){ const sel=$('rm_wpt'); if(!sel)return; const O=window.__OFP;
+    sel.innerHTML=(O&&O.routeWps&&O.routeWps.length)?O.routeWps.map((w,i)=>'<option value="'+i+'">'+escF(w.name)+'</option>').join(''):'<option value="">(load an OFP)</option>'; }
+  function rmTypeUI(){ const t=$('rm_type').value; $('rm_wptWrap').style.display=t==='wpt'?'block':'none'; $('rm_llWrap').style.display=t==='ll'?'block':'none'; $('rm_timeWrap').style.display=t==='time'?'block':'none'; }
+  if($('rm_type')){ $('rm_type').addEventListener('change',rmTypeUI); rmTypeUI(); }
+  window.addEventListener('ofp-parsed',populateWpts); populateWpts();
+  if($('rm_set'))$('rm_set').addEventListener('click',function(){
+    const t=$('rm_type').value, range=Math.max(1,parseFloat($('rm_range').value)||5);
+    if(t==='wpt'){ const O=window.__OFP,i=parseInt($('rm_wpt').value,10); if(!O||!O.routeWps||isNaN(i)||!O.routeWps[i]){$('rm_target').textContent='no wpt';return;} const w=O.routeWps[i]; reminder={type:'pos',lat:w.lat,lon:w.lon,name:w.name,range:range}; }
+    else if(t==='ll'){ const m=/(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/.exec($('rm_ll').value); if(!m){$('rm_target').textContent='bad lat/long';return;} reminder={type:'pos',lat:parseFloat(m[1]),lon:parseFloat(m[2]),name:m[1]+', '+m[2],range:range}; }
+    else { const tm=toM($('rm_time').value); if(tm==null){$('rm_target').textContent='set a time';return;} reminder={type:'time',timeMin:tm,name:$('rm_time').value+'Z'}; }
+    reminder.fired=false; if($('rm_target'))$('rm_target').textContent=reminder.name;
+  });
+  if($('rm_clear'))$('rm_clear').addEventListener('click',function(){reminder=null;if($('rm_target'))$('rm_target').textContent='--';if($('rm_ttg'))$('rm_ttg').textContent='--:--';});
+  function checkReminder(){
+    if(!reminder){return;}
+    const now=utcNow(); const nowM=now.getUTCHours()*60+now.getUTCMinutes()+now.getUTCSeconds()/60;
+    let ttgTxt='--:--', reached=false;
+    if(reminder.type==='time'){ let d=reminder.timeMin-nowM; if(d<-720)d+=1440; if(d>720)d-=1440; ttgTxt=d<=0?'now':fmt(Math.round(d)); if(d<=0)reached=true; }
+    else if(gpsPos){ const dist=gcNM(gpsPos.lat,gpsPos.lon,reminder.lat,reminder.lon); ttgTxt=(gpsKt>30)?fmt(Math.round(dist/gpsKt*60)):(Math.round(dist)+' NM'); if(dist<=reminder.range)reached=true; }
+    else ttgTxt='no GPS';
+    if($('rm_ttg'))$('rm_ttg').textContent=ttgTxt;
+    if(reached && !reminder.fired){ reminder.fired=true; fireAlert('Reminder reached: '+reminder.name+'.'); }
   }
 
   /* ---- Nav: airport weather / D-ATIS / NOTAM lookup (with CORS-proxy fallbacks) ---- */
