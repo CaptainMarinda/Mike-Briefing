@@ -1466,7 +1466,7 @@ window.__renderIdent=function(){
 document.getElementById('go').onclick=generate;
 document.getElementById('print').onclick=()=>window.print();
 document.getElementById('print2').onclick=()=>window.print();
-document.getElementById('reset').onclick=()=>{try{localStorage.removeItem('sm_ofptext');localStorage.removeItem('sm_fields');}catch(e){}location.reload();};
+document.getElementById('reset').onclick=()=>{try{localStorage.removeItem('sm_ofptext');localStorage.removeItem('sm_fields');localStorage.removeItem('sm_ofpid');}catch(e){}location.reload();};
 
 /* keep the screen awake while the app is in front */
 var __wakeLock=null;
@@ -1767,7 +1767,28 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
       el.textContent=on?('OFP '+(OFP.fltCs||(OFP.dep+'-'+OFP.dest)||'loaded')):'no OFP loaded';
       el.className='ofpchip'+(on?'':' off');});
   }
-  window.addEventListener('ofp-parsed',()=>{ OFP=window.__OFP||null; refreshFromOFP(); });
+  // Identify a flight so we can tell when a genuinely NEW flight plan is loaded.
+  let __lastFlightId=''; try{__lastFlightId=localStorage.getItem('sm_ofpid')||'';}catch(e){}
+  function flightId(o){return o?[o.fltCs,o.date,o.dep,o.dest,o.ofpNo].join('|'):'';}
+  // Wipe the previous flight's captured/typed data so the new OFP repopulates cleanly. Keeps cross-flight tools (checklist, whiteboard, PA personal notes).
+  function resetFlightData(){
+    const ids=(typeof PERSIST_IDS!=='undefined'?PERSIST_IDS:[]).concat(['ofp_atd','ofp_delay','ofp_ata','ofp_ablk','p_ttg','p_eta','p_tn','ar_eta','ar_etal','ar_beforesta','ar_tempf','ar_block','dep_intx']);
+    ids.forEach(function(id){var e=$(id);if(!e)return;if(e.tagName!=='SELECT'&&e.type!=='checkbox')e.value='';if(e.dataset)delete e.dataset.touched;});
+    try{localStorage.removeItem('sm_fields');}catch(e){}
+    gpsPhase='ground';gpsSeenSlow=false;gpsFastN=0;gpsSlowN=0;gpsKt=0;gpsPos=null;
+    __warmFor=null;__coolFor=null;reminder=null;
+    var rt=$('rm_target');if(rt)rt.textContent='--';
+    ['warmTtg','coolTtg','rm_ttg'].forEach(function(id){var e=$(id);if(e)e.textContent='--:--';});
+    var sp=$('gpsSpd');if(sp)sp.value='—';
+    var ao=$('ac_out');if(ao){ao.style.display='none';ao.textContent='';}
+    var wo=$('wxOut');if(wo){wo.style.display='none';wo.textContent='';}
+  }
+  window.addEventListener('ofp-parsed',()=>{
+    OFP=window.__OFP||null;
+    const id=flightId(OFP);
+    if(id && id!==__lastFlightId){ __lastFlightId=id; try{localStorage.setItem('sm_ofpid',id);}catch(e){} resetFlightData(); }
+    refreshFromOFP();
+  });
 
   function refreshFromOFP(){
     if(!OFP)return;
