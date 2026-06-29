@@ -337,7 +337,25 @@
         <div style="display:flex;gap:6px"><input id="d_to" type="time" style="flex:1"><button id="d_toStart" type="button" style="padding:8px 14px">START</button></div></div>
       <div class="feat-field"><label class="lab">Trip time (HH:MM, from OFP)</label><input id="d_trip" type="time"></div>
     </div>
-    <p class="hint">Tap START at takeoff to capture the airborne time (uses the device clock). Destination resolves automatically from the OFP. GPS auto-capture and live position are on the <b>Nav</b> tab. Your saved documents are under the <b>DOCS</b> button in the clock bar.</p>
+    <p class="hint">Tap START at takeoff to capture the airborne time (uses internet UTC). Destination resolves automatically from the OFP. Your saved documents are under the <b>DOCS</b> button in the clock bar.</p>
+  </div>
+  <div class="fcard">
+    <h2>GPS auto take-off &amp; landing</h2>
+    <div class="fgrid">
+      <div class="feat-field"><label class="lab">GPS auto T/O &amp; LDG</label><button id="gpsArm" type="button" class="ghost" style="width:100%">Arm GPS</button></div>
+      <div class="feat-field"><label class="lab">Ground speed</label><input id="gpsSpd" type="text" readonly value="—"></div>
+      <div class="feat-field"><label class="lab">Landing (UTC)</label><div style="display:flex;gap:6px"><input id="gpsLdg" type="text" style="flex:1" placeholder="--:--"><button id="gpsLdgStart" type="button" style="padding:8px 12px">LDG</button></div></div>
+    </div>
+    <p class="hint" id="gpsHint">Auto-stamps take-off at the first ground speed above 100 kt (then jumps to Live) and landing at the first reading below 100 kt after airborne (then jumps to Arrival), using internet UTC. Needs location permission and a GPS fix.</p>
+  </div>
+  <div class="fcard">
+    <h2>Aircraft / flight lookup</h2>
+    <p class="fsub">Enter any ATC callsign (e.g. QTR4T) to see airline, route and aircraft type. Needs internet.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <input id="ac_cs" type="text" placeholder="ATC callsign e.g. QTR4T" style="text-transform:uppercase;width:210px">
+      <button id="ac_get" type="button">Look up</button>
+    </div>
+    <pre id="ac_out" style="display:none;white-space:pre-wrap;word-break:break-word;background:#0f1b31;border:1px solid #2a3c5e;border-radius:8px;padding:10px;margin-top:10px;font-family:var(--mono);font-size:12px;color:#cfe;min-height:30px"></pre>
   </div>
   <div class="fcard">
     <div style="text-align:center;margin-bottom:14px">
@@ -385,23 +403,6 @@
       <div class="dispbox"><div class="v" id="n_sked">--</div><div class="l">vs schedule</div></div>
     </div>
     <p class="hint" id="navHint">Arm GPS and load an OFP to compare your position with the planned route. Planned ETA &amp; fuel are interpolated from the OFP totals by distance flown.</p>
-  </div>
-  <div class="fcard">
-    <h2>GPS auto take-off &amp; landing</h2>
-    <div class="fgrid">
-      <div class="feat-field"><label class="lab">GPS auto T/O &amp; LDG</label><button id="gpsArm" type="button" class="ghost" style="width:100%">Arm GPS</button></div>
-      <div class="feat-field"><label class="lab">Ground speed</label><input id="gpsSpd" type="text" readonly value="—"></div>
-      <div class="feat-field"><label class="lab">Landing (UTC)</label><div style="display:flex;gap:6px"><input id="gpsLdg" type="text" style="flex:1" placeholder="--:--"><button id="gpsLdgStart" type="button" style="padding:8px 12px">LDG</button></div></div>
-    </div>
-    <p class="hint" id="gpsHint">GPS auto-capture stamps takeoff when ground speed first exceeds 100 kt, and landing when it drops below 100 kt. Needs location permission and a GPS fix (works on cellular/GPS iPads; Wi-Fi-only devices have no speed).</p>
-  </div>
-  <div class="fcard">
-    <h2>Engine warm-up / cool-down</h2>
-    <div class="dispgrid">
-      <div class="dispbox"><div class="v" id="warmTtg">--:--</div><div class="l">Warm-up left (from off-blocks)</div></div>
-      <div class="dispbox"><div class="v" id="coolTtg">--:--</div><div class="l">Cool-down left (from landing)</div></div>
-    </div>
-    <p class="hint">A 5-minute count starts automatically at off-blocks (warm-up) and at landing (cool-down). You get a sound + pop-up when each completes.</p>
   </div>
   <div class="fcard">
     <h2>Reminder</h2>
@@ -457,6 +458,13 @@
       </div>
       <div class="feat-field"><label class="lab">Notes</label><textarea id="dep_notes" style="min-height:90px"></textarea></div>
     </div>
+    <div class="fcard">
+      <h2>Engine warm-up</h2>
+      <div class="dispgrid">
+        <div class="dispbox"><div class="v" id="warmTtg">--:--</div><div class="l">Warm-up left (from off-blocks)</div></div>
+      </div>
+      <p class="hint">A 5-minute count starts automatically at off-blocks (chocks-off / ATD). Sound + pop-up when complete.</p>
+    </div>
   </div>
 
   <div class="subview2" id="disp-arr">
@@ -488,6 +496,13 @@
         <div class="feat-field"><label class="lab">Dispatch name</label><input id="ar_dispatch" type="text"></div>
       </div>
       <div class="feat-field"><label class="lab">Notes</label><textarea id="ar_notes" style="min-height:90px"></textarea></div>
+    </div>
+    <div class="fcard">
+      <h2>Engine cool-down</h2>
+      <div class="dispgrid">
+        <div class="dispbox"><div class="v" id="coolTtg">--:--</div><div class="l">Cool-down left (from landing)</div></div>
+      </div>
+      <p class="hint">A 5-minute count starts automatically at landing. Sound + pop-up when complete.</p>
     </div>
   </div>
 </div>
@@ -1504,12 +1519,16 @@ try{ if(navigator.storage && navigator.storage.persist){ navigator.storage.persi
       return '<div class="clrow" data-i="'+i+'"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;flex:1">'+
         '<input type="checkbox" class="clchk" '+(it.done?'checked':'')+' style="width:20px;height:20px;flex:0 0 auto">'+
         '<span style="'+(it.done?'text-decoration:line-through;color:#7e90ad':'')+'">'+esc(it.text)+'</span></label>'+
+        '<button class="clup ghost" type="button" title="Move up" style="padding:4px 8px"'+(i===0?' disabled':'')+'>▲</button>'+
+        '<button class="cldn ghost" type="button" title="Move down" style="padding:4px 8px"'+(i===items.length-1?' disabled':'')+'>▼</button>'+
         '<button class="cldel ghost" type="button" style="padding:4px 10px">✕</button></div>';
     }).join('');
     listEl.querySelectorAll('.clrow').forEach(function(row){
       var i=+row.dataset.i;
       row.querySelector('.clchk').addEventListener('change',function(e){items[i].done=e.target.checked;save();render();});
       row.querySelector('.cldel').addEventListener('click',function(){items.splice(i,1);save();render();});
+      row.querySelector('.clup').addEventListener('click',function(){if(i>0){var t=items[i-1];items[i-1]=items[i];items[i]=t;save();render();}});
+      row.querySelector('.cldn').addEventListener('click',function(){if(i<items.length-1){var t=items[i+1];items[i+1]=items[i];items[i]=t;save();render();}});
     });
   }
   function addItem(){var v=input.value.trim();if(!v)return;items.push({text:v,done:false});input.value='';save();render();}
@@ -1617,11 +1636,13 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
   }
   fetchNetTime(); setInterval(fetchNetTime,300000);
 
-  document.querySelectorAll('#dispnav button').forEach(b=>b.addEventListener('click',()=>{
+  function setDispTab(d){
+    const btn=document.querySelector('#dispnav button[data-d="'+d+'"]'); if(!btn)return;
     document.querySelectorAll('#dispnav button').forEach(x=>x.classList.remove('active'));
     document.querySelectorAll('#view-disp .subview2').forEach(x=>x.classList.remove('active'));
-    b.classList.add('active'); $('disp-'+b.dataset.d).classList.add('active');
-  }));
+    btn.classList.add('active'); const v=$('disp-'+d); if(v)v.classList.add('active');
+  }
+  document.querySelectorAll('#dispnav button').forEach(b=>b.addEventListener('click',()=>setDispTab(b.dataset.d)));
 
   function staHHMM(){if(OFP&&OFP.sta){const r=/\d+\/(\d{2})(\d{2})/.exec(OFP.sta);if(r)return r[1]+':'+r[2];}return '';}
   function fnum(){return OFP?(OFP.fltCs||''):'';}
@@ -1938,7 +1959,7 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
   $('d_toStart').addEventListener('click',()=>{const n=utcNow();$('d_to').value=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes());$('r_to').value=$('d_to').value;autoRest();buildChecks();calcRest();calcDisplay();});
 
   /* GPS auto-capture: T/O when ground speed >100 kt, LDG when <100 kt. Armed by default; survives backgrounding; LDG fires even if takeoff was set manually. */
-  let gpsWatch=null,gpsPhase='ground',gpsArmed=false,gpsSeenSlow=false,gpsPos=null,gpsKt=0;
+  let gpsWatch=null,gpsPhase='ground',gpsArmed=false,gpsSeenSlow=false,gpsPos=null,gpsKt=0,gpsFastN=0,gpsSlowN=0;
   function setGpsHint(t){const e=$('gpsHint');if(e)e.textContent=t;}
   function gpsTick(pos){
     if(pos.coords && pos.coords.latitude!=null && !isNaN(pos.coords.latitude)) gpsPos={lat:pos.coords.latitude,lon:pos.coords.longitude};
@@ -1948,19 +1969,23 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
     if(sp==null||isNaN(sp)){if(spd)spd.value='no speed fix';return;}
     const kt=sp*1.94384; if(spd)spd.value=Math.round(kt)+' kt';
     if(kt>=100){
-      if(gpsPhase!=='air'){
+      gpsFastN++; gpsSlowN=0;
+      if(gpsPhase!=='air' && gpsFastN>=3){   // 3 consecutive >100 kt readings = genuine take-off (rejects single GPS glitches)
         if(gpsSeenSlow && !$('d_to').value){
           const n=utcNow();$('d_to').value=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes());$('r_to').value=$('d_to').value;
           autoRest();buildChecks();calcRest();calcDisplay();if(typeof saveState==='function')saveState();
           setGpsHint('Takeoff captured '+$('d_to').value+'Z (>100 kt). Watching for landing.');
         } else setGpsHint('Airborne (>100 kt) — watching for landing.');
         gpsPhase='air';
+        if(window.__goView)window.__goView('disp'); setDispTab('live');   // takeoff → Live page
       }
     } else { // below 100 kt
-      if(gpsPhase==='air'){
+      gpsSlowN++; gpsFastN=0;
+      if(gpsPhase==='air' && gpsSlowN>=3){   // 3 consecutive <100 kt readings after airborne = genuine landing
         const n=utcNow();$('gpsLdg').value=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes());
         gpsPhase='landed';if(typeof saveState==='function')saveState();if(typeof recalcBlock==='function')recalcBlock();
         setGpsHint('Landing captured '+$('gpsLdg').value+'Z (<100 kt).');
+        if(window.__goView)window.__goView('disp'); setDispTab('arr');     // landing → Arrival page
       } else if(gpsPhase==='ground'){ gpsSeenSlow=true; }
     }
   }
@@ -2121,6 +2146,35 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
     }
   });
   window.addEventListener('ofp-parsed',()=>{const el=$('wxIcao'); if(el && !el.value && window.__OFP && window.__OFP.dest) el.value=window.__OFP.dest;});
+
+  /* ---- Live: aircraft / flight lookup by ATC callsign ---- */
+  function acType(t){t=(t||'').trim();var M={A359:'A350-900',A35K:'A350-1000',A332:'A330-200',A333:'A330-300',A339:'A330-900neo',A388:'A380-800',B77W:'777-300ER',B77L:'777-200LR / 777F',B772:'777-200',B788:'787-8',B789:'787-9',B78X:'787-10',B738:'737-800',B38M:'737 MAX 8',A320:'A320',A321:'A321',A319:'A319',A20N:'A320neo',A21N:'A321neo',E190:'Embraer 190',E195:'Embraer 195'};return M[t]?(t+' ('+M[t]+')'):(t||'unknown');}
+  function acShow(t){var o=$('ac_out');if(o){o.style.display='block';o.textContent=t;}}
+  if($('ac_get'))$('ac_get').addEventListener('click',function(){
+    var cs=(($('ac_cs')||{}).value||'').trim().toUpperCase().replace(/\s+/g,''); if(!cs){acShow('Enter an ATC callsign (e.g. QTR4T).');return;}
+    acShow('Looking up '+cs+'…');
+    Promise.all([
+      tryFetch('https://api.adsbdb.com/v0/callsign/'+cs).then(r=>r.json()).catch(()=>null),
+      tryFetch('https://api.adsb.lol/v2/callsign/'+cs).then(r=>r.json()).catch(()=>null)
+    ]).then(function(res){
+      var rt=res[0], live=res[1], lines=['Callsign: '+cs];
+      var fr=rt&&rt.response&&rt.response.flightroute;
+      if(fr){ if(fr.airline&&fr.airline.name)lines.push('Airline: '+fr.airline.name+(fr.callsign_iata?(' / '+fr.callsign_iata):''));
+        if(fr.origin&&fr.destination)lines.push('Route: '+fr.origin.iata_code+' '+(fr.origin.municipality||'')+'  →  '+fr.destination.iata_code+' '+(fr.destination.municipality||'')); }
+      var ac=live&&live.ac&&live.ac[0];
+      if(ac){ lines.push('Aircraft: '+acType(ac.t)+(ac.r?('  ·  reg '+(ac.r||'').trim()):'')); if(ac.alt_baro!=null)lines.push('Now: FL'+Math.round((+ac.alt_baro)/100)+(ac.gs?('  ·  '+Math.round(ac.gs)+' kt GS'):'')); }
+      if(!fr && !ac){
+        tryFetch('https://www.flightradar24.com/v1/search/web/find?limit=6&query='+cs).then(r=>r.json()).then(function(j){
+          var m=j&&j.results&&j.results.filter(function(x){return x.detail&&(x.detail.ac_type||x.detail.schd_from);})[0];
+          if(m){ acShow('Callsign: '+cs+'\nAirline: '+(m.detail.operator||'—')+(m.detail.flight?('  ·  '+m.detail.flight):'')+'\nRoute: '+(m.detail.route||((m.detail.schd_from||'?')+' → '+(m.detail.schd_to||'?')))+'\nAircraft: '+acType(m.detail.ac_type)+(m.detail.reg?('  ·  reg '+m.detail.reg):'')); }
+          else acShow('No info found for '+cs+'. The callsign may not be active or known right now.');
+        }).catch(function(){acShow('No info found for '+cs+' (needs internet, or the flight isn’t active).');});
+        return;
+      }
+      if(!ac) lines.push('Aircraft type: not available (flight not currently airborne / tracked).');
+      acShow(lines.join('\n'));
+    }).catch(function(e){acShow('Lookup failed (needs internet): '+e.message);});
+  });
   /* ---- DOCS: documents stored on-device (IndexedDB), persist until removed ---- */
   let DOCDB=null;
   function docOpen(cb){
