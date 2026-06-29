@@ -306,6 +306,7 @@
   <nav class="subnav" id="dispnav">
     <button data-d="dep">Departure</button>
     <button data-d="live" class="active">Live</button>
+    <button data-d="nav">Nav</button>
     <button data-d="arr">Arrival</button>
   </nav>
   <div class="subview2 active" id="disp-live">
@@ -317,24 +318,7 @@
         <div style="display:flex;gap:6px"><input id="d_to" type="time" style="flex:1"><button id="d_toStart" type="button" style="padding:8px 14px">START</button></div></div>
       <div class="feat-field"><label class="lab">Trip time (HH:MM, from OFP)</label><input id="d_trip" type="time"></div>
     </div>
-    <p class="hint">Tap START at takeoff to capture the airborne time (uses the device clock). Destination resolves automatically from the OFP. Your saved documents are under the <b>DOCS</b> button in the clock bar.</p>
-    <div class="fgrid">
-      <div class="feat-field"><label class="lab">GPS auto T/O &amp; LDG</label><button id="gpsArm" type="button" class="ghost" style="width:100%">Arm GPS</button></div>
-      <div class="feat-field"><label class="lab">Ground speed</label><input id="gpsSpd" type="text" readonly value="—"></div>
-      <div class="feat-field"><label class="lab">Landing (UTC)</label><div style="display:flex;gap:6px"><input id="gpsLdg" type="text" style="flex:1" placeholder="--:--"><button id="gpsLdgStart" type="button" style="padding:8px 12px">LDG</button></div></div>
-    </div>
-    <p class="hint" id="gpsHint">GPS auto-capture stamps takeoff when ground speed first exceeds 100 kt, and landing when it drops below 100 kt. Needs location permission and a GPS fix (works on cellular/GPS iPads; Wi-Fi-only devices have no speed).</p>
-  </div>
-  <div class="fcard">
-    <h2>Airport weather &amp; NOTAMs</h2>
-    <p class="fsub">Live METAR, TAF, D-ATIS and NOTAMs for any airport (needs internet).</p>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <input id="wxIcao" type="text" maxlength="4" placeholder="ICAO e.g. OTHH" style="text-transform:uppercase;width:140px">
-      <button id="wxGet" type="button">METAR / TAF</button>
-      <button id="wxAtis" type="button" class="ghost">D-ATIS</button>
-      <button id="wxNotam" type="button" class="ghost">NOTAMs</button>
-    </div>
-    <pre id="wxOut" style="display:none;white-space:pre-wrap;word-break:break-word;background:#0f1b31;border:1px solid #2a3c5e;border-radius:8px;padding:10px;margin-top:10px;font-family:var(--mono);font-size:11.5px;color:#cfe;min-height:40px"></pre>
+    <p class="hint">Tap START at takeoff to capture the airborne time (uses the device clock). Destination resolves automatically from the OFP. GPS auto-capture and live position are on the <b>Nav</b> tab. Your saved documents are under the <b>DOCS</b> button in the clock bar.</p>
   </div>
   <div class="fcard">
     <div style="text-align:center;margin-bottom:14px">
@@ -351,6 +335,26 @@
     </div>
   </div>
   <div class="fcard">
+    <h2>Sun &mdash; departure, destination &amp; en-route</h2>
+    <table class="ft"><thead><tr><th>Where</th><th>Sunrise</th><th>Sunset</th><th>Day/Night now</th></tr></thead>
+      <tbody id="sunTable"></tbody></table>
+    <div id="routeSun" style="margin-top:10px"></div>
+  </div>
+  </div><!-- /disp-live -->
+
+  <div class="subview2" id="disp-nav">
+  <div class="fcard">
+    <h2>Airport weather &amp; NOTAMs</h2>
+    <p class="fsub">Live METAR / TAF / D-ATIS for any airport (needs internet). NOTAMs are read from your loaded OFP. Enter an ICAO and tap a button.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <input id="wxIcao" type="text" maxlength="4" placeholder="ICAO e.g. OTHH" style="text-transform:uppercase;width:140px">
+      <button id="wxGet" type="button">METAR / TAF</button>
+      <button id="wxAtis" type="button" class="ghost">D-ATIS</button>
+      <button id="wxNotam" type="button" class="ghost">NOTAMs</button>
+    </div>
+    <pre id="wxOut" style="display:none;white-space:pre-wrap;word-break:break-word;background:#0f1b31;border:1px solid #2a3c5e;border-radius:8px;padding:10px;margin-top:10px;font-family:var(--mono);font-size:11.5px;color:#cfe;min-height:40px"></pre>
+  </div>
+  <div class="fcard">
     <h2>Position &amp; next waypoint <span class="hint" style="font-weight:400">— GPS vs OFP plan</span></h2>
     <div class="dispgrid">
       <div class="dispbox"><div class="v" id="n_flown">--</div><div class="l">Dist flown (NM)</div></div>
@@ -364,12 +368,15 @@
     <p class="hint" id="navHint">Arm GPS and load an OFP to compare your position with the planned route. Planned ETA &amp; fuel are interpolated from the OFP totals by distance flown.</p>
   </div>
   <div class="fcard">
-    <h2>Sun &mdash; departure, destination &amp; en-route</h2>
-    <table class="ft"><thead><tr><th>Where</th><th>Sunrise</th><th>Sunset</th><th>Day/Night now</th></tr></thead>
-      <tbody id="sunTable"></tbody></table>
-    <div id="routeSun" style="margin-top:10px"></div>
+    <h2>GPS auto take-off &amp; landing</h2>
+    <div class="fgrid">
+      <div class="feat-field"><label class="lab">GPS auto T/O &amp; LDG</label><button id="gpsArm" type="button" class="ghost" style="width:100%">Arm GPS</button></div>
+      <div class="feat-field"><label class="lab">Ground speed</label><input id="gpsSpd" type="text" readonly value="—"></div>
+      <div class="feat-field"><label class="lab">Landing (UTC)</label><div style="display:flex;gap:6px"><input id="gpsLdg" type="text" style="flex:1" placeholder="--:--"><button id="gpsLdgStart" type="button" style="padding:8px 12px">LDG</button></div></div>
+    </div>
+    <p class="hint" id="gpsHint">GPS auto-capture stamps takeoff when ground speed first exceeds 100 kt, and landing when it drops below 100 kt. Needs location permission and a GPS fix (works on cellular/GPS iPads; Wi-Fi-only devices have no speed).</p>
   </div>
-  </div><!-- /disp-live -->
+  </div><!-- /disp-nav -->
 
   <div class="subview2" id="disp-dep">
     <div class="fcard">
@@ -1892,29 +1899,69 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
     const nh=$('navHint'); if(nh) nh.textContent='Live GPS vs OFP plan. Planned ETA & fuel interpolated from OFP totals by distance.';
   }
 
-  /* ---- Live: airport weather / D-ATIS / NOTAM lookup ---- */
+  /* ---- Nav: airport weather / D-ATIS / NOTAM lookup (with CORS-proxy fallbacks) ---- */
   function wxShow(t){const o=$('wxOut');if(o){o.style.display='block';o.textContent=t;}}
+  function wxHTML(h){const o=$('wxOut');if(o){o.style.display='block';o.innerHTML=h;}}
   function wxIc(){let v=(($('wxIcao')||{}).value||'').trim().toUpperCase();if(!v && typeof OFP!=='undefined' && OFP && OFP.dest)v=OFP.dest;return v;}
+  // Try the URL directly first; if the browser blocks it (CORS) or it errors, retry through public CORS proxies.
+  function tryFetch(url,i){
+    i=i||0;
+    const wraps=[u=>u, u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u), u=>'https://corsproxy.io/?url='+encodeURIComponent(u)];
+    if(i>=wraps.length) return Promise.reject(new Error('all sources unreachable'));
+    return fetch(wraps[i](url),{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r;}).catch(()=>tryFetch(url,i+1));
+  }
   if($('wxGet'))$('wxGet').addEventListener('click',()=>{
     const ic=wxIc(); if(!/^[A-Z]{4}$/.test(ic)){wxShow('Enter a 4-letter ICAO code.');return;}
     wxShow('Fetching METAR / TAF for '+ic+'…');
-    fetch('https://aviationweather.gov/api/data/metar?ids='+ic+'&format=raw').then(r=>r.text()).then(metar=>
-      fetch('https://aviationweather.gov/api/data/taf?ids='+ic+'&format=raw').then(r=>r.text()).then(taf=>{
-        wxShow('METAR '+ic+':\n'+((metar||'').trim()||'(none)')+'\n\nTAF '+ic+':\n'+((taf||'').trim()||'(none)'));
-      })).catch(e=>wxShow('Could not fetch weather (needs internet; source may block cross-origin): '+e.message));
+    Promise.all([
+      tryFetch('https://aviationweather.gov/api/data/metar?ids='+ic+'&format=raw').then(r=>r.text()).catch(()=>''),
+      tryFetch('https://aviationweather.gov/api/data/taf?ids='+ic+'&format=raw').then(r=>r.text()).catch(()=>'')
+    ]).then(([metar,taf])=>{
+      const m=(metar||'').trim(), t=(taf||'').trim();
+      if(!m&&!t){ wxShow('No data returned for '+ic+' — check the ICAO, or the weather service is unreachable right now.'); return; }
+      wxShow('METAR '+ic+':\n'+(m||'(none)')+'\n\nTAF '+ic+':\n'+(t||'(none)'));
+    }).catch(e=>wxShow('Could not fetch weather (needs internet): '+e.message));
   });
+  function parseAtisGuru(html){
+    let txt=html.replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<style[\s\S]*?<\/style>/gi,' ')
+      .replace(/<br\s*\/?>/gi,'\n').replace(/<\/(p|div|h\d|li|pre)>/gi,'\n').replace(/<[^>]+>/g,' ')
+      .replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/&#x?2?7;|&#39;|&rsquo;/g,"'").replace(/&quot;/g,'"');
+    const idx=txt.lastIndexOf('D-ATIS for');           // the real, server-rendered block (the first one is the Blazor placeholder)
+    let body=(idx>=0?txt.slice(idx):txt).replace(/Reload|🗙|An unhandled error has occurred\.?/g,'')
+      .replace(/[ \t]{2,}/g,' ').replace(/\n{3,}/g,'\n\n').trim();
+    if(/No ATIS available/i.test(body) && !/Arrival ATIS|Departure ATIS|ATIS\s+[A-Z]\b/.test(body)) return null;
+    return body.slice(0,6000);
+  }
   if($('wxAtis'))$('wxAtis').addEventListener('click',()=>{
     const ic=wxIc(); if(!/^[A-Z]{4}$/.test(ic)){wxShow('Enter a 4-letter ICAO code.');return;}
     wxShow('Fetching D-ATIS for '+ic+'…');
-    fetch('https://datis.clowd.io/api/'+ic).then(r=>r.json()).then(j=>{
-      if(Array.isArray(j)&&j.length&&j[0].datis){ wxShow('D-ATIS '+ic+':\n\n'+j.map(a=>(a.type?('['+a.type.toUpperCase()+'] '):'')+a.datis).join('\n\n')); }
-      else { wxShow('D-ATIS not available for '+ic+((j&&j.error)?(' ('+j.error+')'):'')+'.\nD-ATIS coverage is mainly US and selected international airports.'); }
-    }).catch(e=>wxShow('Could not fetch D-ATIS (needs internet): '+e.message));
+    tryFetch('https://datis.clowd.io/api/'+ic).then(r=>r.json()).then(j=>{
+      if(Array.isArray(j)&&j.length&&j[0].datis){ wxShow('D-ATIS '+ic+':\n\n'+j.map(a=>(a.type?('['+a.type.toUpperCase()+'] '):'')+a.datis).join('\n\n')); return; }
+      throw 0;
+    }).catch(()=>{
+      // Fallback to atis.guru (545 airports incl. Middle East / international) — server-rendered HTML holds the D-ATIS + METAR + TAF.
+      wxShow('Fetching D-ATIS for '+ic+' (atis.guru)…');
+      tryFetch('https://atis.guru/atis/'+ic).then(r=>r.text()).then(html=>{
+        const b=parseAtisGuru(html);
+        if(b) wxShow(b);
+        else wxShow('No live D-ATIS currently published for '+ic+'. D-ATIS is ACARS-based and only appears once an aircraft has requested it; use the METAR/TAF and the arrival ATIS frequency.');
+      }).catch(e=>wxShow('Could not fetch D-ATIS: '+e.message));
+    });
   });
   if($('wxNotam'))$('wxNotam').addEventListener('click',()=>{
     const ic=wxIc(); if(!/^[A-Z]{4}$/.test(ic)){wxShow('Enter a 4-letter ICAO code.');return;}
-    window.open('https://www.notams.faa.gov/dinsQueryWeb/queryRetrievalMapAction.do?reportType=Raw&retrieveLocId='+ic+'&actionType=notamRetrievalbyICAOs','_blank');
-    wxShow('Opening official NOTAMs for '+ic+' in a new tab (FAA NOTAM search). Your OFP’s own NOTAMs are on the Briefing → NOTAMs sub-tab.');
+    const O=window.__OFP;
+    if(!O || !O.notams){ wxShow('Load an OFP first — NOTAMs are taken from your loaded flight plan.'); return; }
+    const list=O.notams[ic];
+    if(list && list.length){
+      wxShow('NOTAMs '+ic+' (from OFP — '+list.length+'):\n\n'+list.map(n=>'• '+(n.valid?('VALID '+n.valid+'\n  '):'')+n.text).join('\n\n'));
+    } else if(O.notamRaw && O.notamRaw.indexOf(ic)>=0){
+      const i=O.notamRaw.indexOf(ic);
+      wxShow('NOTAMs '+ic+' (from OFP, raw):\n\n'+O.notamRaw.slice(i,i+4000));
+    } else {
+      const avail=Object.keys(O.notams||{});
+      wxShow('No NOTAMs for '+ic+' in the loaded OFP.'+(avail.length?(' The OFP carries NOTAMs for: '+avail.join(', ')+'.'):'')+'\nThe full NOTAM list is on the Briefing → NOTAMs tab.');
+    }
   });
   window.addEventListener('ofp-parsed',()=>{const el=$('wxIcao'); if(el && !el.value && window.__OFP && window.__OFP.dest) el.value=window.__OFP.dest;});
   /* ---- DOCS: documents stored on-device (IndexedDB), persist until removed ---- */
