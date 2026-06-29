@@ -158,6 +158,7 @@
   .clockbar .src{font-size:10.5px;color:#7e90ad;text-align:right}
   .clockbar .src.net{color:#7be0a4}
   .clockbar .t.clkbad{color:#ff5a5a !important;animation:clkflash 1s steps(1,end) infinite}
+  .iclk.clkbad{color:#ff5a5a !important;animation:clkflash 1s steps(1,end) infinite}
   @keyframes clkflash{0%,50%{opacity:1}51%,100%{opacity:.2}}
   #clkWarn{display:none;background:#3a1414;border:1px solid #7a2222;color:#ffb3b3;border-radius:8px;padding:8px 12px;font-size:12px;line-height:1.5;font-weight:600;margin:0 0 12px}
   .flhdr{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:12.5px;color:#9FB3D1;margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid #20304f}
@@ -186,6 +187,9 @@
   #lockScreen .warn{margin-top:22px;font-size:11px;color:#ffb3b3;background:#2a1414;border:1px solid #5a2222;border-radius:8px;padding:10px;line-height:1.5}
   #lockScreen .by{margin-top:14px;font-size:11px;color:#7e90ad}
   #lockScreen .by a{color:#7ec8ff;text-decoration:none}
+  .fab{position:fixed;right:16px;bottom:16px;z-index:80;background:#1f6dff;color:#fff;border:0;border-radius:50%;width:52px;height:52px;box-shadow:0 6px 18px rgba(0,0,0,.4);cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .fab svg{width:24px;height:24px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  @media print{.fab{display:none!important}}
   .modalwrap{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:90;align-items:flex-start;justify-content:center;padding:30px 16px;overflow:auto}
   .modalwrap.open{display:flex}
   .modalbox{background:#13203A;border:1px solid #20304f;border-radius:12px;max-width:560px;width:100%;padding:18px}
@@ -289,14 +293,15 @@
 
 <div class="wrap view" id="view-disp">
   <div class="clockbar">
-    <div><div class="t" id="clkTime">--:--:--Z</div><div class="d" id="clkDate">—</div></div>
+    <div><div class="t" id="clkTime">--:--:--Z</div><div class="d" id="clkDate">—</div><div class="d" id="clkCall" style="color:#7ec8ff;font-weight:700;letter-spacing:1px"></div></div>
     <div style="display:flex;align-items:center;gap:12px">
       <button id="d_docs" type="button" class="ghost" style="padding:7px 13px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>DOCS</button>
-      <div class="src" id="clkSrc">syncing internet time…</div>
+      <div class="src" id="clkSrc">device clock (UTC)</div>
     </div>
   </div>
   <div id="docCurrent" class="hint" style="margin:-4px 0 10px;text-align:right"></div>
   <div id="clkWarn"></div>
+  <div id="windPop" style="display:none;align-items:center;gap:10px;background:#16243f;border:1px solid #2f6df0;color:#dce8ff;border-radius:8px;padding:9px 12px;font-size:12.5px;font-weight:600;margin:0 0 12px"><svg width="16" height="16" viewBox="0 0 24 24" style="flex:0 0 auto;fill:none;stroke:#7ec8ff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2"/><path d="M12.59 19.41A2 2 0 1 0 14 16H2"/><path d="M17.73 7.73A2.5 2.5 0 1 1 19.5 12H2"/></svg><span id="windPopTxt" style="flex:1">Winds update due.</span><button type="button" onclick="this.parentNode.style.display='none'" style="padding:5px 12px">Dismiss</button></div>
   <div class="banner" id="bnr"><svg class="bnico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="bnrTxt"></span><button id="bnrAck">Acknowledge</button></div>
   <nav class="subnav" id="dispnav">
     <button data-d="dep">Departure</button>
@@ -312,13 +317,24 @@
         <div style="display:flex;gap:6px"><input id="d_to" type="time" style="flex:1"><button id="d_toStart" type="button" style="padding:8px 14px">START</button></div></div>
       <div class="feat-field"><label class="lab">Trip time (HH:MM, from OFP)</label><input id="d_trip" type="time"></div>
     </div>
-    <p class="hint">Tap START at takeoff to capture the airborne time (uses internet UTC). Destination resolves automatically from the OFP. Your saved documents are under the <b>DOCS</b> button in the clock bar.</p>
+    <p class="hint">Tap START at takeoff to capture the airborne time (uses the device clock). Destination resolves automatically from the OFP. Your saved documents are under the <b>DOCS</b> button in the clock bar.</p>
     <div class="fgrid">
       <div class="feat-field"><label class="lab">GPS auto T/O &amp; LDG</label><button id="gpsArm" type="button" class="ghost" style="width:100%">Arm GPS</button></div>
       <div class="feat-field"><label class="lab">Ground speed</label><input id="gpsSpd" type="text" readonly value="—"></div>
       <div class="feat-field"><label class="lab">Landing (UTC)</label><div style="display:flex;gap:6px"><input id="gpsLdg" type="text" style="flex:1" placeholder="--:--"><button id="gpsLdgStart" type="button" style="padding:8px 12px">LDG</button></div></div>
     </div>
     <p class="hint" id="gpsHint">GPS auto-capture stamps takeoff when ground speed first exceeds 100 kt, and landing when it drops below 100 kt. Needs location permission and a GPS fix (works on cellular/GPS iPads; Wi-Fi-only devices have no speed).</p>
+  </div>
+  <div class="fcard">
+    <h2>Airport weather &amp; NOTAMs</h2>
+    <p class="fsub">Live METAR, TAF, D-ATIS and NOTAMs for any airport (needs internet).</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <input id="wxIcao" type="text" maxlength="4" placeholder="ICAO e.g. OTHH" style="text-transform:uppercase;width:140px">
+      <button id="wxGet" type="button">METAR / TAF</button>
+      <button id="wxAtis" type="button" class="ghost">D-ATIS</button>
+      <button id="wxNotam" type="button" class="ghost">NOTAMs</button>
+    </div>
+    <pre id="wxOut" style="display:none;white-space:pre-wrap;word-break:break-word;background:#0f1b31;border:1px solid #2a3c5e;border-radius:8px;padding:10px;margin-top:10px;font-family:var(--mono);font-size:11.5px;color:#cfe;min-height:40px"></pre>
   </div>
   <div class="fcard">
     <div style="text-align:center;margin-bottom:14px">
@@ -333,6 +349,19 @@
       <div class="dispbox"><div class="v" id="d_rest1">--:--</div><div class="l">To rest start</div></div>
       <div class="dispbox"><div class="v" id="d_rest2">--:--</div><div class="l">To rest end</div></div>
     </div>
+  </div>
+  <div class="fcard">
+    <h2>Position &amp; next waypoint <span class="hint" style="font-weight:400">— GPS vs OFP plan</span></h2>
+    <div class="dispgrid">
+      <div class="dispbox"><div class="v" id="n_flown">--</div><div class="l">Dist flown (NM)</div></div>
+      <div class="dispbox"><div class="v" id="n_togo">--</div><div class="l">Dist to go (NM)</div></div>
+      <div class="dispbox"><div class="v" id="n_next">--</div><div class="l">Next waypoint</div></div>
+      <div class="dispbox"><div class="v" id="n_nextd">--</div><div class="l">Dist to next (NM)</div></div>
+      <div class="dispbox"><div class="v" id="n_eta">--:--</div><div class="l">Plan ETA next (UTC)</div></div>
+      <div class="dispbox"><div class="v" id="n_fuel">--</div><div class="l">Plan fuel next</div></div>
+      <div class="dispbox"><div class="v" id="n_sked">--</div><div class="l">vs schedule</div></div>
+    </div>
+    <p class="hint" id="navHint">Arm GPS and load an OFP to compare your position with the planned route. Planned ETA &amp; fuel are interpolated from the OFP totals by distance flown.</p>
   </div>
   <div class="fcard">
     <h2>Sun &mdash; departure, destination &amp; en-route</h2>
@@ -492,7 +521,17 @@
       <button id="paCopy">Copy</button>
       <span class="hint" id="paCopied" style="margin-top:0"></span>
     </div>
-    <p class="hint">Wording reproduced from the Eflight flight-bag app (Qatar Airways templates).</p>
+    <p class="hint">Qatar Airways PA templates — edit freely before reading.</p>
+  </div>
+  <div class="fcard">
+    <label class="lab">My announcements (saved on this device)</label>
+    <p class="fsub" style="margin-top:2px">Type or paste your own PA scripts here — they stay saved with the app and are available on every flight.</p>
+    <textarea id="p_custom" placeholder="Your personal announcements / notes…" style="min-height:160px;font-family:var(--sans);font-size:13px;color:#E6ECF5;width:100%"></textarea>
+    <div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <button id="p_customCopy" class="ghost">Copy</button>
+      <label class="ghost" style="cursor:pointer;padding:8px 14px;border-radius:8px;border:1px solid #2a3c5e">Import .txt<input id="p_customFile" type="file" accept=".txt,text/plain" style="display:none"></label>
+      <span class="hint" id="p_customMsg" style="margin-top:0"></span>
+    </div>
   </div>
 </div>
 
@@ -503,6 +542,17 @@
     <p class="hint">Add your reference documents (PDF, images, etc.). They are stored on this device only and stay until you remove them. Tap a document name to set it as the current document; use Open to view it.</p>
     <input id="docsAdd" type="file" multiple style="margin-top:6px">
     <div id="docsList" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<button id="wbFab" class="fab" type="button" title="Whiteboard / notes" aria-label="Whiteboard"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+<div class="modalwrap" id="wbModal">
+  <div class="modalbox">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <h2>Whiteboard</h2><button id="wbClose" class="ghost">Close</button></div>
+    <p class="hint">Shared scratch-pad for this flight — jot anything (clearances, frequencies, reminders). It stays saved on this device and is available from every page.</p>
+    <textarea id="wbText" placeholder="Type or paste notes…" style="width:100%;min-height:300px;background:#0f1b31;border:1px solid #2a3c5e;color:#dce8ff;border-radius:8px;padding:10px;font-family:var(--mono);font-size:13px"></textarea>
+    <p class="hint" id="wbMsg" style="margin-top:8px"></p>
   </div>
 </div>
 
@@ -934,10 +984,15 @@ function parseOFP(text, opts){
   const ntStartW=T.search(/\n\s*NOTAM/i);
   data.wxRaw = wxStart>=0 ? T.slice(wxStart, (ntStartW>wxStart?ntStartW:wxStart+6000)).replace(/\n{3,}/g,'\n\n').trim() : '';
   data.notams={};
-  const nIx=T.search(/\n\s*NOTAM/i);
+  // Find the REAL NOTAM bulletin (LIDO-NOTAM-BULLETIN), not the page-1 "NOTAMS AND ALL OTHER…" self-briefing sentence.
+  let nIx=T.search(/\nNOTAMS?\s*\n\s*LIDO[- ]?NOTAM/i);
+  if(nIx<0) nIx=T.search(/\nNOTAMS?\s*\n\s*=+/);
+  if(nIx<0) nIx=T.search(/\n\s*NOTAMS?\s*\n/);
+  if(nIx<0) nIx=T.search(/\n\s*NOTAM/i);
   if(nIx>=0){
     const nSec=T.slice(nIx);
-    const re=/^\s*([A-Z]{4})\s*\/[A-Z]{3}\b.*$/gm; let r, blocks=[];
+    // Real airport headers have a SPACE before the slash ("OTHH /DOH …"); navaid text lines do not ("RNAV/RNP", "DVOR/DME"). Require \s+\/ to skip the false ones.
+    const re=/^([A-Z]{4})\s+\/[A-Z]{3}\b.*$/gm; let r, blocks=[];
     while((r=re.exec(nSec))) blocks.push({icao:r[1],ix:r.index});
     blocks.forEach((b,j)=>{
       const seg=nSec.slice(b.ix,(j+1<blocks.length)?blocks[j+1].ix:undefined);
@@ -946,23 +1001,31 @@ function parseOFP(text, opts){
         const v=/VALID:\s*(.+)$/.exec(lines[k]);
         if(v){
           let txt=[]; for(let q=k+1;q<lines.length;q++){
-            if(/VALID:|^[A-Z]{4}\s*\/[A-Z]{3}|^\+{3,}|^={3,}|^-{3,}/.test(lines[q]))break;
+            if(/VALID:|^[A-Z]{4}\s+\/[A-Z]{3}|^\+{3,}|^={3,}|^-{3,}/.test(lines[q]))break;
             if(lines[q].trim())txt.push(lines[q].trim());
           }
           const body=txt.join(' ');
           if(isRelevantNotam(body)){
-            items.push({valid:v[1].trim(),text:body,vobj:parseNotamValidity(v[1])});
+            (data.notams[b.icao]=data.notams[b.icao]||[]).push({valid:v[1].trim(),text:body,vobj:parseNotamValidity(v[1])});
           }
         }
       }
-      if(items.length) data.notams[b.icao]=items;
     });
   }
   data.notamRaw = nIx>=0 ? T.slice(nIx, nIx+9000).replace(/\n{3,}/g,'\n\n').trim() : '';
   data.route=parseRouteCoords(T);
+  // Build named waypoint list with cumulative great-circle distance (for live position vs plan).
+  (function(){
+    const seen=new Set(); const wps=[];
+    data.route.forEach(p=>{ if(p.name && p.name.length>=2 && !/^[NSEW]$/.test(p.name)){ const k=p.name+'@'+p.lat.toFixed(2)+','+p.lon.toFixed(2); if(!seen.has(k)){seen.add(k);wps.push(p);} } });
+    let cum=0; const out=[];
+    for(let i=0;i<wps.length;i++){ if(i>0)cum+=gcNM(wps[i-1].lat,wps[i-1].lon,wps[i].lat,wps[i].lon); out.push({name:wps[i].name,lat:wps[i].lat,lon:wps[i].lon,cumNM:Math.round(cum),elapsed:wps[i].elapsed}); }
+    data.routeWps=out; data.routeTotNM=out.length?out[out.length-1].cumNM:0;
+  })();
   return data;
 }
 
+function gcNM(la1,lo1,la2,lo2){const R=3440.065,d=Math.PI/180;const dLa=(la2-la1)*d,dLo=(lo2-lo1)*d;const a=Math.sin(dLa/2)**2+Math.cos(la1*d)*Math.cos(la2*d)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.min(1,Math.sqrt(a)));}
 function parseRouteCoords(T){
   const pts=[];
   T.split('\n').forEach(ln=>{
@@ -980,13 +1043,17 @@ function parseRouteCoords(T){
     if(lat===null||isNaN(lat)||isNaN(lon)||Math.abs(lat)>90||Math.abs(lon)>180)return;
     let tm=/\b([0-2]\d)([0-5]\d)\b/.exec(ln);
     const elapsed=tm?(+tm[1]*60+ +tm[2]):null;
-    pts.push({lat,lon,elapsed});
+    // waypoint name = first 2–5 letter ident immediately after the coordinate block
+    const after=ln.replace(/[NS]\d{2,4}\.?\d*\s*\/?\s*[EW]\d{3,5}\.?\d*/,' ').trim();
+    const nmm=/^([A-Z]{2,5}\d?)\b/.exec(after);
+    const name=nmm?nmm[1]:'';
+    pts.push({lat,lon,elapsed,name});
   });
   return pts;
 }
 
 function isRelevantNotam(s){
-  if(/MINIMUM CLIMB|TAKEOFF MIN|CRANE|OBSTACLE|MSA|AMDT|OBSC|MARKINGS|GRASS|BIRD|FREQ CHG|AD HR|FUEL/.test(s)
+  if(/MINIMUM CLIMB|TAKEOFF MIN|CRANE|OBSTACLE|MSA|AMDT|OBSC|MARKINGS|GRASS|BIRD|FREQ CHG|AD HR/.test(s)
      && !/CLSD|CLOSED|U\/S|UNSERVICE|SUSPENDED/.test(s)) return false;
   return /(RWY|TWY|APRON|STAND).*(CLSD|CLOSED)|CLSD|CLOSED|U\/S|UNSERVICEABLE|SUSPENDED|(ILS|VOR|DME|LOC|GP|GLIDE|PAPI|NDB|TACAN|RNAV|RVR).*(U\/S|UNSERVICE|SUSPEND|NOT MNT|OUT OF SERVICE|NOT HARMONIZED)|OUT OF SERVICE|DISPLACED/.test(s);
 }
@@ -1044,7 +1111,7 @@ function build(data){
   s1+=grid('g3',[c('Dep (ICAO)',data.dep),c('Dest (ICAO)',data.dest),c('Dest time zone',tz(data.dest))]);
   s1+=grid('g3',[c('Aircraft type',data.acType),c('Aircraft tail',data.tail),c('Dep time zone',tz(data.dep))]);
   s1+=sec('Levels & performance');
-  s1+=grid('g5',[c('Initial FL','FL'+(data.initFL||'')),c('Highest FL','FL'+(data.highFL||'')),c('Gnd dist (NM)',data.gndDist),c('Speed / CI','CI '+(data.speedCI||'')),c('TOC temp',data.tocTemp)]);
+  s1+=grid('g6',[c('Initial FL','FL'+(data.initFL||'')),c('Highest FL','FL'+(data.highFL||'')),c('Gnd dist (NM)',data.gndDist),c('Speed / CI','CI '+(data.speedCI||'')),c('TOC temp',data.tocTemp),c('Lowest tropo',data.tropo?data.tropo.fl:'—')]);
   s1+=sec('Wind shear — cruise-level SR > 4');
   const sw=data.shearWin;
   if(sw && !sw.none && sw.onset){
@@ -1066,18 +1133,19 @@ function build(data){
     s1+=`<div class="body"><p class="item">${esc(data.remarks).replace(/\n/g,'<br>')}</p></div>`;
   }
   s1+=sec('Weights (kg) — estimated vs limit');
-  s1+=grid('g3',[c('EZFW / MZFW '+(data.mzfw||''),data.ezfw),c('ETOW / MTOW '+(data.mtow||''),data.etow),c('ELW / MLWT '+(data.mlwt||''),data.elwt)]);
-  if(data.towOver!==null){
-    const over=data.towOver; const marg=(data.mtow&&data.etow)?Math.abs(+data.mtow-+data.etow):'';
-    s1+=`<div class="flag"><span class="chip ${over?'r':'g'}">${over?'YES — OVER MTOW':'NO — within MTOW'}</span>
-      ETOW ${esc(data.etow)} vs MTOW ${esc(data.mtow)} &mdash; margin ${esc(marg)} kg ${over?'OVER':'under'} limit.</div>`;
-    if(over) s1+=`<div class="flag" style="background:#fbe0e0;border-color:#d9433f;color:#7a1414"><b><svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px;fill:none;stroke:#7a1414;stroke-width:2.2;stroke-linejoin:round"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><circle cx="12" cy="17.4" r="1" fill="#7a1414" stroke="none"/></svg> CAUTION</b> — estimated take-off weight is ABOVE MTOW. Re-check loadsheet / fuel before departure.</div>`;
-  }
-  if(data.elwOver!==null){
-    const over=data.elwOver; const marg=(data.mlwt&&data.elwt)?Math.abs(+data.mlwt-+data.elwt):'';
-    s1+=`<div class="flag"><span class="chip ${over?'r':'g'}">${over?'YES — OVWT':'NO — within limit'}</span>
-      ELW ${esc(data.elwt)} vs MLWT ${esc(data.mlwt)} &mdash; margin ${esc(marg)} kg ${over?'OVER':'under'} limit.</div>`;
-    if(over) s1+=`<div class="flag" style="background:#fbe0e0;border-color:#d9433f;color:#7a1414"><b><svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px;fill:none;stroke:#7a1414;stroke-width:2.2;stroke-linejoin:round"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><circle cx="12" cy="17.4" r="1" fill="#7a1414" stroke="none"/></svg> CAUTION</b> — estimated landing weight is ABOVE MLWT. Re-check arrival fuel / loadsheet.</div>`;
+  s1+=`<div class="body"><div class="grid g3">`+
+    wcell('EZFW / MZFW',data.ezfw,data.mzfw)+
+    wcell('ETOW / MTOW',data.etow,data.mtow)+
+    wcell('ELW / MLWT',data.elwt,data.mlwt)+
+  `</div></div>`;
+  // Single line below the boxes: ETOW vs Max Landing Weight (overweight-landing / immediate-return margin), same colour scheme.
+  const wEM=wStatus(data.etow,data.mlwt);
+  if(wEM){
+    const lab=wEM.over?'ABOVE MLW':(wEM.cls==='a'?'< 1000 kg margin':'within MLW');
+    s1+=`<div class="flag"><span class="chip ${wEM.cls}">${esc(lab)}</span> `+
+      `ETOW ${esc(data.etow)} vs MLW ${esc(data.mlwt)} &mdash; `+
+      (wEM.over?`${esc(Math.abs(wEM.diff))} kg ABOVE max landing weight (overweight for an immediate return/landing).`
+              :`${esc(wEM.diff)} kg below max landing weight.`)+`</div>`;
   }
   s1+=sec('Times (UTC)');
   s1+=grid('g4',[c('STD / dep',data.std),c('STA / arr',data.sta),c('Block time',fmtHHMM(data.blk)),c('Trip time',fmtHHMM(data.tripT))]);
@@ -1231,6 +1299,17 @@ function sec(t){return `<div class="sec">${esc(t)}</div>`;}
 function grid(cls,cells){return `<div class="body"><div class="grid ${cls}">${cells.join('')}</div></div>`;}
 function c(label,val,hl){return `<div class="cell"><label>${esc(label)}</label><input class="${hl?'hl':''}" value="${esc(val==null?'':val)}"></div>`;}
 function foot(l,r){return `<div class="foot"><span>${esc(l)}</span><span>${esc(r)}</span></div>`;}
+// Weight cell coloured vs its limit: green if margin >1000kg, amber if <1000kg, red if over.
+function wStatus(val,lim){const v=parseFloat(val),L=parseFloat(lim);if(isNaN(v)||isNaN(L))return null;const diff=L-v;return{cls:v>L?'r':(diff<1000?'a':'g'),diff,over:v>L};}
+function wcell(label,val,lim){
+  const w=wStatus(val,lim);
+  const border=w?(w.cls==='r'?'#d9433f':w.cls==='a'?'#d99a1f':'#2e9e5b'):'var(--line)';
+  const tag=w?(w.over?('OVER +'+Math.abs(w.diff)):(w.cls==='a'?(w.diff+' margin'):(w.diff+' under'))):'';
+  return `<div class="cell" style="border-left:4px solid ${border};padding-left:7px">`+
+    `<label>${esc(label)} (max ${esc(lim||'?')})</label>`+
+    `<div style="display:flex;align-items:center;gap:6px"><input class="hl" style="flex:1;min-width:0" value="${esc(val==null?'':val)}">`+
+    (w?`<span class="chip ${w.cls}" style="white-space:nowrap">${esc(tag)}</span>`:'')+`</div></div>`;
+}
 function fmtHHMM(v){if(!v)return'';v=String(v);if(v.includes(':'))return v;if(v.length<=2)return v;
   return v.slice(0,-2)+':'+v.slice(-2);}
 function tz(icao){
@@ -1279,20 +1358,29 @@ function generate(){
     const opts={known:'',qseats:0};
     const data=parseOFP(text,opts);
     build(data);
-    const ib=document.getElementById('identbar'), ii=document.getElementById('identInfo');
-    if(ib&&ii){ ib.classList.remove('empty');
-      ii.innerHTML=`<span>ATC <b>${esc(data.atcCs||'—')}</b></span><span>Flt <b>${esc(data.fltCs||'—')}</b></span>`+
-        `<span><b>${esc(data.dep||'?')}</b> &rarr; <b>${esc(data.dest||'?')}</b></span><span>${esc(data.date||'')}</span><span>OFP ${esc(data.ofpNo||'')}</span>`; }
     try{localStorage.setItem('sm_ofptext',text);}catch(e){}
     document.getElementById('tb').style.display='flex';
     document.getElementById('subnav').style.display='flex';
     setMsg('Briefing generated. Review fields, then Print / Save as PDF.','ok');
     window.__OFP=data;
+    if(window.__renderIdent)window.__renderIdent();
     window.dispatchEvent(new CustomEvent('ofp-parsed'));
     const oOfp=document.getElementById('out-ofp');
     if(oOfp&&oOfp.scrollIntoView) oOfp.scrollIntoView({behavior:'smooth',block:'start'});
   }catch(e){setMsg('Parse error: '+e.message,'err');console.error(e);}
 }
+// Ident bar: full identity (ATC + Flt QR + route/date/OFP) on the OFP-briefing & PA pages; only the ATC callsign (QTR) + route/date elsewhere.
+window.__renderIdent=function(){
+  const ib=document.getElementById('identbar'), ii=document.getElementById('identInfo');
+  const d=window.__OFP; if(!ib||!ii||!d) return;
+  ib.classList.remove('empty');
+  const active=document.querySelector('.view.active'); const v=active?active.id:'';
+  const full=(v==='view-briefing'||v==='view-pa');
+  const route=`<span><b>${esc(d.dep||'?')}</b> &rarr; <b>${esc(d.dest||'?')}</b></span><span>${esc(d.date||'')}</span>`;
+  ii.innerHTML = full
+    ? `<span>ATC <b>${esc(d.atcCs||'—')}</b></span><span>Flt <b>${esc(d.fltCs||'—')}</b></span>`+route+`<span>OFP ${esc(d.ofpNo||'')}</span>`
+    : `<span>Callsign <b>${esc(d.atcCs||'—')}</b></span>`+route;
+};
 document.getElementById('go').onclick=generate;
 document.getElementById('print').onclick=()=>window.print();
 document.getElementById('print2').onclick=()=>window.print();
@@ -1300,9 +1388,26 @@ document.getElementById('reset').onclick=()=>{try{localStorage.removeItem('sm_of
 
 /* keep the screen awake while the app is in front */
 var __wakeLock=null;
-async function requestWake(){try{if('wakeLock' in navigator){__wakeLock=await navigator.wakeLock.request('screen');}}catch(e){}}
+async function requestWake(){try{if('wakeLock' in navigator){__wakeLock=await navigator.wakeLock.request('screen');if(__wakeLock&&__wakeLock.addEventListener)__wakeLock.addEventListener('release',function(){__wakeLock=null;});}}catch(e){__wakeLock=null;}}
+function ensureWake(){if(!__wakeLock)requestWake();}
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')requestWake();});
+['pointerdown','touchend','keydown'].forEach(function(ev){document.addEventListener(ev,ensureWake,{passive:true});});
 requestWake();
+
+/* Ask the browser to keep our data (localStorage + IndexedDB) even under storage pressure / after the app is killed. */
+try{ if(navigator.storage && navigator.storage.persist){ navigator.storage.persisted().then(function(p){ if(!p) navigator.storage.persist(); }).catch(function(){}); } }catch(e){}
+
+/* Shared whiteboard — accessible from every page, saved on this device */
+(function(){
+  var fab=document.getElementById('wbFab'), modal=document.getElementById('wbModal'),
+      ta=document.getElementById('wbText'), close=document.getElementById('wbClose'), msg=document.getElementById('wbMsg');
+  if(!fab||!modal||!ta) return;
+  try{var v=localStorage.getItem('sm_wb'); if(v)ta.value=v;}catch(e){}
+  fab.addEventListener('click',function(){modal.classList.add('open');setTimeout(function(){ta.focus();},50);});
+  close.addEventListener('click',function(){modal.classList.remove('open');});
+  modal.addEventListener('click',function(e){if(e.target===modal)modal.classList.remove('open');});
+  ta.addEventListener('input',function(){try{localStorage.setItem('sm_wb',ta.value);}catch(e){} if(msg){msg.textContent='Saved ✓';setTimeout(function(){if(msg.textContent==='Saved ✓')msg.textContent='';},1200);}});
+})();
 
 document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('#subnav button').forEach(x=>x.classList.remove('active'));
@@ -1312,13 +1417,34 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
 }));
 
 (function(){
-  document.querySelectorAll('#topnav button').forEach(b=>b.addEventListener('click',()=>{
+  const VIEWS=['briefing','dg','disp','rest','pa'];
+  function goView(v){
+    const btn=document.querySelector('#topnav button[data-v="'+v+'"]'); if(!btn)return;
     document.querySelectorAll('#topnav button').forEach(x=>x.classList.remove('active'));
     document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
-    b.classList.add('active');
-    document.getElementById('view-'+b.dataset.v).classList.add('active');
+    btn.classList.add('active');
+    document.getElementById('view-'+v).classList.add('active');
     window.scrollTo({top:0,behavior:'smooth'});
-  }));
+    if(window.__renderIdent)window.__renderIdent();
+    try{localStorage.setItem('sm_view',v);}catch(e){}
+  }
+  window.__goView=goView;
+  document.querySelectorAll('#topnav button').forEach(b=>b.addEventListener('click',()=>goView(b.dataset.v)));
+  try{const sv=localStorage.getItem('sm_view'); if(sv&&VIEWS.indexOf(sv)>=0&&document.querySelector('#topnav button[data-v="'+sv+'"]')) goView(sv);}catch(e){}
+  function curView(){const a=document.querySelector('.view.active');return a?a.id.replace('view-',''):'briefing';}
+  function shiftView(dir){const i=VIEWS.indexOf(curView());if(i<0)return;const j=Math.min(VIEWS.length-1,Math.max(0,i+dir));if(j!==i)goView(VIEWS[j]);}
+  // Swipe left / right anywhere to change pages (ignores swipes on inputs, modals, lock, tables, the route map)
+  let __tsx=null,__tsy=null;
+  document.addEventListener('touchstart',e=>{if(e.touches.length===1){__tsx=e.touches[0].clientX;__tsy=e.touches[0].clientY;}},{passive:true});
+  document.addEventListener('touchend',e=>{
+    const sx=__tsx,sy=__tsy; __tsx=null; if(sx==null)return;
+    const t=e.changedTouches[0]; const dx=t.clientX-sx, dy=t.clientY-sy;
+    if(Math.abs(dx)<70 || Math.abs(dx)<=Math.abs(dy)*1.8) return;
+    if(document.querySelector('.modalwrap.open')) return;
+    const lk=document.getElementById('lockScreen'); if(lk&&getComputedStyle(lk).display!=='none') return;
+    const tg=e.target; if(tg&&tg.closest&&tg.closest('input,textarea,select,button,.raw,table,svg,#routeMap')) return;
+    shiftView(dx<0?1:-1);
+  },{passive:true});
 
   const $=id=>document.getElementById(id);
   const toM=hhmm=>{if(!hhmm)return null;const p=hhmm.split(':');return (+p[0])*60+(+p[1]);};
@@ -1332,13 +1458,21 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
   const fv=(a,b)=>a!=null?a:b;
   const rawHHMM=v=>{if(v==null||v==='')return'';v=String(v);if(v.includes(':'))return v;v=v.replace(/\D/g,'').padStart(4,'0');return v.slice(0,2)+':'+v.slice(2,4);};
 
-  let netOffset=0, netSrc='device';
+  // Internet-synced UTC: utcNow() shows true UTC (device clock + measured offset). Divergence vs the device clock is flagged.
+  let netOffset=0, netSrc='device', __windSlot='', __netTried=0;
   function utcNow(){return new Date(Date.now()+netOffset);}
+  // serverMs = server's UTC at the moment it answered; t0 = local time just before the request. Compensate for ~half the round-trip and reject absurd values.
+  function setNet(serverMs,t0){ if(serverMs&&!isNaN(serverMs)){ const mid=t0+(Date.now()-t0)/2; const off=serverMs-mid; if(Math.abs(off)<12*3600*1000){ netOffset=off; netSrc='internet'; } } }
   function fetchNetTime(){
-    fetch('https://worldtimeapi.org/api/timezone/Etc/UTC',{cache:'no-store'})
-      .then(r=>r.json()).then(j=>{const ms=j&&(j.unixtime?j.unixtime*1000:(j.utc_datetime?Date.parse(j.utc_datetime):NaN));if(ms&&!isNaN(ms)){netOffset=ms-Date.now();netSrc='internet';}})
-      .catch(()=>{fetch('https://timeapi.io/api/Time/current/zone?timeZone=UTC',{cache:'no-store'})
-        .then(r=>r.json()).then(j=>{const ms=j&&j.dateTime?Date.parse(j.dateTime+'Z'):NaN;if(ms&&!isNaN(ms)){netOffset=ms-Date.now();netSrc='internet';}}).catch(()=>{});});
+    // Try several CORS-friendly sources; the first to answer wins. Independent of the (possibly wrong) device clock.
+    let t0=Date.now();
+    fetch('https://www.cloudflare.com/cdn-cgi/trace',{cache:'no-store'}).then(r=>r.text()).then(t=>{
+      const m=/ts=([0-9.]+)/.exec(t); if(m){setNet(Math.round(parseFloat(m[1])*1000),t0);return;} throw 0;
+    }).catch(()=>{ t0=Date.now(); return fetch('https://timeapi.io/api/Time/current/zone?timeZone=UTC',{cache:'no-store'}).then(r=>r.json()).then(j=>{
+      const ms=j&&j.dateTime?Date.parse(j.dateTime+(/[Zz]$/.test(j.dateTime)?'':'Z')):NaN; if(!isNaN(ms))setNet(ms,t0); else throw 0;
+    }); }).catch(()=>{ t0=Date.now(); return fetch('https://worldtimeapi.org/api/timezone/Etc/UTC',{cache:'no-store'}).then(r=>r.json()).then(j=>{
+      const ms=j&&(j.unixtime?j.unixtime*1000:(j.utc_datetime?Date.parse(j.utc_datetime):NaN)); if(ms&&!isNaN(ms))setNet(ms,t0);
+    }); }).catch(()=>{});
   }
   const pad2=n=>String(n).padStart(2,'0');
   const MON3=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -1348,24 +1482,29 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
     el.textContent=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes())+':'+pad2(n.getUTCSeconds())+'Z';
     $('clkDate').textContent=DOW[n.getUTCDay()]+' '+pad2(n.getUTCDate())+' '+MON3[n.getUTCMonth()]+' '+n.getUTCFullYear()+' (UTC)';
     const ic=$('identClock'); if(ic) ic.textContent=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes())+':'+pad2(n.getUTCSeconds())+'Z';
-    // Internet-vs-device divergence: flash red + warn if off by >1 min or the date differs
-    const dev=new Date();
-    const diffMs=Math.abs(netOffset);
+    const cc=$('clkCall'); if(cc) cc.textContent=(typeof OFP!=='undefined'&&OFP&&OFP.atcCs)?('Callsign '+OFP.atcCs):'';
+    // Internet-vs-device divergence: flash the clock + warn if the iPad clock is off by >1 min or the date differs.
+    const diffMs=Math.abs(netOffset); const dev=new Date();
     const dateDiff=(n.getUTCFullYear()!==dev.getUTCFullYear()||n.getUTCMonth()!==dev.getUTCMonth()||n.getUTCDate()!==dev.getUTCDate());
     const diverged=(netSrc==='internet')&&(diffMs>60000||dateDiff);
-    el.classList.toggle('clkbad',diverged);
+    el.classList.toggle('clkbad',diverged); if(ic)ic.classList.toggle('clkbad',diverged);
     const w=$('clkWarn');
     if(w){
       if(diverged){
         const secs=Math.round(diffMs/1000), mins=Math.floor(secs/60);
         const off=mins>=1?(mins+' min'+(secs%60?(' '+(secs%60)+'s'):'')):(secs+'s');
         w.style.display='block';
-        w.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><circle cx="12" cy="17.4" r="1" fill="currentColor" stroke="none"/></svg> Your device clock is off by '+off+(dateDiff?' and the DATE differs':'')+' from internet UTC. The time shown is internet UTC — fix your device date &amp; time to keep captured takeoff/landing times accurate.';
-      } else { w.style.display='none'; }
+        w.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><circle cx="12" cy="17.4" r="1" fill="currentColor" stroke="none"/></svg> Your iPad clock is off by '+off+(dateDiff?' and the DATE differs':'')+' from actual UTC. The time shown is internet UTC — set the iPad to the correct date &amp; time (Settings → General → Date &amp; Time → Set Automatically) so captured takeoff/landing times are accurate.';
+      } else w.style.display='none';
     }
-    const s=$('clkSrc'); if(s){s.textContent=netSrc==='internet'?'internet time ✓':'device clock (offline)'; s.className='src'+(netSrc==='internet'?' net':'');}
+    const s=$('clkSrc'); if(s){s.textContent=netSrc==='internet'?'internet UTC ✓':'device clock (no internet yet)'; s.className='src'+(netSrc==='internet'?' net':'');}
+    // Wind-update reminder at 0000 / 0600 / 1200 / 1800 UTC
+    if(n.getUTCMinutes()===0 && n.getUTCHours()%6===0){
+      const slot=n.getUTCFullYear()+'-'+n.getUTCMonth()+'-'+n.getUTCDate()+'-'+n.getUTCHours();
+      if(__windSlot!==slot){ __windSlot=slot; const wp=$('windPop'); if(wp){const tt=$('windPopTxt'); if(tt)tt.textContent='Winds update — the '+pad2(n.getUTCHours())+'00Z forecast is now valid. Refresh your winds / OFP.'; wp.style.display='flex';} }
+    }
   }
-  fetchNetTime(); setInterval(fetchNetTime,600000);
+  fetchNetTime(); setInterval(fetchNetTime,300000);
 
   document.querySelectorAll('#dispnav button').forEach(b=>b.addEventListener('click',()=>{
     document.querySelectorAll('#dispnav button').forEach(x=>x.classList.remove('active'));
@@ -1638,6 +1777,7 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
 
   function calcDisplay(){
     updateClock();
+    try{updateNav();}catch(e){}
     const to=toM($('d_to').value), tm=tripMin(), trip=toM($('d_trip').value);
     const now=utcNow(), nowMin=now.getUTCHours()*60+now.getUTCMinutes()+now.getUTCSeconds()/60;
     $('utcnow').textContent=fmt(nowMin);
@@ -1684,32 +1824,99 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
   $('d_to').addEventListener('input',()=>{$('r_to').value=$('d_to').value;autoRest();buildChecks();calcRest();calcDisplay();});
   $('d_toStart').addEventListener('click',()=>{const n=utcNow();$('d_to').value=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes());$('r_to').value=$('d_to').value;autoRest();buildChecks();calcRest();calcDisplay();});
 
-  /* GPS auto-capture: takeoff when ground speed >100 kt, landing when <100 kt */
-  let gpsWatch=null,gpsPhase='ground',gpsArmed=false,gpsSeenSlow=false;
+  /* GPS auto-capture: T/O when ground speed >100 kt, LDG when <100 kt. Armed by default; survives backgrounding; LDG fires even if takeoff was set manually. */
+  let gpsWatch=null,gpsPhase='ground',gpsArmed=false,gpsSeenSlow=false,gpsPos=null;
   function setGpsHint(t){const e=$('gpsHint');if(e)e.textContent=t;}
   function gpsTick(pos){
+    if(pos.coords && pos.coords.latitude!=null && !isNaN(pos.coords.latitude)) gpsPos={lat:pos.coords.latitude,lon:pos.coords.longitude};
     const sp=pos.coords.speed;
-    if(sp==null||isNaN(sp)){$('gpsSpd').value='no speed fix';return;}
-    const kt=sp*1.94384; $('gpsSpd').value=Math.round(kt)+' kt';
-    if(kt<100)gpsSeenSlow=true;
-    if(gpsPhase==='ground'&&gpsSeenSlow&&kt>100){
-      const n=utcNow();$('d_to').value=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes());$('r_to').value=$('d_to').value;
-      gpsPhase='air';autoRest();buildChecks();calcRest();calcDisplay();if(typeof saveState==='function')saveState();
-      setGpsHint('Takeoff captured '+$('d_to').value+'Z (>100 kt). Watching for landing.');
-    } else if(gpsPhase==='air'&&kt<100){
-      const n=utcNow();$('gpsLdg').value=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes());
-      gpsPhase='landed';if(typeof saveState==='function')saveState();
-      setGpsHint('Landing captured '+$('gpsLdg').value+'Z (<100 kt).');
+    const spd=$('gpsSpd');
+    if(sp==null||isNaN(sp)){if(spd)spd.value='no speed fix';return;}
+    const kt=sp*1.94384; if(spd)spd.value=Math.round(kt)+' kt';
+    if(kt>=100){
+      if(gpsPhase!=='air'){
+        if(gpsSeenSlow && !$('d_to').value){
+          const n=utcNow();$('d_to').value=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes());$('r_to').value=$('d_to').value;
+          autoRest();buildChecks();calcRest();calcDisplay();if(typeof saveState==='function')saveState();
+          setGpsHint('Takeoff captured '+$('d_to').value+'Z (>100 kt). Watching for landing.');
+        } else setGpsHint('Airborne (>100 kt) — watching for landing.');
+        gpsPhase='air';
+      }
+    } else { // below 100 kt
+      if(gpsPhase==='air'){
+        const n=utcNow();$('gpsLdg').value=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes());
+        gpsPhase='landed';if(typeof saveState==='function')saveState();if(typeof recalcBlock==='function')recalcBlock();
+        setGpsHint('Landing captured '+$('gpsLdg').value+'Z (<100 kt).');
+      } else if(gpsPhase==='ground'){ gpsSeenSlow=true; }
     }
   }
-  function gpsErr(e){setGpsHint('GPS error: '+(e&&e.message?e.message:'no fix')+'. Use the manual START / LDG buttons instead.');}
-  $('gpsLdgStart').addEventListener('click',()=>{const n=utcNow();$('gpsLdg').value=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes());if(typeof saveState==='function')saveState();});
-  $('gpsArm').addEventListener('click',()=>{
-    if(gpsArmed){ if(gpsWatch!=null&&navigator.geolocation)navigator.geolocation.clearWatch(gpsWatch); gpsWatch=null;gpsArmed=false;$('gpsArm').textContent='Arm GPS';setGpsHint('GPS auto-capture off.'); return; }
-    if(!navigator.geolocation){setGpsHint('Geolocation not available in this browser.');return;}
-    gpsArmed=true;gpsPhase='ground';gpsSeenSlow=false;$('gpsArm').textContent='Disarm GPS';setGpsHint('GPS armed — waiting for a fix… stamps T/O >100 kt, LDG <100 kt.');
-    gpsWatch=navigator.geolocation.watchPosition(gpsTick,gpsErr,{enableHighAccuracy:true,maximumAge:1000,timeout:30000});
+  function gpsErr(e){setGpsHint('GPS: '+(e&&e.message?e.message:'no fix yet')+' — manual START / LDG buttons still work.');}
+  function gpsStartWatch(){ if(!navigator.geolocation)return; if(gpsWatch!=null)navigator.geolocation.clearWatch(gpsWatch); gpsWatch=navigator.geolocation.watchPosition(gpsTick,gpsErr,{enableHighAccuracy:true,maximumAge:1000,timeout:30000}); }
+  function gpsArmOn(reset){ if(!navigator.geolocation){setGpsHint('Geolocation not available in this browser.');return;} gpsArmed=true; if(reset){gpsPhase='ground';gpsSeenSlow=false;} $('gpsArm').textContent='Disarm GPS'; setGpsHint('GPS armed — waiting for a fix… stamps T/O >100 kt, LDG <100 kt.'); gpsStartWatch(); }
+  function gpsArmOff(){ gpsArmed=false; if(gpsWatch!=null&&navigator.geolocation)navigator.geolocation.clearWatch(gpsWatch); gpsWatch=null; $('gpsArm').textContent='Arm GPS'; setGpsHint('GPS auto-capture off.'); }
+  $('gpsLdgStart').addEventListener('click',()=>{const n=utcNow();$('gpsLdg').value=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes());if(typeof saveState==='function')saveState();if(typeof recalcBlock==='function')recalcBlock();});
+  $('gpsArm').addEventListener('click',()=>{ gpsArmed?gpsArmOff():gpsArmOn(true); });
+  // Armed by default, and re-acquire the watch when the app returns from the background (iOS suspends watchPosition).
+  gpsArmOn(true);
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && gpsArmed) gpsStartWatch(); });
+
+  /* ---- Live: distance flown / to go + next waypoint vs OFP plan ---- */
+  function updateNav(){
+    const O=window.__OFP;
+    if(!gpsPos||!O||!O.routeWps||O.routeWps.length<2){ return; }
+    const wps=O.routeWps, tot=O.routeTotNM||0; if(!tot){return;}
+    let ni=0,nd=1e9;
+    for(let i=0;i<wps.length;i++){const d=gcNM(gpsPos.lat,gpsPos.lon,wps[i].lat,wps[i].lon);if(d<nd){nd=d;ni=i;}}
+    const dest=wps[wps.length-1];
+    const dDestNow=gcNM(gpsPos.lat,gpsPos.lon,dest.lat,dest.lon);
+    const dDestNear=gcNM(wps[ni].lat,wps[ni].lon,dest.lat,dest.lon);
+    let flown,nextIdx;
+    if(dDestNow<dDestNear){ flown=wps[ni].cumNM+gcNM(wps[ni].lat,wps[ni].lon,gpsPos.lat,gpsPos.lon); nextIdx=Math.min(ni+1,wps.length-1); }
+    else { flown=wps[ni].cumNM-gcNM(wps[ni].lat,wps[ni].lon,gpsPos.lat,gpsPos.lon); nextIdx=ni; }
+    flown=Math.max(0,Math.min(tot,flown)); const toGo=Math.max(0,tot-flown);
+    const nx=wps[nextIdx], distNext=gcNM(gpsPos.lat,gpsPos.lon,nx.lat,nx.lon);
+    const trip=(O.tripT?(+String(O.tripT).padStart(4,'0').slice(0,2)*60 + +String(O.tripT).padStart(4,'0').slice(2)):null);
+    const to=toM($('d_to').value);
+    const fracNext=nx.cumNM/tot, fracFlown=flown/tot;
+    let etaTxt='--:--';
+    if(trip!=null&&to!=null) etaTxt=fmt(addT(to,Math.round(trip*fracNext)));
+    else if(nx.elapsed!=null&&to!=null) etaTxt=fmt(addT(to,nx.elapsed));
+    let fuelTxt='--';
+    const ramp=parseFloat(O.fRamp),taxi=parseFloat(O.fTaxi)||0,tripF=parseFloat(O.fTrip);
+    if(!isNaN(ramp)&&!isNaN(tripF)){ fuelTxt=Math.max(0,Math.round((ramp-taxi)-tripF*fracNext))+' kg'; }
+    let skedTxt='--';
+    if(trip!=null&&to!=null&&flown>5){ const now=utcNow(); const nowMin=now.getUTCHours()*60+now.getUTCMinutes()+now.getUTCSeconds()/60; const act=signed(to,nowMin); if(act!=null){ const dl=Math.round(act-trip*fracFlown); skedTxt=dl===0?'on plan':(dl>0?('+'+dl+' min late'):(Math.abs(dl)+' min early')); } }
+    const set=(id,v)=>{const e=$(id);if(e)e.textContent=v;};
+    set('n_flown',Math.round(flown)); set('n_togo',Math.round(toGo)); set('n_next',nx.name||'--');
+    set('n_nextd',Math.round(distNext)); set('n_eta',etaTxt); set('n_fuel',fuelTxt); set('n_sked',skedTxt);
+    const nh=$('navHint'); if(nh) nh.textContent='Live GPS vs OFP plan. Planned ETA & fuel interpolated from OFP totals by distance.';
+  }
+
+  /* ---- Live: airport weather / D-ATIS / NOTAM lookup ---- */
+  function wxShow(t){const o=$('wxOut');if(o){o.style.display='block';o.textContent=t;}}
+  function wxIc(){let v=(($('wxIcao')||{}).value||'').trim().toUpperCase();if(!v && typeof OFP!=='undefined' && OFP && OFP.dest)v=OFP.dest;return v;}
+  if($('wxGet'))$('wxGet').addEventListener('click',()=>{
+    const ic=wxIc(); if(!/^[A-Z]{4}$/.test(ic)){wxShow('Enter a 4-letter ICAO code.');return;}
+    wxShow('Fetching METAR / TAF for '+ic+'…');
+    fetch('https://aviationweather.gov/api/data/metar?ids='+ic+'&format=raw').then(r=>r.text()).then(metar=>
+      fetch('https://aviationweather.gov/api/data/taf?ids='+ic+'&format=raw').then(r=>r.text()).then(taf=>{
+        wxShow('METAR '+ic+':\n'+((metar||'').trim()||'(none)')+'\n\nTAF '+ic+':\n'+((taf||'').trim()||'(none)'));
+      })).catch(e=>wxShow('Could not fetch weather (needs internet; source may block cross-origin): '+e.message));
   });
+  if($('wxAtis'))$('wxAtis').addEventListener('click',()=>{
+    const ic=wxIc(); if(!/^[A-Z]{4}$/.test(ic)){wxShow('Enter a 4-letter ICAO code.');return;}
+    wxShow('Fetching D-ATIS for '+ic+'…');
+    fetch('https://datis.clowd.io/api/'+ic).then(r=>r.json()).then(j=>{
+      if(Array.isArray(j)&&j.length&&j[0].datis){ wxShow('D-ATIS '+ic+':\n\n'+j.map(a=>(a.type?('['+a.type.toUpperCase()+'] '):'')+a.datis).join('\n\n')); }
+      else { wxShow('D-ATIS not available for '+ic+((j&&j.error)?(' ('+j.error+')'):'')+'.\nD-ATIS coverage is mainly US and selected international airports.'); }
+    }).catch(e=>wxShow('Could not fetch D-ATIS (needs internet): '+e.message));
+  });
+  if($('wxNotam'))$('wxNotam').addEventListener('click',()=>{
+    const ic=wxIc(); if(!/^[A-Z]{4}$/.test(ic)){wxShow('Enter a 4-letter ICAO code.');return;}
+    window.open('https://www.notams.faa.gov/dinsQueryWeb/queryRetrievalMapAction.do?reportType=Raw&retrieveLocId='+ic+'&actionType=notamRetrievalbyICAOs','_blank');
+    wxShow('Opening official NOTAMs for '+ic+' in a new tab (FAA NOTAM search). Your OFP’s own NOTAMs are on the Briefing → NOTAMs sub-tab.');
+  });
+  window.addEventListener('ofp-parsed',()=>{const el=$('wxIcao'); if(el && !el.value && window.__OFP && window.__OFP.dest) el.value=window.__OFP.dest;});
   /* ---- DOCS: documents stored on-device (IndexedDB), persist until removed ---- */
   let DOCDB=null;
   function docOpen(cb){
@@ -1792,12 +1999,14 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
     const myName=speaker==='Captain'?(capt||'[CAPTAIN]'):(fo||'[FO]');
     const other=speaker==='Captain'?(fo||'[FO]'):(capt||'[CAPTAIN]');
     const dest=pv('p_destn','[DESTINATION_NAME]');
+    const _sr=(typeof OFP!=='undefined'&&OFP&&OFP.shearMax)?parseFloat(OFP.shearMax.sr):NaN;
+    const turb=isNaN(_sr)?'some light turbulence':(_sr>4?`moderate turbulence (forecast shear SR ${OFP.shearMax.sr})`:`light turbulence (forecast shear SR ${OFP.shearMax.sr})`);
     let t;
     if(paMode==='welcome'){
       t=`Good ${g}, ladies and gentlemen.\n\n`+
       `This is your ${speaker} speaking. My name is ${myName}. On behalf of Qatar Airways and all the crew, I would like to welcome you on board this ${pv('p_ac','[AIRCRAFT]')}, flight ${pv('p_no','[NUMBER]')} to ${dest}.\n\n`+
       `Beside me here on the Flight Deck is ${other}. And looking after your safety and comfort in the cabin today are CSD / CS ${pv('p_csd','[CSDNAME]')}, and our award-winning team.\n\n`+
-      `Our flight time today is ${pv('p_dur','[DURATION]')}, and we will be cruising at an altitude of ${pv('p_fl','[FL]')}. We're expecting generally good weather en route. (However, we may experience some light turbulence after departure / during the flight).\n\n`+
+      `Our flight time today is ${pv('p_dur','[DURATION]')}, and we will be cruising at an altitude of ${pv('p_fl','[FL]')}. We're expecting generally good weather en route. However, we may experience ${turb} during the flight.\n\n`+
       `For your safety, please keep your seatbelt fastened at all times, even when the seatbelt signs are switched off.\n\n`+
       `Before we begin our descent into ${dest}, I'll update you with the latest weather and arrival information.\n\n`+
       `Until then, please make yourself comfortable and enjoy our world-class service.\n\n`+
@@ -1821,6 +2030,15 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
     const done=()=>{const c=$('paCopied');c.textContent='Copied ✓';setTimeout(()=>c.textContent='',1500);};
     if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(done,done);else done();
   });
+  /* ---- PA: personal announcements (saved on this device, available every flight) ---- */
+  (function(){
+    const ta=$('p_custom'); if(!ta) return;
+    try{const v=localStorage.getItem('sm_pa_custom');if(v)ta.value=v;}catch(e){}
+    const flash=t=>{const m=$('p_customMsg');if(m){m.textContent=t;setTimeout(()=>{if(m.textContent===t)m.textContent='';},1500);}};
+    ta.addEventListener('input',()=>{try{localStorage.setItem('sm_pa_custom',ta.value);}catch(e){}flash('Saved ✓');});
+    $('p_customCopy').addEventListener('click',()=>{const done=()=>flash('Copied ✓');if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(ta.value).then(done,done);else done();});
+    $('p_customFile').addEventListener('change',()=>{const f=$('p_customFile').files&&$('p_customFile').files[0];if(!f)return;const r=new FileReader();r.onload=()=>{ta.value=(ta.value?ta.value+'\n\n':'')+String(r.result||'');try{localStorage.setItem('sm_pa_custom',ta.value);}catch(e){}flash('Imported ✓');};r.readAsText(f);$('p_customFile').value='';});
+  })();
 
   $('p_shot').addEventListener('change',()=>{
     const f=$('p_shot').files&&$('p_shot').files[0]; if(!f)return;
@@ -1872,7 +2090,7 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
   const PERSIST_IDS=['d_to','d_trip','gpsLdg','r_to','r_type','r_start','r_end','r_gap',
     'dep_date','dep_fnum','dep_from','dep_to','dep_block','dep_ft','dep_fl','dep_std','dep_delay','dep_chocks','dep_zfw','dep_tow','dep_lwt','dep_atis','dep_rwy','dep_intx','dep_notes',
     'ar_atis','ar_tempc','ar_stand','ar_arrfuel','ar_freq','ar_mlwt','ar_lwt','ar_dispatch','ar_notes','ar_ata','ar_block',
-    'p_speaker','p_greet','p_capt','p_fo','p_csd','p_ac','p_no','p_destn','p_dur','p_fl','p_wx','p_tc'];
+    'p_speaker','p_greet','p_capt','p_fo','p_csd','p_ac','p_no','p_destn','p_dur','p_fl','p_wx','p_tc','wxIcao'];
   let saveTimer=null;
   function saveState(){clearTimeout(saveTimer);saveTimer=setTimeout(function(){
     try{const o={};PERSIST_IDS.forEach(id=>{const e=$(id);if(e&&e.value!=='')o[id]=e.value;});
@@ -1890,6 +2108,10 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
   window.__restoreState=restoreState;
   document.addEventListener('input',saveState,true);
   document.addEventListener('change',saveState,true);
+  // #44 — any entry change propagates instantly to related/derived fields across the app.
+  function syncAll(){try{calcDisplay();}catch(e){}try{buildPA();}catch(e){}try{if(typeof recalcBlock==='function')recalcBlock();}catch(e){}}
+  document.addEventListener('input',syncAll,true);
+  document.addEventListener('change',syncAll,true);
 
   calcRest(); buildPA();
   calcDisplay();
