@@ -704,14 +704,14 @@
    Leave it "" to set a per-device password on first use instead.
    (Still a client-side gate: deters casual access, not strong security.)
    ============================================================ */
-var APP_PASSWORD_HASH = "eca009a403a67ca3f6bb840b281e8d3b67340a16f81580c57559818aa694481d";
+var APP_PASSWORD_HASH = "d41c8abd2a10a194241323743517a388bc28b1255fdcd9ff5825791f5fe391dd";
 /* ADMIN-CONTROLLED password. The live hash comes from pw.json (the admin changes it via the
    Password Manager tool — changing it blocks every user until they enter the new password).
    The last hash seen is cached so the device keeps working offline; the baked-in hash is only
    the first-ever-launch fallback. The unlock check waits for this so it never uses a stale value. */
 try{var __ah=localStorage.getItem('sm_admin_hash'); if(__ah)APP_PASSWORD_HASH=__ah;}catch(e){}
 var __pwReady=Promise.race([
-  fetch('pw.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;})
+  fetch((location.protocol==='file:'?'https://captainmarinda.github.io/Mike-Briefing/pw.json':'pw.json')+'?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;})
     .then(function(j){if(j&&j.hash){APP_PASSWORD_HASH=j.hash;try{localStorage.setItem('sm_admin_hash',j.hash);}catch(e){}}}).catch(function(){}),
   new Promise(function(res){setTimeout(res,4000);})
 ]);
