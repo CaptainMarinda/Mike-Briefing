@@ -116,6 +116,11 @@
   nav.topnav button{background:transparent;border:0;border-bottom:3px solid transparent;color:#9FB3D1;padding:12px 14px;font-size:12.5px;font-weight:600;border-radius:0;white-space:nowrap}
   nav.topnav button:hover{background:#13203A;color:#cfe}
   nav.topnav button.active{color:#fff;border-bottom-color:var(--plum2)}
+  /* premium grouping: primary tabs bolder/brighter, with separators between groups */
+  nav.topnav button.primary{color:#dfeaff;font-weight:800;font-size:13.5px;letter-spacing:.2px}
+  nav.topnav button.primary .nico{width:18px;height:18px}
+  nav.topnav button.primary.active{color:#fff;background:linear-gradient(180deg,rgba(90,24,70,.0),rgba(90,24,70,.35));border-bottom-width:3px}
+  nav.topnav .navsep{flex:0 0 auto;align-self:center;width:1px;height:20px;background:#2a3c5e;margin:0 8px}
   .nico{width:16px;height:16px;vertical-align:-3px;margin-right:6px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .nico.fill{fill:currentColor;stroke:none}
   .bnico{width:18px;height:18px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-right:4px}
@@ -234,13 +239,13 @@
 </header>
 
 <nav class="topnav" id="topnav">
-  <button data-v="load" class="active"><svg class="nico" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>Load</button>
-  <button data-v="cl"><svg class="nico" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>C/L</button>
-  <button data-v="briefing"><svg class="nico" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></svg>OFP Briefing</button>
-  <button data-v="dg"><svg class="nico" viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><circle cx="12" cy="17.4" r="1" fill="currentColor" stroke="none"/></svg>Dangerous Goods</button>
-  <button data-v="disp"><svg class="nico fill" viewBox="0 0 24 24"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>Inflight Display</button>
-  <button data-v="rest"><svg class="nico" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>Inflight Rest</button>
-  <button data-v="pa"><svg class="nico" viewBox="0 0 24 24"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>PA Guide</button>
+  <button data-v="load" class="active"><svg class="nico" viewBox="0 0 24 24"><path d="M12 3v11"/><path d="M8 10l4 4 4-4"/><path d="M4 16v2a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-2"/></svg>Load</button>
+  <span class="navsep" aria-hidden="true"></span>
+  <button data-v="briefing" class="primary"><svg class="nico" viewBox="0 0 24 24"><path d="M7 3h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>OFP Briefing</button>
+  <button data-v="disp" class="primary"><svg class="nico fill" viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0 0 11.5 2 1.5 1.5 0 0 0 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>Inflight Display</button>
+  <span class="navsep" aria-hidden="true"></span>
+  <button data-v="cldg"><svg class="nico" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M8.5 12.5l2 2 4-4"/></svg>Checklist / DGR</button>
+  <button data-v="rest"><svg class="nico" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/><path d="M17 3l.7 1.8L19.5 5.5l-1.8.7L17 8l-.7-1.8L14.5 5.5l1.8-.7z"/></svg>Inflight Rest</button>
 </nav>
 <nav class="subnav" id="subnav" style="display:none">
   <button data-s="ofp" class="active">OFP</button>
@@ -272,18 +277,33 @@
     <button id="print2">Print / Save as PDF</button>
     <button id="reset" class="ghost">Load another OFP</button>
   </div>
-</div>
-
-<div class="wrap view" id="view-cl">
   <div class="fcard">
-    <h2>Checklist</h2>
-    <p class="fsub">Your own checklist — add items, tick them off. Saved on this device. Use <b>Reset ticks</b> before each flight.</p>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
-      <input id="cl_new" type="text" placeholder="Add a checklist item…" style="flex:1;min-width:180px">
-      <button id="cl_add" type="button">Add</button>
-      <button id="cl_reset" type="button" class="ghost">Reset ticks</button>
+    <h2>Crew roster (OCR)</h2>
+    <p class="fsub">Upload a roster screenshot to read crew names into the Welcome PA (Captain / FO / CSD).</p>
+    <input id="p_shot" type="file" accept="image/*">
+    <span class="hint" id="p_ocr"></span>
+  </div>
+  <div class="fcard">
+    <h2>My announcements</h2>
+    <p class="fsub" style="margin-top:2px">Your own PA scripts / notes — saved on this device, available every flight.</p>
+    <textarea id="p_custom" placeholder="Your personal announcements / notes…" style="min-height:150px;font-family:var(--sans);font-size:13px;color:#E6ECF5;width:100%"></textarea>
+    <div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <button id="p_customCopy" class="ghost">Copy</button>
+      <label class="ghost" style="cursor:pointer;padding:8px 14px;border-radius:8px;border:1px solid #2a3c5e">Import .txt<input id="p_customFile" type="file" accept=".txt,text/plain" style="display:none"></label>
+      <span class="hint" id="p_customMsg" style="margin-top:0"></span>
     </div>
-    <div id="cl_list"></div>
+    <div style="margin-top:14px;border-top:1px solid #20304f;padding-top:12px">
+      <label class="lab">Translate announcement</label>
+      <p class="fsub" style="margin-top:2px">Paste any announcement (or your own text), choose a language, and translate. Needs internet.</p>
+      <textarea id="tr_src" placeholder="Text to translate…" style="min-height:90px;width:100%;font-family:var(--sans);font-size:13px;color:#E6ECF5"></textarea>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
+        <select id="tr_lang"></select>
+        <button id="tr_go" type="button">Translate</button>
+        <button id="tr_copy" type="button" class="ghost">Copy result</button>
+        <span class="hint" id="tr_msg" style="margin-top:0"></span>
+      </div>
+      <textarea id="tr_out" readonly placeholder="Translation…" style="min-height:90px;width:100%;margin-top:8px;font-family:var(--sans);font-size:13px;color:#E6ECF5"></textarea>
+    </div>
   </div>
 </div>
 
@@ -294,18 +314,36 @@
   <div id="out-notam" class="subview"></div>
 </div>
 
-<div class="wrap view" id="view-dg">
-  <div class="fcard">
-    <h2>Dangerous Goods &mdash; Emergency Response</h2>
-    <p class="fsub">ICAO Emergency Response Guidance. Choose a hazard class and/or a drill letter from the menus to see the relevant response.</p>
-    <div class="fgrid">
-      <div class="feat-field"><label class="lab">Hazard class (drill code)</label>
-        <select id="dgClass"><option value="">— select hazard class —</option></select></div>
-      <div class="feat-field"><label class="lab">Drill letter</label>
-        <select id="dgLetter"><option value="">— select drill letter —</option></select></div>
+<div class="wrap view" id="view-cldg">
+  <nav class="subnav" id="cldgnav">
+    <button data-cd="cl" class="active">Checklist</button>
+    <button data-cd="dg">Dangerous Goods</button>
+  </nav>
+  <div class="subview2 active" id="cd-cl">
+    <div class="fcard">
+      <h2>Checklist</h2>
+      <p class="fsub">Your own checklist — add items, tick them off. Saved on this device. Use <b>Reset ticks</b> before each flight.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+        <input id="cl_new" type="text" placeholder="Add a checklist item…" style="flex:1;min-width:180px">
+        <button id="cl_add" type="button">Add</button>
+        <button id="cl_reset" type="button" class="ghost">Reset ticks</button>
+      </div>
+      <div id="cl_list"></div>
     </div>
-    <div id="dgClassDetail"></div>
-    <div id="dgLetterDetail"></div>
+  </div>
+  <div class="subview2" id="cd-dg">
+    <div class="fcard">
+      <h2>Dangerous Goods &mdash; Emergency Response</h2>
+      <p class="fsub">ICAO Emergency Response Guidance. Choose a hazard class and/or a drill letter from the menus to see the relevant response.</p>
+      <div class="fgrid">
+        <div class="feat-field"><label class="lab">Hazard class (drill code)</label>
+          <select id="dgClass"><option value="">— select hazard class —</option></select></div>
+        <div class="feat-field"><label class="lab">Drill letter</label>
+          <select id="dgLetter"><option value="">— select drill letter —</option></select></div>
+      </div>
+      <div id="dgClassDetail"></div>
+      <div id="dgLetterDetail"></div>
+    </div>
   </div>
 </div>
 
@@ -470,6 +508,11 @@
       </div>
       <p class="hint">A 5-minute count starts automatically at off-blocks (chocks-off / ATD). Sound + pop-up when complete.</p>
     </div>
+    <div class="fcard">
+      <h2>Cabin announcement</h2>
+      <button id="pa_welcome_btn" type="button" style="width:100%;padding:14px;font-size:16px;font-weight:700">Welcome PA <span id="paOfp" class="ofpchip off" style="margin-left:8px">no OFP loaded</span></button>
+      <p class="hint">Opens the Welcome announcement window — crew &amp; flight details auto-fill from the OFP.</p>
+    </div>
   </div>
 
   <div class="subview2" id="disp-arr">
@@ -509,6 +552,11 @@
       </div>
       <p class="hint">A 5-minute count starts automatically at landing. Sound + pop-up when complete.</p>
     </div>
+    <div class="fcard">
+      <h2>Cabin announcement</h2>
+      <button id="pa_descent_btn" type="button" style="width:100%;padding:14px;font-size:16px;font-weight:700">Descent PA</button>
+      <p class="hint">Opens the Descent announcement window — landing-in / ETA-local / local-time auto-fill in flight.</p>
+    </div>
   </div>
 </div>
 
@@ -542,14 +590,11 @@
   </div>
 </div>
 
-<div class="wrap view" id="view-pa">
-  <div class="fcard">
-    <h2>PA Guide <span id="paOfp" class="ofpchip off">no OFP loaded</span></h2>
-    <p class="fsub">Aircraft type, destination name and cruise level auto-fill from the OFP. Upload a roster screenshot to read crew names, or type them in.</p>
-    <div class="patabs">
-      <button data-pa="welcome" class="active">Welcome</button>
-      <button data-pa="descent">Descent</button>
-    </div>
+
+<div class="modalwrap" id="paModal">
+  <div class="modalbox" style="max-width:660px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <h2 id="paModalTitle">Welcome PA</h2><button id="paClose" class="ghost">Close</button></div>
     <div class="fgrid">
       <div class="feat-field"><label class="lab">Who is speaking</label>
         <select id="p_speaker"><option value="Captain">Captain</option><option value="First Officer">First Officer</option></select></div>
@@ -566,11 +611,11 @@
     </div>
     <div class="fgrid">
       <div class="feat-field"><label class="lab">Flight number</label><input id="p_no" type="text" placeholder="[NUMBER]"></div>
-      <div class="feat-field"><label class="lab">Destination (full name, from OFP)</label><input id="p_destn" type="text" placeholder="[DESTINATION_NAME]"></div>
+      <div class="feat-field"><label class="lab">Destination (from OFP)</label><input id="p_destn" type="text" placeholder="[DESTINATION_NAME]"></div>
     </div>
     <div class="fgrid pa-welcome">
       <div class="feat-field"><label class="lab">Flight time</label><input id="p_dur" type="text" placeholder="7 hours 30 minutes"></div>
-      <div class="feat-field"><label class="lab">Cruise level (highest FL, from OFP)</label><input id="p_fl" type="text" placeholder="FL380"></div>
+      <div class="feat-field"><label class="lab">Cruise level (from OFP)</label><input id="p_fl" type="text" placeholder="FL380"></div>
     </div>
     <div class="fgrid pa-descent" style="display:none">
       <div class="feat-field"><label class="lab">Landing in (min)</label><input id="p_ttg" type="text" placeholder="[TIME_TO_GO]"></div>
@@ -581,29 +626,32 @@
       <div class="feat-field"><label class="lab">Temp &deg;C</label><input id="p_tc" type="text" placeholder="22"></div>
       <div class="feat-field"><label class="lab">Local time now</label><input id="p_tn" type="text" placeholder="[TIME_NOW]"></div>
     </div>
-    <div class="feat-field" style="margin-top:6px">
-      <label class="lab">Roster screenshot (optional — reads crew names via OCR)</label>
-      <input id="p_shot" type="file" accept="image/*">
-      <span class="hint" id="p_ocr"></span>
+    <div class="pa-welcome">
+      <label class="lab" style="margin-top:8px">Welcome announcement</label>
+      <textarea id="paText" readonly style="min-height:240px;width:100%;font-family:var(--sans);font-size:13px;color:#E6ECF5"></textarea>
+      <div style="margin-top:8px;display:flex;gap:10px;align-items:center"><button id="paCopy">Copy</button><span class="hint" id="paCopied" style="margin:0"></span></div>
+    </div>
+    <div class="pa-descent" style="display:none">
+      <label class="lab" style="margin-top:8px">Descent announcement</label>
+      <textarea id="paTextD" readonly style="min-height:220px;width:100%;font-family:var(--sans);font-size:13px;color:#E6ECF5"></textarea>
+      <div style="margin-top:8px;display:flex;gap:10px;align-items:center"><button id="paCopyD">Copy</button><span class="hint" id="paCopiedD" style="margin:0"></span></div>
     </div>
   </div>
-  <div class="fcard">
-    <label class="lab">Announcement</label>
-    <textarea id="paText" readonly style="min-height:240px;font-family:var(--sans);font-size:13px;color:#E6ECF5"></textarea>
-    <div style="margin-top:10px;display:flex;gap:10px;align-items:center">
-      <button id="paCopy">Copy</button>
-      <span class="hint" id="paCopied" style="margin-top:0"></span>
-    </div>
-    <p class="hint">Qatar Airways PA templates — edit freely before reading.</p>
-  </div>
-  <div class="fcard">
-    <label class="lab">My announcements (saved on this device)</label>
-    <p class="fsub" style="margin-top:2px">Type or paste your own PA scripts here — they stay saved with the app and are available on every flight.</p>
-    <textarea id="p_custom" placeholder="Your personal announcements / notes…" style="min-height:160px;font-family:var(--sans);font-size:13px;color:#E6ECF5;width:100%"></textarea>
-    <div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-      <button id="p_customCopy" class="ghost">Copy</button>
-      <label class="ghost" style="cursor:pointer;padding:8px 14px;border-radius:8px;border:1px solid #2a3c5e">Import .txt<input id="p_customFile" type="file" accept=".txt,text/plain" style="display:none"></label>
-      <span class="hint" id="p_customMsg" style="margin-top:0"></span>
+</div>
+
+<div class="modalwrap" id="eofModal">
+  <div class="modalbox">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h2>Flight summary</h2><button id="eofClose" class="ghost">Close</button></div>
+    <div class="dispgrid">
+      <div class="dispbox"><div class="v" id="eof_off">--:--</div><div class="l">Blocks off</div></div>
+      <div class="dispbox"><div class="v" id="eof_to">--:--</div><div class="l">Take off</div></div>
+      <div class="dispbox"><div class="v" id="eof_ldg">--:--</div><div class="l">Landing</div></div>
+      <div class="dispbox"><div class="v" id="eof_on">--:--</div><div class="l">Blocks on</div></div>
+      <div class="dispbox"><div class="v" id="eof_trip">--</div><div class="l">Trip (airborne)</div></div>
+      <div class="dispbox"><div class="v" id="eof_blk">--</div><div class="l">Block time</div></div>
+      <div class="dispbox"><div class="v" id="eof_dist">--</div><div class="l">Distance flown</div></div>
+      <div class="dispbox"><div class="v" id="eof_tz">--</div><div class="l">Time zones</div></div>
     </div>
   </div>
 </div>
@@ -1271,15 +1319,7 @@ function build(data){
   }
   s1+=sec('Times (UTC)');
   s1+=grid('g4',[c('STD / dep',data.std),c('STA / arr',data.sta),c('Block time',fmtHHMM(data.blk)),c('Trip time',fmtHHMM(data.tripT))]);
-  s1+=`<div class="body"><div class="grid g4">`+
-    `<div class="cell"><label>ATD (actual off-blocks)</label><div style="display:flex;gap:4px">`+
-      `<input id="ofp_atd" class="hl" style="flex:1" placeholder="--:--" oninput="window.__atdEdited&&window.__atdEdited(this.value)">`+
-      `<button type="button" onclick="window.__captureATD&&window.__captureATD()" style="padding:4px 10px;font-size:11px">START</button></div></div>`+
-    `<div class="cell"><label>+/- Schedule (delay)</label><input id="ofp_delay" class="hl" readonly placeholder="--"></div>`+
-    `<div class="cell"><label>ATA (actual on-blocks)</label><input id="ofp_ata"></div>`+
-    `<div class="cell"><label>Actual block</label><input id="ofp_ablk"></div>`+
-  `</div></div>`;
-  s1+=foot('Pre-filled from OFP '+esc(data.ofpNo||'')+'. All fields editable.','Verify vs released OFP. Not for navigation.');
+  s1+=foot('Pre-filled from OFP '+esc(data.ofpNo||'')+'. Off-blocks / take-off / landing are captured on the Inflight Display.','Verify vs released OFP. Not for navigation.');
   oOfp.insertAdjacentHTML('beforeend',s1+'</div>');
 
   let s2=sheet('ROUTE • ETOPS • FIR • HAZARDS',ident);
@@ -1498,7 +1538,7 @@ window.__renderIdent=function(){
   const d=window.__OFP; if(!ib||!ii||!d) return;
   ib.classList.remove('empty');
   const active=document.querySelector('.view.active'); const v=active?active.id:'';
-  const full=(v==='view-briefing'||v==='view-pa');
+  const full=(v==='view-briefing');
   const route=`<span><b>${esc(d.dep||'?')}</b> &rarr; <b>${esc(d.dest||'?')}</b></span><span>${esc(d.date||'')}</span>`;
   ii.innerHTML = full
     ? `<span>ATC <b>${esc(d.atcCs||'—')}</b></span><span>Flt <b>${esc(d.fltCs||'—')}</b></span>`+route+`<span>OFP ${esc(d.ofpNo||'')}</span>`
@@ -1585,9 +1625,15 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
   b.classList.add('active');
   document.getElementById('out-'+b.dataset.s).classList.add('active');
 }));
+document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#cldgnav button').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('#view-cldg .subview2').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  var v=document.getElementById('cd-'+b.dataset.cd); if(v)v.classList.add('active');
+}));
 
 (function(){
-  const VIEWS=['load','cl','briefing','dg','disp','rest','pa'];
+  const VIEWS=['load','briefing','disp','cldg','rest'];
   function goView(v){
     const btn=document.querySelector('#topnav button[data-v="'+v+'"]'); if(!btn)return;
     document.querySelectorAll('#topnav button').forEach(x=>x.classList.remove('active'));
@@ -2358,53 +2404,74 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
   window.__atdEdited=function(v){syncATD(v);};
   $('dep_chocks').addEventListener('input',()=>syncATD($('dep_chocks').value));
 
-  let paMode='welcome';
-  document.querySelectorAll('.patabs button').forEach(b=>b.addEventListener('click',()=>{
-    document.querySelectorAll('.patabs button').forEach(x=>x.classList.remove('active'));
-    b.classList.add('active');paMode=b.dataset.pa;
-    document.querySelectorAll('.pa-welcome').forEach(e=>e.style.display=paMode==='welcome'?'flex':'none');
-    document.querySelectorAll('.pa-descent').forEach(e=>e.style.display=paMode==='descent'?'flex':'none');
-    buildPA();
-  }));
-  const pv=(id,ph)=>{const x=$(id).value.trim();return x||ph;};
-  function buildPA(){
-    const g=$('p_greet').value;
-    const speaker=$('p_speaker').value;
-    const capt=$('p_capt').value.trim(), fo=$('p_fo').value.trim();
+  const pv=(id,ph)=>{var e=$(id);var x=e?e.value.trim():'';return x||ph;};
+  function paBase(){
+    const g=($('p_greet')||{}).value||'morning';
+    const speaker=($('p_speaker')||{}).value||'Captain';
+    const capt=(($('p_capt')||{}).value||'').trim(), fo=(($('p_fo')||{}).value||'').trim();
     const myName=speaker==='Captain'?(capt||'[CAPTAIN]'):(fo||'[FO]');
     const other=speaker==='Captain'?(fo||'[FO]'):(capt||'[CAPTAIN]');
-    const dest=pv('p_destn','[DESTINATION_NAME]');
+    return {g:g,speaker:speaker,myName:myName,other:other,dest:pv('p_destn','[DESTINATION_NAME]')};
+  }
+  function buildPAWelcome(){
+    if(!$('paText'))return; const b=paBase();
     const _sr=(typeof OFP!=='undefined'&&OFP&&OFP.shearMax)?parseFloat(OFP.shearMax.sr):NaN;
     const turb=isNaN(_sr)?'some light turbulence':(_sr>4?`moderate turbulence (forecast shear SR ${OFP.shearMax.sr})`:`light turbulence (forecast shear SR ${OFP.shearMax.sr})`);
-    let t;
-    if(paMode==='welcome'){
-      t=`Good ${g}, ladies and gentlemen.\n\n`+
-      `This is your ${speaker} speaking. My name is ${myName}. On behalf of Qatar Airways and all the crew, I would like to welcome you on board this ${pv('p_ac','[AIRCRAFT]')}, flight ${pv('p_no','[NUMBER]')} to ${dest}.\n\n`+
-      `Beside me here on the Flight Deck is ${other}. And looking after your safety and comfort in the cabin today are CSD / CS ${pv('p_csd','[CSDNAME]')}, and our award-winning team.\n\n`+
+    $('paText').value=`Good ${b.g}, ladies and gentlemen.\n\n`+
+      `This is your ${b.speaker} speaking. My name is ${b.myName}. On behalf of Qatar Airways and all the crew, I would like to welcome you on board this ${pv('p_ac','[AIRCRAFT]')}, flight ${pv('p_no','[NUMBER]')} to ${b.dest}.\n\n`+
+      `Beside me here on the Flight Deck is ${b.other}. And looking after your safety and comfort in the cabin today are CSD / CS ${pv('p_csd','[CSDNAME]')}, and our award-winning team.\n\n`+
       `Our flight time today is ${pv('p_dur','[DURATION]')}, and we will be cruising at an altitude of ${pv('p_fl','[FL]')}. We're expecting generally good weather en route. However, we may experience ${turb} during the flight.\n\n`+
       `For your safety, please keep your seatbelt fastened at all times, even when the seatbelt signs are switched off.\n\n`+
-      `Before we begin our descent into ${dest}, I'll update you with the latest weather and arrival information.\n\n`+
+      `Before we begin our descent into ${b.dest}, I'll update you with the latest weather and arrival information.\n\n`+
       `Until then, please make yourself comfortable and enjoy our world-class service.\n\n`+
       `I wish you a very pleasant journey on board this Qatar Airways flight. Thank you.`;
-    }else{
-      t=`Good ${g}, ladies and gentlemen. This is your ${speaker} speaking.\n\n`+
+  }
+  function buildPADescent(){
+    if(!$('paTextD'))return; const b=paBase();
+    $('paTextD').value=`Good ${b.g}, ladies and gentlemen. This is your ${b.speaker} speaking.\n\n`+
       `We trust you're having a pleasant flight with us today.\n\n`+
-      `We'll be starting our descent into ${dest} shortly, and should be landing in ${pv('p_ttg','[TIME_TO_GO]')} minutes, approximately ${pv('p_eta','[ETA_LOCAL]')}.\n\n`+
+      `We'll be starting our descent into ${b.dest} shortly, and should be landing in ${pv('p_ttg','[TIME_TO_GO]')} minutes, approximately ${pv('p_eta','[ETA_LOCAL]')}.\n\n`+
       `It's a ${pv('p_wx','[WEATHER]')} day today, with a temperature of ${pv('p_tc','[TEMPC]')} Celsius.\n\n`+
       `The local time now is ${pv('p_tn','[TIME_NOW]')}.\n\n`+
-      `On behalf of all the crew, we wish you a very pleasant stay in ${dest}, or a smooth onward journey.\n\n`+
+      `On behalf of all the crew, we wish you a very pleasant stay in ${b.dest}, or a smooth onward journey.\n\n`+
       `It's been our pleasure having you on board today.\n\n`+
       `Thank you for choosing the award-winning Qatar Airways.`;
-    }
-    $('paText').value=t;
   }
+  function buildPA(){ buildPAWelcome(); buildPADescent(); }
   ['p_speaker','p_greet','p_capt','p_fo','p_csd','p_ac','p_no','p_destn','p_dur','p_fl','p_ttg','p_eta','p_wx','p_tc','p_tn']
-    .forEach(id=>$(id).addEventListener('input',()=>{ $(id).dataset.touched='1'; buildPA(); }));
-  $('paCopy').addEventListener('click',()=>{
-    const txt=$('paText').value;
-    const done=()=>{const c=$('paCopied');c.textContent='Copied ✓';setTimeout(()=>c.textContent='',1500);};
-    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(done,done);else done();
-  });
+    .forEach(id=>{var e=$(id);if(e)e.addEventListener('input',()=>{ e.dataset.touched='1'; buildPA(); });});
+  function wireCopy(btn,src,msgId){var b=$(btn);if(!b)return;b.addEventListener('click',function(){var t=($(src)||{}).value||'';var done=function(){var c=$(msgId);if(c){c.textContent='Copied ✓';setTimeout(function(){c.textContent='';},1500);}};if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(done,done);else done();});}
+  wireCopy('paCopy','paText','paCopied');
+  wireCopy('paCopyD','paTextD','paCopiedD');
+  /* PA window: Welcome (Departure) / Descent (Arrival) buttons open the same modal in the right mode */
+  function openPA(mode){
+    document.querySelectorAll('#paModal .pa-welcome').forEach(e=>e.style.display=mode==='welcome'?'':'none');
+    document.querySelectorAll('#paModal .pa-descent').forEach(e=>e.style.display=mode==='descent'?'':'none');
+    if($('paModalTitle'))$('paModalTitle').textContent=mode==='welcome'?'Welcome PA':'Descent PA';
+    if(mode==='welcome')buildPAWelcome();else buildPADescent();
+    if($('paModal'))$('paModal').classList.add('open');
+  }
+  if($('pa_welcome_btn'))$('pa_welcome_btn').addEventListener('click',function(){openPA('welcome');});
+  if($('pa_descent_btn'))$('pa_descent_btn').addEventListener('click',function(){openPA('descent');});
+  if($('paClose'))$('paClose').addEventListener('click',function(){$('paModal').classList.remove('open');});
+  if($('paModal'))$('paModal').addEventListener('click',function(e){if(e.target===$('paModal'))$('paModal').classList.remove('open');});
+  /* ---- Translate announcement (Load tab) ---- */
+  (function(){
+    var sel=$('tr_lang'); if(!sel) return;
+    var L=[['ar','Arabic'],['fr','French'],['es','Spanish'],['de','German'],['it','Italian'],['pt','Portuguese'],['nl','Dutch'],['ru','Russian'],['tr','Turkish'],['fa','Persian (Farsi)'],['ur','Urdu'],['hi','Hindi'],['bn','Bengali'],['ta','Tamil'],['id','Indonesian'],['ms','Malay'],['th','Thai'],['zh-CN','Chinese (Simplified)'],['ja','Japanese'],['ko','Korean'],['el','Greek'],['he','Hebrew'],['pl','Polish'],['sw','Swahili'],['tl','Filipino']];
+    sel.innerHTML=L.map(function(x){return '<option value="'+x[0]+'">'+x[1]+'</option>';}).join('');
+    function trMsg(t){var m=$('tr_msg');if(m)m.textContent=t;}
+    if($('tr_go'))$('tr_go').addEventListener('click',function(){
+      var src=(($('tr_src')||{}).value||'').trim(), tl=sel.value; if(!src){trMsg('Enter text to translate.');return;}
+      trMsg('Translating…');
+      tryFetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+tl+'&dt=t&q='+encodeURIComponent(src)).then(function(r){return r.json();}).then(function(j){
+        var out=(j&&j[0])?j[0].map(function(s){return s[0];}).join(''):''; if(out){$('tr_out').value=out;trMsg('Done.');}else throw 0;
+      }).catch(function(){
+        tryFetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(src.slice(0,480))+'&langpair=en|'+tl).then(function(r){return r.json();}).then(function(j){var o=j&&j.responseData&&j.responseData.translatedText; if(o){$('tr_out').value=o;trMsg('Done (first part).');}else trMsg('Translation failed.');}).catch(function(){trMsg('Translation failed (needs internet).');});
+      });
+    });
+    if($('tr_copy'))$('tr_copy').addEventListener('click',function(){var t=($('tr_out')||{}).value||'';if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(function(){trMsg('Copied ✓');},function(){});});
+  })();
   /* ---- PA: personal announcements (saved on this device, available every flight) ---- */
   (function(){
     const ta=$('p_custom'); if(!ta) return;
@@ -2457,8 +2524,27 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
     if(ata!=null&&off!=null){let b=ata-off;if(b<0)b+=1440;$('ar_block').value=Math.floor(b/60)+'h '+pad2(b%60)+'m';}
     else $('ar_block').value='';
   }
-  $('ar_blockStop').addEventListener('click',()=>{const n=utcNow();$('ar_ata').value=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes());recalcBlock();if(typeof saveState==='function')saveState();});
+  $('ar_blockStop').addEventListener('click',()=>{const n=utcNow();$('ar_ata').value=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes());recalcBlock();if(typeof saveState==='function')saveState();showEndOfFlight();});
   $('ar_ata').addEventListener('input',recalcBlock);
+  function showEndOfFlight(){
+    var setv=function(id,v){var e=$(id);if(e)e.textContent=v||'--';};
+    var off=($('dep_chocks')||{}).value||'', to=($('d_to')||{}).value||'', ldg=($('gpsLdg')||{}).value||'', on=($('ar_ata')||{}).value||'';
+    setv('eof_off',off||'--:--'); setv('eof_to',to||'--:--'); setv('eof_ldg',ldg||'--:--'); setv('eof_on',on||'--:--');
+    var toM_=toM(to), ldgM=toM(ldg), trip='--';
+    if(toM_!=null&&ldgM!=null){var d=ldgM-toM_;if(d<0)d+=1440;trip=Math.floor(d/60)+'h '+pad2(d%60)+'m';}
+    setv('eof_trip',trip);
+    setv('eof_blk',(($('ar_block')||{}).value)||'--');
+    var O=window.__OFP, dist='--', nf=$('n_flown');
+    if(nf&&nf.textContent&&nf.textContent!=='--'&&nf.textContent!=='--:--')dist=nf.textContent+' NM';
+    else if(O&&O.gndDist)dist=O.gndDist+' NM';
+    setv('eof_dist',dist);
+    var tz='--', dap=destAirport(), dep=depAirport();
+    if(dap&&dep&&dap.utc!=null&&dep.utc!=null){var z=Math.round(Math.abs((+dap.utc)-(+dep.utc)));tz=z+' zone'+(z===1?'':'s');}
+    setv('eof_tz',tz);
+    if($('eofModal'))$('eofModal').classList.add('open');
+  }
+  if($('eofClose'))$('eofClose').addEventListener('click',function(){$('eofModal').classList.remove('open');});
+  if($('eofModal'))$('eofModal').addEventListener('click',function(e){if(e.target===$('eofModal'))$('eofModal').classList.remove('open');});
   ['dep_date','dep_fnum','dep_from','dep_to','dep_block','dep_ft','dep_fl','dep_std','dep_delay','dep_chocks','dep_zfw','dep_tow','dep_lwt','dep_atis','dep_rwy','dep_intx','dep_notes','ar_atis','ar_stand','ar_arrfuel','ar_freq','ar_mlwt','ar_lwt','ar_dispatch','ar_notes'].forEach(id=>{const e=$(id);if(e)e.addEventListener('input',()=>{e.dataset.touched='1';});});
 
   /* ---- persist all typed field values (survive restart/purge) ---- */
