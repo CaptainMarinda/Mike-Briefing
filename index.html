@@ -349,9 +349,9 @@
   </div>
   <div class="fcard">
     <h2>Aircraft / flight lookup</h2>
-    <p class="fsub">Enter any ATC callsign (e.g. QTR4T) to see airline, route and aircraft type. Needs internet.</p>
+    <p class="fsub">Enter an ATC callsign (e.g. QTR4T) for airline + route + live aircraft, or a registration (e.g. A7-ALS) for the exact type &amp; operator. Most complete while the flight is airborne. Needs internet.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <input id="ac_cs" type="text" placeholder="ATC callsign e.g. QTR4T" style="text-transform:uppercase;width:210px">
+      <input id="ac_cs" type="text" placeholder="callsign QTR4T or reg A7-ALS" style="text-transform:uppercase;width:230px">
       <button id="ac_get" type="button">Look up</button>
     </div>
     <pre id="ac_out" style="display:none;white-space:pre-wrap;word-break:break-word;background:#0f1b31;border:1px solid #2a3c5e;border-radius:8px;padding:10px;margin-top:10px;font-family:var(--mono);font-size:12px;color:#cfe;min-height:30px"></pre>
@@ -1632,18 +1632,19 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
   // Internet-synced UTC: utcNow() shows true UTC (device clock + measured offset). Divergence vs the device clock is flagged.
   let netOffset=0, netSrc='device', __windSlot='', __netTried=0;
   function utcNow(){return new Date(Date.now()+netOffset);}
-  // serverMs = server's UTC at the moment it answered; t0 = local time just before the request. Compensate for ~half the round-trip and reject absurd values.
-  function setNet(serverMs,t0){ if(serverMs&&!isNaN(serverMs)){ const mid=t0+(Date.now()-t0)/2; const off=serverMs-mid; if(Math.abs(off)<12*3600*1000){ netOffset=off; netSrc='internet'; } } }
+  // serverMs = server UTC when it answered; t0 = local time just before the request. Compensate for ~half the round-trip and reject slow/absurd reads.
+  function setNet(serverMs,t0){ if(serverMs&&!isNaN(serverMs)){ var rtt=Date.now()-t0; if(rtt>8000)return; const mid=t0+rtt/2; const off=serverMs-mid; if(Math.abs(off)<12*3600*1000){ netOffset=off; netSrc='internet'; } } }
   function fetchNetTime(){
-    // Use the CORS-proxy chain (tryFetch) so the time sources load even when they block cross-origin directly. First to answer wins. Independent of the (possibly wrong) device clock.
-    let t0=Date.now();
-    tryFetch('https://www.cloudflare.com/cdn-cgi/trace').then(r=>r.text()).then(t=>{
-      const m=/ts=([0-9.]+)/.exec(t); if(m){setNet(Math.round(parseFloat(m[1])*1000),t0);return;} throw 0;
-    }).catch(()=>{ t0=Date.now(); return tryFetch('https://timeapi.io/api/Time/current/zone?timeZone=UTC').then(r=>r.json()).then(j=>{
-      const ms=j&&j.dateTime?Date.parse(j.dateTime+(/[Zz]$/.test(j.dateTime)?'':'Z')):NaN; if(!isNaN(ms))setNet(ms,t0); else throw 0;
-    }); }).catch(()=>{ t0=Date.now(); return tryFetch('https://worldtimeapi.org/api/timezone/Etc/UTC').then(r=>r.json()).then(j=>{
-      const ms=j&&(j.unixtime?j.unixtime*1000:(j.utc_datetime?Date.parse(j.utc_datetime):NaN)); if(ms&&!isNaN(ms))setNet(ms,t0);
-    }); }).catch(()=>{});
+    // Read true UTC from OUR OWN server's HTTP "Date" header (same-origin → no CORS, no proxy, no stale cache; HEAD bypasses the service worker). Accurate to ~1 s.
+    var t0=Date.now();
+    fetch((location.pathname||'/')+'?_t='+t0,{method:'HEAD',cache:'no-store'}).then(function(r){
+      var d=r.headers.get('Date'); var ms=d?Date.parse(d):NaN; if(!isNaN(ms)) setNet(ms,t0);
+    }).catch(function(){
+      // fallback only when there's no server Date (e.g. opened as a local file): a public time API
+      var t1=Date.now();
+      fetch('https://timeapi.io/api/Time/current/zone?timeZone=UTC',{cache:'no-store'}).then(function(r){return r.json();})
+        .then(function(j){ var ms=j&&j.dateTime?Date.parse(j.dateTime+(/[Zz]$/.test(j.dateTime)?'':'Z')):NaN; if(!isNaN(ms))setNet(ms,t1); }).catch(function(){});
+    });
   }
   const pad2=n=>String(n).padStart(2,'0');
   const MON3=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -2235,33 +2236,61 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
   });
   window.addEventListener('ofp-parsed',()=>{const el=$('wxIcao'); if(el && !el.value && window.__OFP && window.__OFP.dest) el.value=window.__OFP.dest;});
 
-  /* ---- Live: aircraft / flight lookup by ATC callsign ---- */
-  function acType(t){t=(t||'').trim();var M={A359:'A350-900',A35K:'A350-1000',A332:'A330-200',A333:'A330-300',A339:'A330-900neo',A388:'A380-800',B77W:'777-300ER',B77L:'777-200LR / 777F',B772:'777-200',B788:'787-8',B789:'787-9',B78X:'787-10',B738:'737-800',B38M:'737 MAX 8',A320:'A320',A321:'A321',A319:'A319',A20N:'A320neo',A21N:'A321neo',E190:'Embraer 190',E195:'Embraer 195'};return M[t]?(t+' ('+M[t]+')'):(t||'unknown');}
+  /* ---- Live: aircraft / flight lookup by ATC callsign OR registration ---- */
+  function acType(t){t=(t||'').trim();var M={A359:'A350-900',A35K:'A350-1000',A332:'A330-200',A333:'A330-300',A338:'A330-800neo',A339:'A330-900neo',A388:'A380-800',B77W:'777-300ER',B77L:'777-200LR / 777F',B772:'777-200',B773:'777-300',B788:'787-8',B789:'787-9',B78X:'787-10',B763:'767-300',B744:'747-400',B748:'747-8',B738:'737-800',B739:'737-900',B38M:'737 MAX 8',B39M:'737 MAX 9',A320:'A320',A321:'A321',A319:'A319',A20N:'A320neo',A21N:'A321neo',A19N:'A319neo',E190:'Embraer 190',E195:'Embraer 195',E290:'Embraer E190-E2',AT76:'ATR 72-600'};return M[t]?(t+' ('+M[t]+')'):(t||'unknown');}
   function acShow(t){var o=$('ac_out');if(o){o.style.display='block';o.textContent=t;}}
-  if($('ac_get'))$('ac_get').addEventListener('click',function(){
-    var cs=(($('ac_cs')||{}).value||'').trim().toUpperCase().replace(/\s+/g,''); if(!cs){acShow('Enter an ATC callsign (e.g. QTR4T).');return;}
+  function acJ(u){return tryFetch(u).then(function(r){return r.json();}).catch(function(){return null;});}
+  async function acByReg(reg){
+    acShow('Looking up '+reg+'…');
+    var ac=await acJ('https://api.adsbdb.com/v0/aircraft/'+encodeURIComponent(reg));
+    var a=ac&&ac.response&&ac.response.aircraft;
+    var lines=[];
+    if(a){ lines.push('Registration: '+(a.registration||reg));
+      lines.push('Aircraft: '+(a.type||acType(a.icao_type))+(a.icao_type?(' ['+a.icao_type+']'):''));
+      if(a.manufacturer)lines.push('Manufacturer: '+a.manufacturer);
+      if(a.registered_owner)lines.push('Operator: '+a.registered_owner+(a.registered_owner_country_name?(' — '+a.registered_owner_country_name):'')); }
+    else lines.push('Registration: '+reg+' — not found in the aircraft database.');
+    var live=await acJ('https://api.adsb.lol/v2/registration/'+encodeURIComponent(reg));
+    var lv=live&&live.ac&&live.ac[0];
+    if(lv) lines.push('Airborne now: '+((lv.flight||'').trim()||'—')+'  ·  FL'+Math.round((+lv.alt_baro||0)/100)+(lv.gs?('  ·  '+Math.round(lv.gs)+' kt GS'):''));
+    else lines.push('Not currently airborne.');
+    acShow(lines.join('\n'));
+  }
+  async function acByCs(cs){
     acShow('Looking up '+cs+'…');
-    Promise.all([
-      tryFetch('https://api.adsbdb.com/v0/callsign/'+cs).then(r=>r.json()).catch(()=>null),
-      tryFetch('https://api.adsb.lol/v2/callsign/'+cs).then(r=>r.json()).catch(()=>null)
-    ]).then(function(res){
-      var rt=res[0], live=res[1], lines=['Callsign: '+cs];
-      var fr=rt&&rt.response&&rt.response.flightroute;
-      if(fr){ if(fr.airline&&fr.airline.name)lines.push('Airline: '+fr.airline.name+(fr.callsign_iata?(' / '+fr.callsign_iata):''));
-        if(fr.origin&&fr.destination)lines.push('Route: '+fr.origin.iata_code+' '+(fr.origin.municipality||'')+'  →  '+fr.destination.iata_code+' '+(fr.destination.municipality||'')); }
-      var ac=live&&live.ac&&live.ac[0];
-      if(ac){ lines.push('Aircraft: '+acType(ac.t)+(ac.r?('  ·  reg '+(ac.r||'').trim()):'')); if(ac.alt_baro!=null)lines.push('Now: FL'+Math.round((+ac.alt_baro)/100)+(ac.gs?('  ·  '+Math.round(ac.gs)+' kt GS'):'')); }
-      if(!fr && !ac){
-        tryFetch('https://www.flightradar24.com/v1/search/web/find?limit=6&query='+cs).then(r=>r.json()).then(function(j){
-          var m=j&&j.results&&j.results.filter(function(x){return x.detail&&(x.detail.ac_type||x.detail.schd_from);})[0];
-          if(m){ acShow('Callsign: '+cs+'\nAirline: '+(m.detail.operator||'—')+(m.detail.flight?('  ·  '+m.detail.flight):'')+'\nRoute: '+(m.detail.route||((m.detail.schd_from||'?')+' → '+(m.detail.schd_to||'?')))+'\nAircraft: '+acType(m.detail.ac_type)+(m.detail.reg?('  ·  reg '+m.detail.reg):'')); }
-          else acShow('No info found for '+cs+'. The callsign may not be active or known right now.');
-        }).catch(function(){acShow('No info found for '+cs+' (needs internet, or the flight isn’t active).');});
-        return;
-      }
-      if(!ac) lines.push('Aircraft type: not available (flight not currently airborne / tracked).');
-      acShow(lines.join('\n'));
-    }).catch(function(e){acShow('Lookup failed (needs internet): '+e.message);});
+    var res=await Promise.all([ acJ('https://api.adsbdb.com/v0/callsign/'+cs), acJ('https://api.adsb.lol/v2/callsign/'+cs) ]);
+    var rt=res[0], live=res[1];
+    var fr=rt&&rt.response&&rt.response.flightroute;
+    var lv=live&&live.ac&&live.ac[0];
+    var lines=['Callsign: '+cs];
+    if(fr&&fr.airline&&fr.airline.name)lines.push('Airline: '+fr.airline.name+(fr.callsign_iata?(' / '+fr.callsign_iata):''));
+    if(fr&&fr.origin&&fr.destination)lines.push('Route: '+fr.origin.iata_code+' '+(fr.origin.municipality||'')+'  →  '+fr.destination.iata_code+' '+(fr.destination.municipality||''));
+    if(lv){
+      var reg=(lv.r||'').trim();
+      // enrich the live type code with the full aircraft record from its registration
+      var a=null; if(reg){ var acd=await acJ('https://api.adsbdb.com/v0/aircraft/'+encodeURIComponent(reg)); a=acd&&acd.response&&acd.response.aircraft; }
+      lines.push('Aircraft (live): '+(a&&a.type?a.type+(a.icao_type?(' ['+a.icao_type+']'):''):acType(lv.t))+(reg?('  ·  '+reg):''));
+      if(a&&a.registered_owner && !(fr&&fr.airline)) lines.splice(1,0,'Operator: '+a.registered_owner);
+      lines.push('Position: FL'+Math.round((+lv.alt_baro||0)/100)+(lv.gs?('  ·  '+Math.round(lv.gs)+' kt GS'):'')+(lv.lat!=null?('  ·  '+(+lv.lat).toFixed(1)+'/'+(+lv.lon).toFixed(1)):''));
+      acShow(lines.join('\n')); return;
+    }
+    // not airborne → try FlightRadar24 (scheduled) for the type, via the proxy chain
+    var j=await acJ('https://www.flightradar24.com/v1/search/web/find?limit=8&query='+cs);
+    var m=j&&j.results&&j.results.filter(function(x){return x.detail&&(x.detail.ac_type||x.detail.schd_from);})[0];
+    if(m){
+      if(!fr&&m.detail.operator)lines.push('Operator: '+m.detail.operator);
+      if(!(fr&&fr.origin)&&(m.detail.route||m.detail.schd_from))lines.push('Route: '+(m.detail.route||((m.detail.schd_from||'?')+' → '+(m.detail.schd_to||'?'))));
+      if(m.detail.ac_type)lines.push('Aircraft (scheduled): '+acType(m.detail.ac_type)+(m.detail.reg?('  ·  '+m.detail.reg):''));
+      if(m.detail.flight)lines.push('Flight: '+m.detail.flight);
+    } else if(!fr){ acShow('No info found for '+cs+'. It may not be a known/active flight — try the aircraft registration instead (e.g. A7-ALS).'); return; }
+    else lines.push('Aircraft type: not available (flight isn’t airborne right now — try its registration).');
+    acShow(lines.join('\n'));
+  }
+  if($('ac_get'))$('ac_get').addEventListener('click',function(){
+    var q=(($('ac_cs')||{}).value||'').trim().toUpperCase().replace(/\s+/g,'');
+    if(!q){acShow('Enter an ATC callsign (e.g. QTR4T) or a registration (e.g. A7-ALS).');return;}
+    var isReg=/-/.test(q) || /^N[0-9]/.test(q);   // hyphen, or US N-reg
+    (isReg?acByReg(q):acByCs(q)).catch(function(e){acShow('Lookup failed (needs internet): '+(e&&e.message||e));});
   });
   /* ---- DOCS: documents stored on-device (IndexedDB), persist until removed ---- */
   let DOCDB=null;
