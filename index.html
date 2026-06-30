@@ -29,6 +29,8 @@
     var b=new Blob([JSON.stringify(mani)],{type:'application/manifest+json'});
     addLink('manifest',URL.createObjectURL(b));
   }catch(e){}
+  // Register the service worker so the app launches & runs OFFLINE (caches itself + PDF/OCR libraries). Needs sw.js uploaded to the repo root.
+  try{ if('serviceWorker' in navigator){ window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); } }catch(e){}
 })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -402,6 +404,12 @@
       <div class="dispbox"><div class="v" id="n_fuel">--</div><div class="l">Plan fuel next</div></div>
       <div class="dispbox"><div class="v" id="n_sked">--</div><div class="l">vs schedule</div></div>
     </div>
+    <div class="fgrid">
+      <div class="feat-field"><label class="lab">Next waypoint</label>
+        <select id="n_nextSel"><option value="auto">Auto (next ahead)</option></select></div>
+      <div class="feat-field"><label class="lab">Actual fuel now (kg)</label><input id="n_actfuel" type="number" placeholder="from EICAS / FMC"></div>
+      <div class="feat-field"><label class="lab">Plan now / Δ actual−plan</label><input id="n_fueldiff" type="text" readonly placeholder="—"></div>
+    </div>
     <p class="hint" id="navHint">Arm GPS and load an OFP to compare your position with the planned route. Planned ETA &amp; fuel are interpolated from the OFP totals by distance flown.</p>
   </div>
   <div class="fcard">
@@ -444,7 +452,7 @@
       <div class="fgrid">
         <div class="feat-field"><label class="lab">STD (UTC)</label><input id="dep_std" type="text"></div>
         <div class="feat-field"><label class="lab">Delay</label><input id="dep_delay" type="text"></div>
-        <div class="feat-field"><label class="lab">Chocks-off (UTC)</label><input id="dep_chocks" type="text"></div>
+        <div class="feat-field"><label class="lab">Chocks-off (UTC)</label><div style="display:flex;gap:6px"><input id="dep_chocks" type="text" style="flex:1" placeholder="--:--"><button id="dep_chocksStart" type="button" style="padding:8px 12px" onclick="window.__captureATD&&window.__captureATD()">BLOCKS OFF</button></div></div>
       </div>
       <div class="fgrid">
         <div class="feat-field"><label class="lab">Final ZFW</label><input id="dep_zfw" type="text"></div>
@@ -1094,6 +1102,7 @@ function parseOFP(text, opts){
     });
   }
   data.notamRaw = nIx>=0 ? T.slice(nIx, nIx+9000).replace(/\n{3,}/g,'\n\n').trim() : '';
+  data.notamFull = nIx>=0 ? T.slice(nIx).replace(/\n{3,}/g,'\n\n') : '';
   data.route=parseRouteCoords(T);
   // Build named waypoint list with cumulative great-circle distance (for live position vs plan).
   (function(){
@@ -1908,22 +1917,28 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
     return `<tr><td class="k" style="color:#cfe">${escF(label)}</td><td class="mono">${srT}</td><td class="mono">${ssT}</td><td>${dn}</td></tr>`;
   }
   function routeSunCrossings(now){
-    if(!OFP||!OFP.route)return [];
+    if(!OFP)return [];
     const to=toM($('d_to').value); if(to==null)return [];
-    const pts=OFP.route.filter(p=>p.elapsed!=null);
-    if(pts.length<2)return [];
+    const trip=tripMin();
+    let pts=[];
+    if(OFP.route && OFP.route.filter(p=>p.elapsed!=null).length>=2){
+      // per-waypoint times present in the OFP
+      pts=OFP.route.filter(p=>p.elapsed!=null).map(p=>({lat:p.lat,lon:p.lon,utc:addT(to,p.elapsed)}));
+    } else if(OFP.routeWps && OFP.routeWps.length>=2 && trip!=null && OFP.routeTotNM){
+      // fallback: estimate each waypoint's UTC from takeoff + trip-time × distance fraction
+      pts=OFP.routeWps.map(w=>({lat:w.lat,lon:w.lon,utc:addT(to,Math.round(trip*(w.cumNM/OFP.routeTotNM)))}));
+    } else return [];
     const out=[]; let prev=null;
     pts.forEach(p=>{
-      const utcMin=addT(to,p.elapsed);
-      const el=solarElev(p.lat,p.lon,utcMin,now);
+      const el=solarElev(p.lat,p.lon,p.utc,now);
       if(prev){
         if((prev.el<0&&el>=0)||(prev.el>=0&&el<0)){
           const frac=Math.abs(prev.el)/(Math.abs(prev.el)+Math.abs(el));
-          let tm=prev.utc+frac*((utcMin-prev.utc+1440)%1440); tm=((tm%1440)+1440)%1440;
+          let tm=prev.utc+frac*((p.utc-prev.utc+1440)%1440); tm=((tm%1440)+1440)%1440;
           out.push({type:el>=0?'Sunrise':'Sunset',utc:tm,fromTO:Math.round(((tm-to)%1440+1440)%1440)});
         }
       }
-      prev={el,utc:utcMin};
+      prev={el,utc:p.utc};
     });
     return out;
   }
@@ -1992,8 +2007,9 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
     if(kt>=100){
       gpsFastN++; gpsSlowN=0;
       if(gpsPhase!=='air' && gpsFastN>=3){   // 3 consecutive >100 kt readings = genuine take-off (rejects single GPS glitches)
-        if(gpsSeenSlow && !$('d_to').value){
-          const n=utcNow();$('d_to').value=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes());$('r_to').value=$('d_to').value;
+        if(gpsSeenSlow && !$('d_to').dataset.touched){   // overwrite the STD pre-fill (programmatic), but respect a manually typed take-off
+          const n=utcNow();$('d_to').value=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes());$('d_to').dataset.touched='1';
+          $('r_to').value=$('d_to').value;$('r_to').dataset.touched='1';
           autoRest();buildChecks();calcRest();calcDisplay();if(typeof saveState==='function')saveState();
           setGpsHint('Takeoff captured '+$('d_to').value+'Z (>100 kt). Watching for landing.');
         } else setGpsHint('Airborne (>100 kt) — watching for landing.');
@@ -2034,6 +2050,7 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
     if(dDestNow<dDestNear){ flown=wps[ni].cumNM+gcNM(wps[ni].lat,wps[ni].lon,gpsPos.lat,gpsPos.lon); nextIdx=Math.min(ni+1,wps.length-1); }
     else { flown=wps[ni].cumNM-gcNM(wps[ni].lat,wps[ni].lon,gpsPos.lat,gpsPos.lon); nextIdx=ni; }
     flown=Math.max(0,Math.min(tot,flown)); const toGo=Math.max(0,tot-flown);
+    const selEl=$('n_nextSel'); if(selEl && selEl.value!=='auto'){ const si=parseInt(selEl.value,10); if(!isNaN(si)&&wps[si]) nextIdx=si; }
     const nx=wps[nextIdx], distNext=gcNM(gpsPos.lat,gpsPos.lon,nx.lat,nx.lon);
     const trip=(O.tripT?(+String(O.tripT).padStart(4,'0').slice(0,2)*60 + +String(O.tripT).padStart(4,'0').slice(2)):null);
     const to=toM($('d_to').value);
@@ -2044,6 +2061,11 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
     let fuelTxt='--';
     const ramp=parseFloat(O.fRamp),taxi=parseFloat(O.fTaxi)||0,tripF=parseFloat(O.fTrip);
     if(!isNaN(ramp)&&!isNaN(tripF)){ fuelTxt=Math.max(0,Math.round((ramp-taxi)-tripF*fracNext))+' kg'; }
+    // plan fuel at CURRENT position, and difference vs the actual fuel the crew enters
+    if($('n_fueldiff')){ let dt='—';
+      if(!isNaN(ramp)&&!isNaN(tripF)){ const planNow=Math.max(0,Math.round((ramp-taxi)-tripF*fracFlown)); const act=parseFloat(($('n_actfuel')||{}).value);
+        dt=isNaN(act)?(planNow+' kg plan'):(planNow+' plan / '+(act-planNow>=0?'+':'')+Math.round(act-planNow)+' kg'); }
+      $('n_fueldiff').value=dt; }
     let skedTxt='--';
     if(trip!=null&&to!=null&&flown>5){ const now=utcNow(); const nowMin=now.getUTCHours()*60+now.getUTCMinutes()+now.getUTCSeconds()/60; const act=signed(to,nowMin); if(act!=null){ const dl=Math.round(act-trip*fracFlown); skedTxt=dl===0?'on plan':(dl>0?('+'+dl+' min late'):(Math.abs(dl)+' min early')); } }
     const set=(id,v)=>{const e=$(id);if(e)e.textContent=v;};
@@ -2078,8 +2100,10 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
   }
 
   var reminder=null;
-  function populateWpts(){ const sel=$('rm_wpt'); if(!sel)return; const O=window.__OFP;
-    sel.innerHTML=(O&&O.routeWps&&O.routeWps.length)?O.routeWps.map((w,i)=>'<option value="'+i+'">'+escF(w.name)+'</option>').join(''):'<option value="">(load an OFP)</option>'; }
+  function populateWpts(){ const O=window.__OFP;
+    const opts=(O&&O.routeWps&&O.routeWps.length)?O.routeWps.map((w,i)=>'<option value="'+i+'">'+escF(w.name)+'</option>').join(''):'';
+    const sel=$('rm_wpt'); if(sel)sel.innerHTML=opts||'<option value="">(load an OFP)</option>';
+    const ns=$('n_nextSel'); if(ns)ns.innerHTML='<option value="auto">Auto (next ahead)</option>'+opts; }
   function rmTypeUI(){ const t=$('rm_type').value; $('rm_wptWrap').style.display=t==='wpt'?'block':'none'; $('rm_llWrap').style.display=t==='ll'?'block':'none'; $('rm_timeWrap').style.display=t==='time'?'block':'none'; }
   if($('rm_type')){ $('rm_type').addEventListener('change',rmTypeUI); rmTypeUI(); }
   window.addEventListener('ofp-parsed',populateWpts); populateWpts();
@@ -2156,11 +2180,22 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
     const O=window.__OFP;
     if(!O || !O.notams){ wxShow('Load an OFP first — NOTAMs are taken from your loaded flight plan.'); return; }
     const list=O.notams[ic];
+    // Find the airport's own block by its real header (ICAO + space + slash, e.g. "OPKC /KHI"), bounded by the next airport header — not just any mention of the code.
+    let raw='';
+    const full=O.notamFull||O.notamRaw||'';
+    if(full){
+      const hm=new RegExp('(?:^|\\n)'+ic+'\\s+/[A-Z]{3}\\b').exec(full);
+      if(hm){
+        const start=hm.index;
+        const after=full.slice(start+ic.length+2);
+        const nx=/\n[A-Z]{4}\s+\/[A-Z]{3}\b/.exec(after);
+        raw=full.slice(start, nx?(start+ic.length+2+nx.index):Math.min(start+5000,full.length)).trim();
+      }
+    }
     if(list && list.length){
-      wxShow('NOTAMs '+ic+' (from OFP — '+list.length+'):\n\n'+list.map(n=>'• '+(n.valid?('VALID '+n.valid+'\n  '):'')+n.text).join('\n\n'));
-    } else if(O.notamRaw && O.notamRaw.indexOf(ic)>=0){
-      const i=O.notamRaw.indexOf(ic);
-      wxShow('NOTAMs '+ic+' (from OFP, raw):\n\n'+O.notamRaw.slice(i,i+4000));
+      wxShow('NOTAMs '+ic+' (from OFP — '+list.length+'):\n\n'+list.map(n=>'• '+(n.valid?('VALID '+n.valid+'\n  '):'')+n.text).join('\n\n')+(raw?('\n\n— full airport block —\n'+raw):''));
+    } else if(raw){
+      wxShow('NOTAMs '+ic+' (from OFP):\n\n'+raw);
     } else {
       const avail=Object.keys(O.notams||{});
       wxShow('No NOTAMs for '+ic+' in the loaded OFP.'+(avail.length?(' The OFP carries NOTAMs for: '+avail.join(', ')+'.'):'')+'\nThe full NOTAM list is on the Briefing → NOTAMs tab.');
@@ -2258,7 +2293,7 @@ document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click
     put('ofp_atd',hhmmv); put('ofp_delay',delay);
     put('dep_chocks',hhmmv); put('dep_delay',delay);
   }
-  window.__captureATD=function(){const n=utcNow();syncATD(pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes()));};
+  window.__captureATD=function(){const n=utcNow();syncATD(pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes()));const dc=$('dep_chocks');if(dc)dc.dataset.touched='1';if(typeof saveState==='function')saveState();if(typeof recalcBlock==='function')recalcBlock();};
   window.__atdEdited=function(v){syncATD(v);};
   $('dep_chocks').addEventListener('input',()=>syncATD($('dep_chocks').value));
 
