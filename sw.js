@@ -2,7 +2,7 @@
    Upload this file to the GitHub repo ROOT, next to index.html.
    Navigation is network-first (so a freshly uploaded index.html loads when online,
    and the cached copy loads when offline). Libraries/assets are cache-first. */
-const CACHE = 'skymatrix-v3';
+const CACHE = 'skymatrix-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -27,6 +27,12 @@ self.addEventListener('activate', function (e) {
 self.addEventListener('fetch', function (e) {
   var req = e.request;
   if (req.method !== 'GET') return;
+  // pw.json is the live admin-password source of truth — ALWAYS network-first,
+  // never served stale from cache (a stale hash here = the right password being rejected).
+  if (req.url.indexOf('pw.json') !== -1) {
+    e.respondWith(fetch(req).catch(function () { return caches.match(req); }));
+    return;
+  }
   var isNav = req.mode === 'navigate' || req.destination === 'document';
   if (isNav) {
     // network-first so the newest app loads online; cached index offline
