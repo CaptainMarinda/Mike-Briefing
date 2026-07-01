@@ -221,11 +221,15 @@
   <div class="locklogo" id="lockLogo"></div>
   <div class="box">
     <div class="tag">Flight briefing assistant</div>
-    <input id="lockPw" type="password" placeholder="Enter password" autocomplete="off">
-    <button id="lockBtn">Unlock</button>
-    <button id="lockBio" style="display:none;margin-top:8px;background:#13203A;border:1px solid #2a3c5e"><svg width="16" height="16" viewBox="0 0 24 24" style="vertical-align:-3px;margin-right:6px;fill:none;stroke:#7ec8ff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M2 12a10 10 0 0 1 4-8"/><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M8.65 22c.21-.66.45-1.32.57-2"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M2 16h.01"/><path d="M21.8 16c.2-2 .131-5.354 0-6"/><path d="M9 6.8a6 6 0 0 1 9 5.2c0 .47 0 1.17-.02 2"/></svg>Use Face ID / Touch ID</button>
+    <div class="by" style="margin:6px 0 2px">Your device ID — send it to the admin to get a 30-day access code:</div>
+    <div style="display:flex;gap:8px;align-items:center;justify-content:center;margin:4px 0 10px">
+      <span id="lockDev" style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:18px;font-weight:800;color:#7fd8ff;letter-spacing:1px">—</span>
+      <button id="lockDevCopy" type="button" style="padding:5px 12px;font-size:12px;background:#13203A;border:1px solid #2a3c5e;margin:0">Copy</button>
+    </div>
+    <input id="lockCode" type="text" placeholder="Paste 30-day access code" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button id="lockBtn">Activate</button>
     <div id="lockMsg"></div>
-    <div class="by" style="margin-top:8px">Access is controlled by the admin. If your password no longer works, the admin has reset it — ask for the new one.</div>
+    <div class="by" style="margin-top:8px">Access is by a 30-day code from the admin, locked to this device. When it expires, ask the admin for a new code.</div>
     <div class="warn"><b>FOR REFERENCE ONLY.</b> This tool must NOT be used for operational purposes. The official hard copy of the OFP must be used for flight operations. For individual use only.</div>
     <div class="by">Prepared by Sky Matrix &middot; <a href="mailto:skymatrix401@gmail.com">skymatrix401@gmail.com</a></div>
   </div>
@@ -704,114 +708,95 @@
    Leave it "" to set a per-device password on first use instead.
    (Still a client-side gate: deters casual access, not strong security.)
    ============================================================ */
-var APP_PASSWORD_HASH = "d41c8abd2a10a194241323743517a388bc28b1255fdcd9ff5825791f5fe391dd";
-/* ADMIN-CONTROLLED password. The live hash comes from pw.json (the admin changes it via the
-   Password Manager tool — changing it blocks every user until they enter the new password).
-   The last hash seen is cached so the device keeps working offline; the baked-in hash is only
-   the first-ever-launch fallback. The unlock check waits for this so it never uses a stale value. */
-try{var __ah=localStorage.getItem('sm_admin_hash'); if(__ah)APP_PASSWORD_HASH=__ah;}catch(e){}
-var __pwReady=Promise.race([
-  fetch((location.protocol==='file:'?'https://captainmarinda.github.io/Mike-Briefing/pw.json':'pw.json')+'?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;})
-    .then(function(j){if(j&&j.hash){APP_PASSWORD_HASH=j.hash;try{localStorage.setItem('sm_admin_hash',j.hash);}catch(e){}}}).catch(function(){}),
-  new Promise(function(res){setTimeout(res,4000);})
-]);
+var LIC_PUBKEY = "BMxAfrty9p7_t79ebh4KowBcDiZVaiyBIRPPgMGaPK2Bt4yB9EU1W-4z9WQ4E4K_7j_s5RmOucyx7CRDtkcnwng";
+/* ===== Device-licensed access =====
+   Access is granted by a 30-day, device-locked code signed by the admin's
+   private key (held only in the License Manager tool). The app holds just the
+   PUBLIC key above, so it can VERIFY codes but never forge them. Each code is
+   bound to this device's ID and carries an expiry day: it stops working after
+   30 days and is useless on any other device. No password is used. */
 (function(){
   var lock=document.getElementById('lockScreen');
   function unlock(){lock.style.display='none';if(typeof requestWake==='function')requestWake();}
-  if(sessionStorage.getItem('sm_unlocked')==='1') unlock();
-  /* pure-JS SHA-256 fallback — used when crypto.subtle is unavailable
-     (e.g. Android WebView loading file://, which is not a secure context).
-     Verified to match crypto.subtle / Node crypto for ASCII + UTF-8 + emoji. */
-  function jsSha256(ascii){
-    function rr(n,x){return (x>>>n)|(x<<(32-n));}
-    var K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
-    0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
-    0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
-    0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
-    0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
-    0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
-    0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
-    0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
-    var H=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
-    var bytes=[];
-    for(var i=0;i<ascii.length;i++){var c=ascii.charCodeAt(i);
-      if(c<0x80)bytes.push(c);
-      else if(c<0x800)bytes.push(0xc0|(c>>6),0x80|(c&0x3f));
-      else if(c<0xd800||c>=0xe000)bytes.push(0xe0|(c>>12),0x80|((c>>6)&0x3f),0x80|(c&0x3f));
-      else{i++;var c2=ascii.charCodeAt(i);var cp=0x10000+((c&0x3ff)<<10)+(c2&0x3ff);
-        bytes.push(0xf0|(cp>>18),0x80|((cp>>12)&0x3f),0x80|((cp>>6)&0x3f),0x80|(cp&0x3f));}}
-    var bitLen=bytes.length*8; bytes.push(0x80);
-    while(bytes.length%64!==56)bytes.push(0);
-    for(var j=7;j>=0;j--)bytes.push((bitLen/Math.pow(2,8*j))&0xff);
-    var w=new Array(64);
-    for(var off=0;off<bytes.length;off+=64){
-      for(var t=0;t<16;t++)w[t]=(bytes[off+t*4]<<24)|(bytes[off+t*4+1]<<16)|(bytes[off+t*4+2]<<8)|(bytes[off+t*4+3]);
-      for(t=16;t<64;t++){var s0=rr(7,w[t-15])^rr(18,w[t-15])^(w[t-15]>>>3);
-        var s1=rr(17,w[t-2])^rr(19,w[t-2])^(w[t-2]>>>10);w[t]=(w[t-16]+s0+w[t-7]+s1)|0;}
-      var a=H[0],b=H[1],c=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
-      for(t=0;t<64;t++){var S1=rr(6,e)^rr(11,e)^rr(25,e);var ch=(e&f)^(~e&g);
-        var t1=(h+S1+ch+K[t]+w[t])|0;var S0=rr(2,a)^rr(13,a)^rr(22,a);var maj=(a&b)^(a&c)^(b&c);
-        var t2=(S0+maj)|0;h=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0;}
-      H[0]=(H[0]+a)|0;H[1]=(H[1]+b)|0;H[2]=(H[2]+c)|0;H[3]=(H[3]+d)|0;
-      H[4]=(H[4]+e)|0;H[5]=(H[5]+f)|0;H[6]=(H[6]+g)|0;H[7]=(H[7]+h)|0;}
-    var out='';for(var k=0;k<8;k++)out+=('00000000'+(H[k]>>>0).toString(16)).slice(-8);
-    return out;
-  }
-  async function sha256hex(s){
-    try{const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
-      return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');}catch(e){}
-    try{return jsSha256(s);}catch(e){return null;}
-  }
-  function deviceHash(){try{return localStorage.getItem('sm_pwhash')||'';}catch(e){return '';}}
   var msg=document.getElementById('lockMsg');
+  if(sessionStorage.getItem('sm_unlocked')==='1'){unlock();}
 
-  /* ---- Biometric unlock (Face ID / Touch ID via WebAuthn), bound to the CURRENT admin password.
-         If the admin changes the password, the stored biometric is invalidated and the new password is required. ---- */
-  var BIOKEY='sm_bio_cred', BIOPW='sm_bio_pwhash';
-  function b64e(buf){return btoa(String.fromCharCode.apply(null,new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
-  function b64d(s){s=String(s).replace(/-/g,'+').replace(/_/g,'/');var bin=atob(s);var u=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
-  function rnd(n){var u=new Uint8Array(n);crypto.getRandomValues(u);return u;}
-  function bioOK(){return !!(window.PublicKeyCredential&&navigator.credentials&&navigator.credentials.create&&location.protocol==='https:');}
-  function bioEnrolled(){try{return !!localStorage.getItem(BIOKEY);}catch(e){return false;}}
-  function clearBio(){try{localStorage.removeItem(BIOKEY);localStorage.removeItem(BIOPW);}catch(e){}}
-  async function bioEnroll(){
-    var cred=await navigator.credentials.create({publicKey:{
-      challenge:rnd(32), rp:{name:'Sky Matrix'},
-      user:{id:rnd(16),name:'sky-matrix',displayName:'Sky Matrix'},
-      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
-      authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},
-      timeout:60000, attestation:'none'
-    }});
-    if(!cred)throw new Error('no credential'); localStorage.setItem(BIOKEY,b64e(cred.rawId)); try{localStorage.setItem(BIOPW,APP_PASSWORD_HASH);}catch(e){}
-  }
-  async function bioVerify(){
-    var id=localStorage.getItem(BIOKEY); if(!id)throw new Error('not enrolled');
-    await navigator.credentials.get({publicKey:{ challenge:rnd(32), allowCredentials:[{type:'public-key',id:b64d(id)}], userVerification:'required', timeout:60000 }});
-  }
-  var bioBtn=document.getElementById('lockBio');
-  function refreshBio(){ if(bioBtn) bioBtn.style.display=(bioOK()&&bioEnrolled())?'block':'none'; }
-  refreshBio();
-  if(bioBtn) bioBtn.addEventListener('click',async function(){
-    try{ await __pwReady; }catch(e){}
-    if((localStorage.getItem(BIOPW)||'')!==APP_PASSWORD_HASH){ clearBio(); refreshBio(); if(msg)msg.textContent='Access was reset by the admin — enter the new password.'; return; }
-    try{ if(msg)msg.textContent='Verifying…'; await bioVerify(); sessionStorage.setItem('sm_unlocked','1'); unlock(); }
-    catch(e){ if(msg)msg.textContent='Biometric not recognised — use your password.'; }
-  });
+  var te=function(s){return new TextEncoder().encode(s);};
+  function ub64u(s){s=String(s).replace(/-/g,'+').replace(/_/g,'/');var bin;try{bin=atob(s);}catch(e){return null;}var u=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
 
-  async function afterPwOk(){
-    sessionStorage.setItem('sm_unlocked','1');
-    try{ if(bioOK()){ if(!bioEnrolled()){ if(msg)msg.textContent='✓ Unlocked.'; if(confirm('Enable Face ID / Touch ID to unlock Sky Matrix next time?')){ await bioEnroll(); refreshBio(); } } else { localStorage.setItem(BIOPW,APP_PASSWORD_HASH); } } }catch(e){}
-    unlock();
+  /* persistent per-device id (shown on the lock screen; the admin signs codes for it) */
+  function devId(){
+    var d=null;try{d=localStorage.getItem('sm_dev');}catch(e){}
+    if(!d){
+      var a=new Uint8Array(6);
+      if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(a);
+      else for(var q=0;q<a.length;q++)a[q]=Math.floor(Math.random()*256);
+      var B32='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s='';
+      for(var i=0;i<a.length;i++)s+=B32[a[i]&31];
+      d='SKM-'+s;try{localStorage.setItem('sm_dev',d);}catch(e){}
+    }
+    return d;
   }
-  async function tryUnlock(){
-    try{ await __pwReady; }catch(e){}      // wait for the live admin password to load (fixes the race that rejected the right password)
-    var pw=document.getElementById('lockPw').value;
-    var h=await sha256hex(pw);
-    if(h && h===APP_PASSWORD_HASH){ afterPwOk(); }
-    else{ if(msg)msg.textContent='Incorrect password.'; document.getElementById('lockPw').value=''; }
+  var DEV=devId();
+  var devEl=document.getElementById('lockDev');if(devEl)devEl.textContent=DEV;
+  var devCopy=document.getElementById('lockDevCopy');
+  if(devCopy)devCopy.addEventListener('click',function(){try{navigator.clipboard.writeText(DEV);}catch(e){}devCopy.textContent='Copied';setTimeout(function(){devCopy.textContent='Copy';},1500);});
+
+  /* trusted "today" in epoch-days: the larger of the device clock and the highest
+     day ever seen from a trusted internet source (guards against clock roll-back). */
+  function seenDay(){try{return parseInt(localStorage.getItem('sm_lic_seen')||'0',10)||0;}catch(e){return 0;}}
+  function markSeen(day){try{if(day>seenDay())localStorage.setItem('sm_lic_seen',String(day));}catch(e){}}
+  function todayDay(){return Math.max(Math.floor(Date.now()/86400000),seenDay());}
+  window.__licMarkSeen=function(ms){var d=Math.floor(ms/86400000);if(d>0)markSeen(d);};
+  /* opportunistic trusted time: GitHub Date header (same-origin) else a CORS time API */
+  (function(){
+    try{
+      var u=(location.hostname.indexOf('captainmarinda.github.io')>=0?(location.pathname||'/'):'https://captainmarinda.github.io/Mike-Briefing/')+'?_t='+Date.now();
+      fetch(u,{method:'HEAD',cache:'no-store'}).then(function(r){var d=r.headers.get('Date');if(d){var ms=Date.parse(d);if(ms)window.__licMarkSeen(ms);}}).catch(function(){
+        fetch('https://timeapi.io/api/Time/current/zone?timeZone=UTC',{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){if(j&&j.dateTime){var ms=Date.parse(j.dateTime+'Z');if(ms)window.__licMarkSeen(ms);}}).catch(function(){});
+      });
+    }catch(e){}
+  })();
+
+  async function verifyCode(code){
+    if(!code)return {ok:false,reason:'empty'};
+    var i=code.indexOf('~');if(i<0)return {ok:false,reason:'malformed'};
+    var expDay=parseInt(code.slice(0,i),10);if(!expDay)return {ok:false,reason:'malformed'};
+    var sig=ub64u(code.slice(i+1));if(!sig||sig.length<32)return {ok:false,reason:'malformed'};
+    var raw=ub64u(LIC_PUBKEY);if(!raw)return {ok:false,reason:'nocrypto'};
+    if(!(window.crypto&&crypto.subtle))return {ok:false,reason:'nocrypto'};
+    var pk;try{pk=await crypto.subtle.importKey('raw',raw,{name:'ECDSA',namedCurve:'P-256'},false,['verify']);}catch(e){return {ok:false,reason:'nocrypto'};}
+    var ok=false;try{ok=await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},pk,sig,te(DEV+'|'+expDay));}catch(e){return {ok:false,reason:'nocrypto'};}
+    if(!ok)return {ok:false,reason:'badsig'};
+    if(expDay<todayDay())return {ok:false,reason:'expired',exp:expDay};
+    return {ok:true,exp:expDay};
   }
-  document.getElementById('lockBtn').addEventListener('click',tryUnlock);
-  document.getElementById('lockPw').addEventListener('keydown',function(e){if(e.key==='Enter')tryUnlock();});
+
+  /* auto-unlock if a stored licence is still valid for THIS device */
+  (async function(){
+    var stored=null;try{stored=localStorage.getItem('sm_lic');}catch(e){}
+    if(!stored)return;
+    var r=await verifyCode(stored);
+    if(r.ok){sessionStorage.setItem('sm_unlocked','1');markSeen(todayDay());unlock();}
+    else if(r.reason==='expired'&&msg){msg.textContent='Your 30-day access has expired — paste a new code from the admin.';}
+  })();
+
+  async function tryActivate(){
+    var el=document.getElementById('lockCode');
+    var code=(el&&el.value||'').trim();
+    if(!code){if(msg)msg.textContent='Paste the access code from the admin.';return;}
+    if(msg)msg.textContent='Checking…';
+    var r=await verifyCode(code);
+    if(r.ok){try{localStorage.setItem('sm_lic',code);}catch(e){}sessionStorage.setItem('sm_unlocked','1');markSeen(todayDay());if(msg)msg.textContent='✓ Activated — valid 30 days on this device.';unlock();return;}
+    var m={empty:'Paste the access code.',
+      malformed:'That code looks incomplete — copy the whole thing and try again.',
+      badsig:'This code is not for THIS device ('+DEV+'). Ask the admin for a code generated for this Device ID.',
+      expired:'This code has expired. Ask the admin for a new 30-day code.',
+      nocrypto:'Secure verification is unavailable in this build. (Android: use the WebViewAssetLoader build so the app runs as a secure context.)'}[r.reason]||'Invalid code.';
+    if(msg)msg.textContent=m;
+  }
+  var btn=document.getElementById('lockBtn');if(btn)btn.addEventListener('click',tryActivate);
+  var inp=document.getElementById('lockCode');if(inp)inp.addEventListener('keydown',function(e){if(e.key==='Enter')tryActivate();});
 })();
 
 /* ---- Sky Matrix animated SVG logo (inline; no external image needed) ---- */
