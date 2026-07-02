@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sky Matrix — Free 10-day trial</title>
+<style>
+ :root{--blue:#1f6dff;--sky:#39b4ff;--navy:#0e1726;--ink:#1e2a44;--grey:#5a6b86}
+ *{box-sizing:border-box}
+ body{margin:0;background:#0e1726;color:#e6ecf5;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;min-height:100vh;display:flex;justify-content:center;padding:26px}
+ .box{max-width:520px;width:100%}
+ .logo{display:flex;justify-content:center;margin-bottom:6px}
+ .logo svg{height:70px}
+ .tag{text-align:center;letter-spacing:3px;text-transform:uppercase;font-size:11px;color:var(--sky);margin-bottom:18px}
+ h1{font-size:22px;margin:0 0 6px;color:#fff;text-align:center}
+ p{color:#9fb3d1;font-size:14px;line-height:1.6}
+ ol{color:#9fb3d1;font-size:14px;line-height:1.7}
+ label{display:block;font-size:12px;color:#9fb3d1;margin:14px 0 4px;font-weight:600}
+ input{width:100%;background:#13203a;border:1px solid #2a3c5e;color:#fff;border-radius:9px;padding:12px;font-size:16px}
+ button{width:100%;background:var(--blue);color:#fff;border:0;border-radius:10px;padding:14px;font-size:16px;font-weight:700;cursor:pointer;margin-top:18px}
+ button:disabled{opacity:.6}
+ .msg{margin-top:14px;font-size:14px;min-height:20px;line-height:1.5}
+ .err{color:#ff9aa2}.ok{color:#7be0a4}
+ .code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;color:#9fe0bf;background:#0c1a12;border:1px solid #1f6d4a;border-radius:8px;padding:12px;margin-top:10px;word-break:break-all;display:none}
+ .foot{text-align:center;color:var(--grey);font-size:11px;margin-top:26px;line-height:1.6}
+ a{color:var(--sky)}
+</style></head>
+<body>
+<div class="box">
+  <div class="logo"><svg viewBox="0 0 620 200" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="pl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#cdebff"/><stop offset=".5" stop-color="#39b4ff"/><stop offset="1" stop-color="#1f6dff"/></linearGradient>
+    <linearGradient id="tx" gradientUnits="userSpaceOnUse" x1="206" y1="40" x2="600" y2="180"><stop offset="0" stop-color="#9fe8ff"/><stop offset=".5" stop-color="#2f8bff"/><stop offset="1" stop-color="#7fe0ff"/></linearGradient></defs>
+    <g stroke="#2f8bff"><circle cx="100" cy="100" r="80" fill="none" stroke="#1f6dff" stroke-opacity=".30" stroke-width="2"/>
+    <g stroke-opacity=".4" stroke-width="1.5"><line x1="100" y1="20" x2="169" y2="60"/><line x1="169" y1="60" x2="169" y2="140"/><line x1="169" y1="140" x2="100" y2="180"/><line x1="100" y1="180" x2="31" y2="140"/><line x1="31" y1="140" x2="31" y2="60"/><line x1="31" y1="60" x2="100" y2="20"/><line x1="100" y1="20" x2="100" y2="100"/><line x1="169" y1="60" x2="100" y2="100"/><line x1="169" y1="140" x2="100" y2="100"/><line x1="100" y1="180" x2="100" y2="100"/><line x1="31" y1="140" x2="100" y2="100"/><line x1="31" y1="60" x2="100" y2="100"/></g>
+    <g fill="#39b4ff" stroke="none"><circle cx="100" cy="20" r="4"/><circle cx="169" cy="60" r="4"/><circle cx="169" cy="140" r="4"/><circle cx="100" cy="180" r="4"/><circle cx="31" cy="140" r="4"/><circle cx="31" cy="60" r="4"/></g></g>
+    <g transform="rotate(-16 100 100)"><path d="M100 36 L150 158 L100 132 L50 158 Z" fill="url(#pl)"/><path d="M100 60 L122 140 L100 128 Z" fill="#e3f4ff" opacity=".55"/></g>
+    <text x="206" y="96" font-family="Arial,sans-serif" font-weight="800" font-size="72" letter-spacing="3" fill="url(#tx)">SKY</text>
+    <text x="206" y="172" font-family="Arial,sans-serif" font-weight="800" font-size="72" letter-spacing="3" fill="url(#tx)">MATRIX</text></svg></div>
+  <div class="tag">Fly informed</div>
+
+  <h1>Start your free 10-day trial</h1>
+  <p>Sky Matrix is licensed to one device at a time. To get your free 10-day code:</p>
+  <ol>
+    <li>Open Sky Matrix on your device. On the lock screen you'll see your <b>Device ID</b> (looks like <b>SKM-XXXXXX</b>).</li>
+    <li>Enter your email and that Device ID below.</li>
+    <li>We'll show your code here instantly and email you a copy — paste it into the app and tap <b>Activate</b>.</li>
+  </ol>
+
+  <label for="email">Your email</label>
+  <input id="email" type="email" placeholder="you@example.com" autocomplete="email">
+  <label for="device">Device ID (from the app lock screen)</label>
+  <input id="device" type="text" placeholder="SKM-XXXXXX" autocapitalize="characters" style="text-transform:uppercase">
+  <button id="go">Get my 10-day code</button>
+  <div class="msg" id="msg"></div>
+  <div class="code" id="code"></div>
+
+  <div class="foot">
+    One free trial per device. Codes work only on the device they're issued for.<br>
+    Sky Matrix — for reference only, not for operational use. &middot; <a href="https://www.skymatrix.biz">www.skymatrix.biz</a> &middot; support@skymatrix.biz
+  </div>
+</div>
+<script>
+  // ↓↓↓  set this to your deployed Worker URL (see the setup guide)  ↓↓↓
+  var WORKER_URL = "https://skymatrix-trial.skymatrix.workers.dev";
+
+  var $=function(id){return document.getElementById(id);};
+  function setMsg(t,c){var m=$('msg');m.textContent=t;m.className='msg '+(c||'');}
+  $('go').addEventListener('click',async function(){
+    var email=$('email').value.trim(), device=$('device').value.trim().toUpperCase();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){setMsg('Please enter a valid email.','err');return;}
+    if(!/^SKM-[A-Z0-9]{6}$/.test(device)){setMsg('Enter your Device ID exactly as shown (SKM-XXXXXX).','err');return;}
+    $('go').disabled=true; setMsg('Generating your code…');
+    try{
+      var r=await fetch(WORKER_URL+'/trial',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,device:device})});
+      var j=await r.json();
+      if(j.ok){
+        setMsg('✓ Your 10-day code (valid until '+j.expiry+') — also emailed to you:','ok');
+        var c=$('code'); c.style.display='block'; c.textContent=j.code;
+      } else { setMsg(j.error||'Could not issue a code.','err'); }
+    }catch(e){ setMsg('Network error — please try again.','err'); }
+    $('go').disabled=false;
+  });
+</script>
+</body></html>
