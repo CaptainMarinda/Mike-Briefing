@@ -220,21 +220,25 @@
 <div id="lockScreen">
   <div class="locklogo" id="lockLogo"></div>
   <div class="box">
-    <div class="tag">Flight briefing assistant</div>
-    <div class="tag" style="color:#7fd8ff;letter-spacing:3px;font-size:10px;margin-top:2px">FLY INFORMED</div>
-    <div class="by" style="margin:8px 0 6px">New here? Enter your email and we'll email your access code. Your access code is delivered to your email.</div>
+    <div style="text-align:center;font-weight:800;font-size:24px;letter-spacing:5px;color:#eaf4ff;font-family:Arial,Helvetica,sans-serif;margin:0 0 4px">SKY MATRIX</div>
+    <div class="tag" style="margin-bottom:2px">Flight briefing assistant</div>
+    <div class="tag" style="color:#7fd8ff;letter-spacing:4px;font-size:11px;margin-top:0">FLY INFORMED</div>
+    <div class="by" style="margin:8px 0 6px">New here? Enter your email, then choose an option below. Your access code is emailed to you; your Device ID is filled in automatically.</div>
     <input id="lockEmail" type="email" placeholder="Your email" autocomplete="email" autocapitalize="off" spellcheck="false">
-    <div style="display:flex;gap:8px;align-items:center;margin:8px 0 6px">
-      <input id="lockDevField" type="text" value="••••••••••" readonly aria-label="Your device ID" style="flex:1;text-align:center;font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:800;letter-spacing:1px;color:#7fd8ff">
-      <button id="lockDevShow" type="button" style="padding:11px 14px;font-size:13px;background:#13203A;border:1px solid #2a3c5e;margin:0;white-space:nowrap;border-radius:9px;color:#cfe0f5">Show ID</button>
+    <input id="lockDevField" type="text" value="••••••••••" readonly aria-label="Your device ID" style="text-align:center;font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:800;letter-spacing:2px;color:#7fd8ff">
+    <div style="display:flex;gap:8px;margin:-2px 0 12px">
+      <button id="lockDevShow" type="button" style="width:auto;flex:1;background:#13203A;border:1px solid #2a3c5e;color:#cfe0f5;font-size:13px;padding:9px">Show ID</button>
+      <button id="lockDevCopy" type="button" style="width:auto;flex:1;background:#13203A;border:1px solid #2a3c5e;color:#cfe0f5;font-size:13px;padding:9px">Copy ID</button>
     </div>
-    <button id="lockReq">Email me my access code</button>
+    <button id="lockTrial">Start my free 10-day trial</button>
+    <button id="lockReq" style="background:#13203A;border:1px solid #2a3c5e;color:#cfe0f5;margin-top:8px">Email me my access code</button>
     <div id="lockReqMsg" style="font-size:13px;margin-top:6px;min-height:16px"></div>
     <div class="by" style="margin:14px 0 4px;border-top:1px solid #1b2942;padding-top:12px">Got your code from the email? Paste it below to activate.</div>
     <input id="lockCode" type="text" placeholder="Paste your access code" autocomplete="off" autocapitalize="off" spellcheck="false">
     <button id="lockBtn">Activate</button>
     <div id="lockMsg"></div>
-    <div class="by" style="margin-top:8px">Access is by a security code, locked to this device. Your access code is delivered to your email.</div>
+    <a href="https://skymatrix.biz/user-guide.pdf" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:12px;color:#7fd8ff;font-weight:600;text-decoration:none">Download User Guide (PDF)</a>
+    <div class="by" style="margin-top:10px">Access is by a security code, locked to this device. Your access code is delivered to your email.</div>
     <div class="warn"><b>FOR REFERENCE ONLY.</b> This tool must NOT be used for operational purposes. The official hard copy of the OFP must be used for flight operations. For individual use only.</div>
     <div class="by">Prepared by Sky Matrix &middot; <a href="https://www.skymatrix.biz">www.skymatrix.biz</a></div>
   </div>
@@ -748,28 +752,30 @@ var LIC_PUBKEY = "BMxAfrty9p7_t79ebh4KowBcDiZVaiyBIRPPgMGaPK2Bt4yB9EU1W-4z9WQ4E4
     return d;
   }
   var DEV=devId();
-  /* Device ID is masked; "Show ID" fills the real ID into the field (the user only types their email). */
+  /* Device ID is masked; "Show ID" reveals it in the field, "Copy ID" copies it. The user only types their email. */
   var devEl=document.getElementById('lockDevField');
   var devShow=document.getElementById('lockDevShow');
+  var devCopy=document.getElementById('lockDevCopy');
   var __devShown=false;
   function toggleDev(){ __devShown=!__devShown; if(devEl)devEl.value=__devShown?DEV:'••••••••••'; if(devShow)devShow.textContent=__devShown?'Hide ID':'Show ID'; }
   if(devShow)devShow.addEventListener('click',toggleDev);
-  /* In-app code request: emails the access code for THIS device (delivered by email, not shown here). */
+  if(devCopy)devCopy.addEventListener('click',function(){ try{ navigator.clipboard.writeText(DEV); }catch(e){} devCopy.textContent='Copied ✓'; setTimeout(function(){devCopy.textContent='Copy ID';},1400); });
+  /* In-app code request: emails a device-locked access code to THIS device (trial or access; delivered by email). */
   var LIC_WORKER="https://skymatrix-trial.skymatrix.workers.dev";
-  var reqBtn=document.getElementById('lockReq'), reqMsg=document.getElementById('lockReqMsg');
+  var reqMsg=document.getElementById('lockReqMsg');
   function setReq(t,c){ if(reqMsg){reqMsg.textContent=t; reqMsg.style.color=c||'#9fb3d1';} }
-  if(reqBtn)reqBtn.addEventListener('click',async function(){
+  function requestCode(btn, label){
     var em=((document.getElementById('lockEmail')||{}).value||'').trim();
-    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ setReq('Enter a valid email address.','#ff9aa2'); return; }
-    reqBtn.disabled=true; setReq('Sending your access code…');
-    try{
-      var r=await fetch(LIC_WORKER+'/trial',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:em,device:DEV})});
-      var j=await r.json();
-      if(j.ok){ setReq('✓ Your access code has been emailed to '+em+'. Check your inbox, then paste it below.','#7be0a4'); }
-      else { setReq(j.error||'Could not send a code right now. Please try again.','#ff9aa2'); }
-    }catch(e){ setReq('Network error. Check your connection and try again.','#ff9aa2'); }
-    reqBtn.disabled=false;
-  });
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ setReq('Enter a valid email address first.','#ff9aa2'); return; }
+    btn.disabled=true; setReq(label+'…');
+    fetch(LIC_WORKER+'/trial',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:em,device:DEV})})
+      .then(function(r){ return r.json(); })
+      .then(function(j){ if(j.ok){ setReq('✓ Your access code has been emailed to '+em+'. Check your inbox, then paste it below.','#7be0a4'); } else { setReq(j.error||'Could not send a code right now. Please try again.','#ff9aa2'); } })
+      .catch(function(){ setReq('Network error. Check your connection and try again.','#ff9aa2'); })
+      .then(function(){ btn.disabled=false; });
+  }
+  var trialBtn=document.getElementById('lockTrial'); if(trialBtn)trialBtn.addEventListener('click',function(){ requestCode(trialBtn,'Starting your free 10-day trial'); });
+  var reqBtn=document.getElementById('lockReq'); if(reqBtn)reqBtn.addEventListener('click',function(){ requestCode(reqBtn,'Sending your access code'); });
 
   /* trusted "today" in epoch-days: the larger of the device clock and the highest
      day ever seen from a trusted internet source (guards against clock roll-back). */
