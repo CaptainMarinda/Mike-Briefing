@@ -139,10 +139,16 @@
       <p class="lead">Sky Matrix reads your OFP and gives you a clean, in-flight companion — weather alerts, NOTAMs, an inflight display, crew rest planning, checklists and cabin announcements — all in one place, on your iPad or phone.</p>
       <div class="btns">
         <a class="btn primary" href="trial.html">Start your free 10-day trial</a>
-        <a class="btn ghost" href="app.html">Open the app</a>
+        <a class="btn ghost" href="skymatrix.apk" download>Download Android app</a>
+        <a class="btn ghost" href="app.html" title="Runs on iPhone &amp; iPad in Safari — add to Home Screen to install">Download iOS app</a>
       </div>
     </div>
-    <div class="heroart"><span id="herologo" style="display:block;width:100%"></span></div>
+    <div class="heroart">
+      <video autoplay muted loop playsinline controls preload="auto" poster="video-poster.jpg" style="width:100%;max-width:540px;border-radius:16px;border:1px solid var(--line);background:#000;display:block">
+        <source src="skymatrix-intro.mp4" type="video/mp4">
+        Your browser doesn't support embedded video. <a href="skymatrix-intro.mp4">Watch the clip</a>.
+      </video>
+    </div>
   </div>
 </div>
 
@@ -259,7 +265,7 @@
 <script>
   // clone logo into placeholders
   var tpl=document.getElementById('logotpl').content;
-  ['navlogo','herologo','footlogo'].forEach(function(id){var s=tpl.cloneNode(true);document.getElementById(id).appendChild(s);});
+  ['navlogo','footlogo'].forEach(function(id){var s=tpl.cloneNode(true);document.getElementById(id).appendChild(s);});
   document.getElementById('navlogo').querySelector('svg').style.height='30px';
   document.getElementById('footlogo').querySelector('svg').style.height='44px';
   // mobile menu
