@@ -221,6 +221,7 @@
   <div class="locklogo" id="lockLogo"></div>
   <div class="box">
     <div class="tag">Flight briefing assistant</div>
+    <div class="tag" style="color:#7fd8ff;letter-spacing:3px;font-size:10px;margin-top:2px">FLY INFORMED</div>
     <div class="by" style="margin:6px 0 2px">Your device ID — send it to the admin to get a 30-day access code:</div>
     <div style="display:flex;gap:8px;align-items:center;justify-content:center;margin:4px 0 10px">
       <span id="lockDev" style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:18px;font-weight:800;color:#7fd8ff;letter-spacing:1px">—</span>
@@ -229,16 +230,16 @@
     <input id="lockCode" type="text" placeholder="Paste 30-day access code" autocomplete="off" autocapitalize="off" spellcheck="false">
     <button id="lockBtn">Activate</button>
     <div id="lockMsg"></div>
-    <div class="by" style="margin-top:8px">Access is by a 30-day code from the admin, locked to this device. When it expires, ask the admin for a new code.</div>
+    <div class="by" style="margin-top:8px">Access is by a security code from the admin, locked to this device.</div>
     <div class="warn"><b>FOR REFERENCE ONLY.</b> This tool must NOT be used for operational purposes. The official hard copy of the OFP must be used for flight operations. For individual use only.</div>
-    <div class="by">Prepared by Sky Matrix &middot; <a href="mailto:skymatrix401@gmail.com">skymatrix401@gmail.com</a></div>
+    <div class="by">Prepared by Sky Matrix &middot; <a href="https://www.skymatrix.biz">www.skymatrix.biz</a></div>
   </div>
 </div>
 
 <header class="app">
   <div class="hdrlogo" id="hdrLogo"></div>
   <div style="display:flex;align-items:center;gap:10px">
-    <span class="sub mono">Flight briefing assistant</span>
+    <span class="sub mono">Flight briefing assistant &middot; fly informed</span>
   </div>
 </header>
 
@@ -391,9 +392,9 @@
   </div>
   <div class="fcard">
     <h2>Aircraft / flight lookup</h2>
-    <p class="fsub">Enter an ATC callsign (e.g. QTR4T) for airline + route + live aircraft, or a registration (e.g. A7-ALS) for the exact type &amp; operator. Most complete while the flight is airborne. Needs internet.</p>
+    <p class="fsub">Enter an ATC callsign (e.g. ABC123) for airline + route + live aircraft, or a registration (e.g. G-ABCD) for the exact type &amp; operator. Most complete while the flight is airborne. Needs internet.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <input id="ac_cs" type="text" placeholder="callsign QTR4T or reg A7-ALS" style="text-transform:uppercase;width:230px">
+      <input id="ac_cs" type="text" placeholder="callsign e.g. ABC123 or reg G-ABCD" style="text-transform:uppercase;width:230px">
       <button id="ac_get" type="button">Look up</button>
     </div>
     <pre id="ac_out" style="display:none;white-space:pre-wrap;word-break:break-word;background:#0f1b31;border:1px solid #2a3c5e;border-radius:8px;padding:10px;margin-top:10px;font-family:var(--mono);font-size:12px;color:#cfe;min-height:30px"></pre>
@@ -617,6 +618,9 @@
       <div class="feat-field"><label class="lab">Flight number</label><input id="p_no" type="text" placeholder="[NUMBER]"></div>
       <div class="feat-field"><label class="lab">Destination (from OFP)</label><input id="p_destn" type="text" placeholder="[DESTINATION_NAME]"></div>
     </div>
+    <div class="fgrid">
+      <div class="feat-field"><label class="lab">Airline / operator name (optional)</label><input id="p_airline" type="text" placeholder="e.g. your airline — leave blank to omit"></div>
+    </div>
     <div class="fgrid pa-welcome">
       <div class="feat-field"><label class="lab">Flight time</label><input id="p_dur" type="text" placeholder="7 hours 30 minutes"></div>
       <div class="feat-field"><label class="lab">Cruise level (from OFP)</label><input id="p_fl" type="text" placeholder="FL380"></div>
@@ -693,7 +697,8 @@
 
 <div class="credit">
   <span class="creditlogo" id="footLogo"></span><br>
-  Prepared by <b>Sky Matrix</b> &middot; for queries &amp; feedback contact <a href="mailto:skymatrix401@gmail.com">skymatrix401@gmail.com</a><br>
+  <span style="letter-spacing:3px;text-transform:uppercase;font-size:11px;color:#7fd8ff">Fly Informed</span><br>
+  Prepared by <b>Sky Matrix</b> &middot; <a href="https://www.skymatrix.biz">www.skymatrix.biz</a> &middot; queries &amp; feedback: <a href="mailto:support@skymatrix.biz">support@skymatrix.biz</a><br>
   For reference only — not for operational use. Use the official hard-copy OFP for flight operations. Individual use only.
 </div>
 
@@ -751,10 +756,25 @@ var LIC_PUBKEY = "BMxAfrty9p7_t79ebh4KowBcDiZVaiyBIRPPgMGaPK2Bt4yB9EU1W-4z9WQ4E4
   /* opportunistic trusted time: GitHub Date header (same-origin) else a CORS time API */
   (function(){
     try{
-      var u=(location.hostname.indexOf('captainmarinda.github.io')>=0?(location.pathname||'/'):'https://captainmarinda.github.io/Mike-Briefing/')+'?_t='+Date.now();
+      var u=(location.protocol!=='file:'?(location.pathname||'/'):'https://captainmarinda.github.io/Mike-Briefing/')+'?_t='+Date.now();
       fetch(u,{method:'HEAD',cache:'no-store'}).then(function(r){var d=r.headers.get('Date');if(d){var ms=Date.parse(d);if(ms)window.__licMarkSeen(ms);}}).catch(function(){
         fetch('https://timeapi.io/api/Time/current/zone?timeZone=UTC',{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){if(j&&j.dateTime){var ms=Date.parse(j.dateTime+'Z');if(ms)window.__licMarkSeen(ms);}}).catch(function(){});
       });
+    }catch(e){}
+  })();
+
+  /* ---- Admin temporary block: a device listed in blocked.json is locked out (checked when online) ---- */
+  var __blocked=false;
+  try{ if(localStorage.getItem('sm_blocked_dev')===DEV) __blocked=true; }catch(e){}
+  function lockOut(){ try{lock.style.display='flex';}catch(e){} try{sessionStorage.removeItem('sm_unlocked');}catch(e){} if(msg)msg.textContent='Access suspended by the administrator. Please contact support@skymatrix.biz.'; }
+  function setBlocked(b){ __blocked=b; try{ if(b){localStorage.setItem('sm_blocked_dev',DEV);} else if(localStorage.getItem('sm_blocked_dev')===DEV){localStorage.removeItem('sm_blocked_dev');} }catch(e){} if(b)lockOut(); }
+  if(__blocked)lockOut();
+  (function(){
+    try{
+      var base=(location.protocol!=='file:'?(location.pathname.replace(/[^/]*$/,'')||'/'):'https://captainmarinda.github.io/Mike-Briefing/');
+      fetch(base+'blocked.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(list){
+        if(Array.isArray(list)) setBlocked(list.indexOf(DEV)>=0);
+      }).catch(function(){});
     }catch(e){}
   })();
 
@@ -775,13 +795,14 @@ var LIC_PUBKEY = "BMxAfrty9p7_t79ebh4KowBcDiZVaiyBIRPPgMGaPK2Bt4yB9EU1W-4z9WQ4E4
   /* auto-unlock if a stored licence is still valid for THIS device */
   (async function(){
     var stored=null;try{stored=localStorage.getItem('sm_lic');}catch(e){}
-    if(!stored)return;
+    if(__blocked||!stored)return;
     var r=await verifyCode(stored);
-    if(r.ok){sessionStorage.setItem('sm_unlocked','1');markSeen(todayDay());unlock();}
-    else if(r.reason==='expired'&&msg){msg.textContent='Your 30-day access has expired — paste a new code from the admin.';}
+    if(r.ok&&!__blocked){sessionStorage.setItem('sm_unlocked','1');markSeen(todayDay());unlock();}
+    else if(r.reason==='expired'&&msg){msg.textContent='Your access has expired — paste a new code from the admin.';}
   })();
 
   async function tryActivate(){
+    if(__blocked){lockOut();return;}
     var el=document.getElementById('lockCode');
     var code=(el&&el.value||'').trim();
     if(!code){if(msg)msg.textContent='Paste the access code from the admin.';return;}
@@ -995,14 +1016,15 @@ function parseNotamValidity(s){
 function parseOFP(text, opts){
   const T=text.replace(/\r/g,'');
   const data={raw:T};
-  data.atcCs   = m(/\b(QTR\w+)\/(QR\w+|QTR\w+)/,T) || m(/\b(QTR\d+\w?)\b/,T);
-  data.fltCs   = m(/QTR\w+\/(\w+)/,T) || m(/\b(QR\d+)\b/,T) || m(/STATION COPY\s+(\w+)/,T);
+  // Airline-agnostic: match "ATCcallsign/FLTnumber" (e.g. ICAO 3-letter + number / IATA 2–3 char + number)
+  data.atcCs   = m(/\b([A-Z]{3}\d+[A-Z]?)\/[A-Z]{2,3}\d+[A-Z]?\b/,T);
+  data.fltCs   = m(/\b[A-Z]{3}\d+[A-Z]?\/([A-Z]{2,3}\d+[A-Z]?)\b/,T) || m(/STATION COPY\s+([A-Z]{2,3}\d+[A-Z]?)/,T);
   data.date    = m(/\b([0-3]\d[A-Z]{3})\b/,T);
   data.depMonth= MON[(data.date||'').slice(2,5)]||0;
   let depdest  = /\b([A-Z]{4})\/([A-Z]{4})\b/.exec(T);
   data.dep = depdest?depdest[1]:''; data.dest = depdest?depdest[2]:'';
   data.acType  = m(/[A-Z]{4}\/[A-Z]{4}\s+([A-Z0-9]{3,4})\b/,T) || m(/AIRCRAFT TYPE\s*:\s*(\S+)/,T);
-  data.tail    = m(/\b(A7-?[A-Z]{3})\b/,T) || m(/REG[.:]\s*([A-Z0-9-]+)/,T);
+  data.tail    = m(/REG[.:]\s*([A-Z0-9-]{4,8})/,T) || m(/\b([A-Z]{1,2}-[A-Z]{2,5})\b/,T);
   data.ofpNo   = m(/OFP:\s*([\d/]+)\//,T) || m(/OFP:\s*([\d/]+)/,T);
   data.etops   = m(/ETOPS:\s*(\d+\s*MIN)/,T);
   data.std = m(/\bSTD\s+(\d+\/\d+)/,T);
@@ -1021,7 +1043,7 @@ function parseOFP(text, opts){
   data.altnIcao = altn?altn[1]:''; data.fAltn = altn?altn[2]:'';
   data.fExtra= m(/\bEXTRA\s+\S*\s*(\d+)\s+\d{4}/,T);
   data.fRamp = m(/\bRAMP FUEL\s+(\d+)/,T);
-  // REMARKS only from the OFP HEADER (between the PIC/OFP line and "FUEL TIME"). Prevents grabbing a stray "REMARKS:" buried in the NOTAM section (e.g. QR056 has no header remarks).
+  // REMARKS only from the OFP HEADER (between the PIC/OFP line and "FUEL TIME"). Prevents grabbing a stray "REMARKS:" buried in the NOTAM section (some flights have no header remarks).
   const _headEnd=T.search(/\n\s*FUEL\s+TIME\b/i);
   const _head=_headEnd>0?T.slice(0,_headEnd):T.slice(0,1500);
   const rmM=/\bREMARKS:\s*([\s\S]*)$/i.exec(_head);
@@ -1556,7 +1578,7 @@ function generate(ev){
     if(oOfp&&oOfp.scrollIntoView) oOfp.scrollIntoView({behavior:'smooth',block:'start'});
   }catch(e){setMsg('Parse error: '+e.message,'err');console.error(e);}
 }
-// Ident bar: full identity (ATC + Flt QR + route/date/OFP) on the OFP-briefing & PA pages; only the ATC callsign (QTR) + route/date elsewhere.
+// Ident bar: full identity (ATC callsign + flight number + route/date/OFP) on the OFP-briefing & PA pages; only the ATC callsign + route/date elsewhere.
 window.__renderIdent=function(){
   const ib=document.getElementById('identbar'), ii=document.getElementById('identInfo');
   const d=window.__OFP; if(!ib||!ii||!d) return;
@@ -2326,39 +2348,53 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
     else lines.push('Not currently airborne.');
     acShow(lines.join('\n'));
   }
+  /* Flightradar24: search for the flight, then pull its full detail (most accurate) */
+  async function fr24(cs){
+    var s=await acJ('https://www.flightradar24.com/v1/search/web/find?limit=8&query='+encodeURIComponent(cs));
+    var rs=(s&&s.results)||[];
+    var r=rs.filter(function(x){return x&&x.id&&(x.type==='live'||x.type==='schedule');})[0]
+        || rs.filter(function(x){return x&&x.id&&x.detail&&(x.detail.callsign||x.detail.flight||x.detail.reg);})[0];
+    if(!r||!r.id) return null;
+    return await acJ('https://data-live.flightradar24.com/clickhandler/?flight='+encodeURIComponent(r.id));
+  }
   async function acByCs(cs){
     acShow('Looking up '+cs+'…');
+    var lines=['Callsign: '+cs];
+    // Primary source: Flightradar24 (airline, type, route, live status)
+    var d=null; try{ d=await fr24(cs); }catch(e){}
+    if(d && (d.aircraft||d.airline||d.airport)){
+      if(d.airline&&d.airline.name)lines.push('Airline: '+d.airline.name);
+      var num=d.identification&&d.identification.number&&d.identification.number.default; if(num&&num!==cs)lines.push('Flight: '+num);
+      var o=d.airport&&d.airport.origin, ds=d.airport&&d.airport.destination;
+      if(o&&ds)lines.push('Route: '+((o.code&&o.code.iata)||'?')+(o.name?(' '+o.name):'')+'  →  '+((ds.code&&ds.code.iata)||'?')+(ds.name?(' '+ds.name):''));
+      var mdl=d.aircraft&&d.aircraft.model&&(d.aircraft.model.text||d.aircraft.model.code);
+      if(d.aircraft&&(mdl||d.aircraft.registration))lines.push('Aircraft: '+(mdl||acType(d.aircraft.model&&d.aircraft.model.code))+(d.aircraft.registration?('  ·  '+d.aircraft.registration):''));
+      if(d.status&&d.status.text)lines.push('Status: '+d.status.text);
+      var tr=d.trail&&d.trail[0];
+      if(tr&&tr.alt!=null)lines.push('Position: FL'+Math.round(tr.alt/100)+(tr.spd?('  ·  '+tr.spd+' kt GS'):''));
+      lines.push('— via Flightradar24');
+      acShow(lines.join('\n')); return;
+    }
+    // Fallback: adsbdb (route/airline) + adsb.lol (live)
     var res=await Promise.all([ acJ('https://api.adsbdb.com/v0/callsign/'+cs), acJ('https://api.adsb.lol/v2/callsign/'+cs) ]);
     var rt=res[0], live=res[1];
     var fr=rt&&rt.response&&rt.response.flightroute;
     var lv=live&&live.ac&&live.ac[0];
-    var lines=['Callsign: '+cs];
     if(fr&&fr.airline&&fr.airline.name)lines.push('Airline: '+fr.airline.name+(fr.callsign_iata?(' / '+fr.callsign_iata):''));
     if(fr&&fr.origin&&fr.destination)lines.push('Route: '+fr.origin.iata_code+' '+(fr.origin.municipality||'')+'  →  '+fr.destination.iata_code+' '+(fr.destination.municipality||''));
     if(lv){
       var reg=(lv.r||'').trim();
-      // enrich the live type code with the full aircraft record from its registration
       var a=null; if(reg){ var acd=await acJ('https://api.adsbdb.com/v0/aircraft/'+encodeURIComponent(reg)); a=acd&&acd.response&&acd.response.aircraft; }
       lines.push('Aircraft (live): '+(a&&a.type?a.type+(a.icao_type?(' ['+a.icao_type+']'):''):acType(lv.t))+(reg?('  ·  '+reg):''));
       if(a&&a.registered_owner && !(fr&&fr.airline)) lines.splice(1,0,'Operator: '+a.registered_owner);
       lines.push('Position: FL'+Math.round((+lv.alt_baro||0)/100)+(lv.gs?('  ·  '+Math.round(lv.gs)+' kt GS'):'')+(lv.lat!=null?('  ·  '+(+lv.lat).toFixed(1)+'/'+(+lv.lon).toFixed(1)):''));
-      acShow(lines.join('\n')); return;
-    }
-    // not airborne → try FlightRadar24 (scheduled) for the type, via the proxy chain
-    var j=await acJ('https://www.flightradar24.com/v1/search/web/find?limit=8&query='+cs);
-    var m=j&&j.results&&j.results.filter(function(x){return x.detail&&(x.detail.ac_type||x.detail.schd_from);})[0];
-    if(m){
-      if(!fr&&m.detail.operator)lines.push('Operator: '+m.detail.operator);
-      if(!(fr&&fr.origin)&&(m.detail.route||m.detail.schd_from))lines.push('Route: '+(m.detail.route||((m.detail.schd_from||'?')+' → '+(m.detail.schd_to||'?'))));
-      if(m.detail.ac_type)lines.push('Aircraft (scheduled): '+acType(m.detail.ac_type)+(m.detail.reg?('  ·  '+m.detail.reg):''));
-      if(m.detail.flight)lines.push('Flight: '+m.detail.flight);
-    } else if(!fr){ acShow('No info found for '+cs+'. It may not be a known/active flight — try the aircraft registration instead (e.g. A7-ALS).'); return; }
-    else lines.push('Aircraft type: not available (flight isn’t airborne right now — try its registration).');
+    } else if(lines.length===1){ acShow('No info found for '+cs+'. Try the aircraft registration instead (e.g. G-ABCD).'); return; }
+    else lines.push('Not airborne right now — try its registration for the exact type.');
     acShow(lines.join('\n'));
   }
   if($('ac_get'))$('ac_get').addEventListener('click',function(){
     var q=(($('ac_cs')||{}).value||'').trim().toUpperCase().replace(/\s+/g,'');
-    if(!q){acShow('Enter an ATC callsign (e.g. QTR4T) or a registration (e.g. A7-ALS).');return;}
+    if(!q){acShow('Enter an ATC callsign (e.g. ABC123) or a registration (e.g. G-ABCD).');return;}
     var isReg=/-/.test(q) || /^N[0-9]/.test(q);   // hyphen, or US N-reg
     (isReg?acByReg(q):acByCs(q)).catch(function(e){acShow('Lookup failed (needs internet): '+(e&&e.message||e));});
   });
@@ -2435,20 +2471,20 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
     const capt=(($('p_capt')||{}).value||'').trim(), fo=(($('p_fo')||{}).value||'').trim();
     const myName=speaker==='Captain'?(capt||'[CAPTAIN]'):(fo||'[FO]');
     const other=speaker==='Captain'?(fo||'[FO]'):(capt||'[CAPTAIN]');
-    return {g:g,speaker:speaker,myName:myName,other:other,dest:pv('p_destn','[DESTINATION_NAME]')};
+    return {g:g,speaker:speaker,myName:myName,other:other,dest:pv('p_destn','[DESTINATION_NAME]'),airline:pv('p_airline','')};
   }
   function buildPAWelcome(){
     if(!$('paText'))return; const b=paBase();
     const _sr=(typeof OFP!=='undefined'&&OFP&&OFP.shearMax)?parseFloat(OFP.shearMax.sr):NaN;
     const turb=isNaN(_sr)?'some light turbulence':(_sr>4?`moderate turbulence (forecast shear SR ${OFP.shearMax.sr})`:`light turbulence (forecast shear SR ${OFP.shearMax.sr})`);
     $('paText').value=`Good ${b.g}, ladies and gentlemen.\n\n`+
-      `This is your ${b.speaker} speaking. My name is ${b.myName}. On behalf of Qatar Airways and all the crew, I would like to welcome you on board this ${pv('p_ac','[AIRCRAFT]')}, flight ${pv('p_no','[NUMBER]')} to ${b.dest}.\n\n`+
-      `Beside me here on the Flight Deck is ${b.other}. And looking after your safety and comfort in the cabin today are CSD / CS ${pv('p_csd','[CSDNAME]')}, and our award-winning team.\n\n`+
+      `This is your ${b.speaker} speaking. My name is ${b.myName}. On behalf of ${b.airline||'the flight deck'} and all the crew, I would like to welcome you on board this ${pv('p_ac','[AIRCRAFT]')}, flight ${pv('p_no','[NUMBER]')} to ${b.dest}.\n\n`+
+      `Beside me here on the Flight Deck is ${b.other}. And looking after your safety and comfort in the cabin today are CSD / CS ${pv('p_csd','[CSDNAME]')}, and our cabin crew team.\n\n`+
       `Our flight time today is ${pv('p_dur','[DURATION]')}, and we will be cruising at an altitude of ${pv('p_fl','[FL]')}. We're expecting generally good weather en route. However, we may experience ${turb} during the flight.\n\n`+
       `For your safety, please keep your seatbelt fastened at all times, even when the seatbelt signs are switched off.\n\n`+
       `Before we begin our descent into ${b.dest}, I'll update you with the latest weather and arrival information.\n\n`+
-      `Until then, please make yourself comfortable and enjoy our world-class service.\n\n`+
-      `I wish you a very pleasant journey on board this Qatar Airways flight. Thank you.`;
+      `Until then, please make yourself comfortable and enjoy our service.\n\n`+
+      `I wish you a very pleasant journey${b.airline?(' on board this '+b.airline+' flight'):''}. Thank you.`;
   }
   function buildPADescent(){
     if(!$('paTextD'))return; const b=paBase();
@@ -2459,10 +2495,10 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
       `The local time now is ${pv('p_tn','[TIME_NOW]')}.\n\n`+
       `On behalf of all the crew, we wish you a very pleasant stay in ${b.dest}, or a smooth onward journey.\n\n`+
       `It's been our pleasure having you on board today.\n\n`+
-      `Thank you for choosing the award-winning Qatar Airways.`;
+      `Thank you for flying with ${b.airline||'us'}.`;
   }
   function buildPA(){ buildPAWelcome(); buildPADescent(); }
-  ['p_speaker','p_greet','p_capt','p_fo','p_csd','p_ac','p_no','p_destn','p_dur','p_fl','p_ttg','p_eta','p_wx','p_tc','p_tn']
+  ['p_speaker','p_greet','p_capt','p_fo','p_csd','p_ac','p_no','p_destn','p_airline','p_dur','p_fl','p_ttg','p_eta','p_wx','p_tc','p_tn']
     .forEach(id=>{var e=$(id);if(e)e.addEventListener('input',()=>{ e.dataset.touched='1'; buildPA(); });});
   function wireCopy(btn,src,msgId){var b=$(btn);if(!b)return;b.addEventListener('click',function(){var t=($(src)||{}).value||'';var done=function(){var c=$(msgId);if(c){c.textContent='Copied ✓';setTimeout(function(){c.textContent='';},1500);}};if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(done,done);else done();});}
   wireCopy('paCopy','paText','paCopied');
@@ -2575,7 +2611,7 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
   const PERSIST_IDS=['d_to','d_trip','gpsLdg','r_to','r_type','r_start','r_end','r_gap',
     'dep_date','dep_fnum','dep_from','dep_to','dep_block','dep_ft','dep_fl','dep_std','dep_delay','dep_chocks','dep_zfw','dep_tow','dep_lwt','dep_atis','dep_rwy','dep_intx','dep_notes',
     'ar_atis','ar_tempc','ar_stand','ar_arrfuel','ar_freq','ar_mlwt','ar_lwt','ar_dispatch','ar_notes','ar_ata','ar_block',
-    'p_speaker','p_greet','p_capt','p_fo','p_csd','p_ac','p_no','p_destn','p_dur','p_fl','p_wx','p_tc','wxIcao'];
+    'p_speaker','p_greet','p_capt','p_fo','p_csd','p_ac','p_no','p_destn','p_airline','p_dur','p_fl','p_wx','p_tc','wxIcao'];
   let saveTimer=null;
   function saveState(){clearTimeout(saveTimer);saveTimer=setTimeout(function(){
     try{const o={};PERSIST_IDS.forEach(id=>{const e=$(id);if(e&&e.value!=='')o[id]=e.value;});
