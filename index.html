@@ -7,7 +7,7 @@
 <style>
  :root{
    --blue:#1f6dff;--sky:#39b4ff;--navy:#0e1726;--panel:#13203a;--line:#2a3c5e;
-   --ink:#e6ecf5;--soft:#9fb3d1;--grey:#5a6b86;--good:#7be0a4;--plum:#5a1846;
+   --ink:#e6ecf5;--soft:#9fb3d1;--grey:#5a6b86;--good:#7be0a4;--plum:#5a1846;--burg:#b23a5d;
  }
  *{box-sizing:border-box}
  html{scroll-behavior:smooth}
@@ -21,7 +21,7 @@
  .nav .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
  .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.5px}
  .brand svg{height:30px}
- .brand small{display:block;font-size:9px;letter-spacing:3px;color:var(--sky);font-weight:700}
+ .brand small{display:block;font-size:9px;letter-spacing:3px;color:var(--burg);font-weight:700}
  nav.links{display:flex;gap:20px;align-items:center}
  nav.links a{color:var(--soft);font-size:14px;font-weight:600}
  nav.links a:hover{color:#fff}
@@ -32,7 +32,7 @@
    background:radial-gradient(1000px 500px at 70% -10%,rgba(31,109,255,.25),transparent 60%),
               radial-gradient(700px 400px at 10% 10%,rgba(90,24,70,.35),transparent 60%)}
  .hero .wrap{padding:70px 22px 60px;display:grid;grid-template-columns:1.1fr .9fr;gap:36px;align-items:center}
- .tagline{letter-spacing:5px;text-transform:uppercase;font-size:12px;color:var(--sky);font-weight:700;margin-bottom:14px}
+ .tagline{letter-spacing:5px;text-transform:uppercase;font-size:12px;color:var(--burg);font-weight:700;margin-bottom:14px}
  .hero h1{font-size:44px;line-height:1.08;margin:0 0 16px;color:#fff;font-weight:800}
  .hero h1 span{background:linear-gradient(90deg,#9fe8ff,#2f8bff);-webkit-background-clip:text;background-clip:text;color:transparent}
  .hero p.lead{font-size:17px;color:var(--soft);margin:0 0 26px;max-width:520px}
@@ -123,6 +123,7 @@
       <a href="#about">About</a>
       <a href="#video">Video</a>
       <a href="#download">Download</a>
+      <a href="#products">Our Products</a>
       <a href="#contact">Contact</a>
       <a class="cta" href="trial.html">Start free trial</a>
     </nav>
@@ -170,7 +171,7 @@
     <div class="about">
       <div>
         <p class="sub" style="margin-bottom:16px">Sky Matrix started on the flight deck — a way to cut the clutter of preflight paperwork into a single, calm, in-flight companion. It runs entirely on your own device, works offline once loaded, and is licensed per device so your setup stays yours.</p>
-        <p class="sub">The goal is simple: help you <b style="color:#fff">fly informed</b>. Less hunting through pages, more situational awareness — from top of climb to the gate.</p>
+        <p class="sub">The goal is simple: help you <b style="color:var(--burg)">fly informed</b>. Less hunting through pages, more situational awareness — gate to gate.</p>
       </div>
       <div class="statrow">
         <div class="stat"><b>1</b><span>device-locked licence</span></div>
@@ -187,11 +188,11 @@
   <div class="wrap">
     <div class="kicker">Watch</div>
     <h2>Video introduction</h2>
-    <p class="sub">A short walkthrough of Sky Matrix is on its way. This is where it will live.</p>
-    <div class="video" id="videoBox">
-      <div class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
-      <div><b style="color:var(--ink)">Coming soon</b><br>Video introduction will be added here.</div>
-    </div>
+    <p class="sub">A quick tour of Sky Matrix — the whole app, gate to gate.</p>
+    <video controls playsinline preload="metadata" poster="video-poster.jpg" style="width:100%;border-radius:16px;border:1px solid var(--line);background:#000;display:block">
+      <source src="skymatrix-intro.mp4" type="video/mp4">
+      Your browser doesn't support embedded video. <a href="skymatrix-intro.mp4">Download the clip</a>.
+    </video>
   </div>
 </section>
 
@@ -214,6 +215,21 @@
     <div class="btns" style="margin-top:22px">
       <a class="btn ghost" href="app.html">Open the web app</a>
       <a class="btn primary" href="trial.html">Start free 10-day trial</a>
+    </div>
+  </div>
+</section>
+
+<!-- PRODUCTS -->
+<section id="products">
+  <div class="wrap">
+    <div class="kicker">More from us</div>
+    <h2>Our other products</h2>
+    <p class="sub">We're building more tools for the flight deck. New products will appear here soon.</p>
+    <div class="video" style="aspect-ratio:auto;min-height:150px;padding:26px">
+      <div><b style="color:var(--ink)">Coming soon</b><br>Our other products will be listed here.</div>
+    </div>
+    <div class="btns" style="margin-top:20px">
+      <a class="btn ghost" href="mailto:support@skymatrix.biz?subject=Sky%20Matrix%20products">Get notified</a>
     </div>
   </div>
 </section>
