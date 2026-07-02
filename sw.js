@@ -2,10 +2,10 @@
    Upload this file to the GitHub repo ROOT, next to index.html.
    Navigation is network-first (so a freshly uploaded index.html loads when online,
    and the cached copy loads when offline). Libraries/assets are cache-first. */
-const CACHE = 'skymatrix-v4';
+const CACHE = 'skymatrix-v5';
 const ASSETS = [
   './',
-  './index.html',
+  './app.html',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/2.1.5/tesseract.min.js'
@@ -39,10 +39,10 @@ self.addEventListener('fetch', function (e) {
     e.respondWith(
       fetch(req).then(function (res) {
         var cp = res.clone();
-        caches.open(CACHE).then(function (c) { c.put('./index.html', cp).catch(function () {}); });
+        caches.open(CACHE).then(function (c) { c.put('./app.html', cp).catch(function () {}); });
         return res;
       }).catch(function () {
-        return caches.match(req).then(function (c) { return c || caches.match('./index.html'); });
+        return caches.match(req).then(function (c) { return c || caches.match('./app.html'); });
       })
     );
     return;
