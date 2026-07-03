@@ -30,7 +30,18 @@
     addLink('manifest',URL.createObjectURL(b));
   }catch(e){}
   // Register the service worker so the app launches & runs OFFLINE (caches itself + PDF/OCR libraries). Needs sw.js uploaded to the repo root.
-  try{ if('serviceWorker' in navigator){ window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); } }catch(e){}
+  try{ if('serviceWorker' in navigator){
+    var __swReloaded=false, __hadCtrl=!!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange',function(){
+      if(__swReloaded||!__hadCtrl)return; __swReloaded=true; location.reload();
+    });
+    window.addEventListener('load',function(){
+      navigator.serviceWorker.register('sw.js').then(function(reg){
+        try{reg.update();}catch(e){}
+        setInterval(function(){try{reg.update();}catch(e){}},30*60*1000);
+      }).catch(function(){});
+    });
+  } }catch(e){}
 })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
