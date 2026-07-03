@@ -2657,4 +2657,33 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
   function saveState(){clearTimeout(saveTimer);saveTimer=setTimeout(function(){
     try{const o={};PERSIST_IDS.forEach(id=>{const e=$(id);if(e&&e.value!=='')o[id]=e.value;});
       const a=$('ofp_atd'); if(a&&a.value)o['ofp_atd']=a.value;
+      localStorage.setItem('sm_fields',JSON.stringify(o));}catch(e){}
+  },300);}
+  function restoreState(){
+    try{const o=JSON.parse(localStorage.getItem('sm_fields')||'{}');
+      Object.keys(o).forEach(id=>{const e=$(id);if(e){e.value=o[id];e.dataset.touched='1';}});
+      if(o.ofp_atd&&typeof syncATD==='function')syncATD(o.ofp_atd);
+      const tc=$('ar_tempc'); if(tc&&tc.value!==''){const cC=parseFloat(tc.value);$('ar_tempf').value=isNaN(cC)?'':Math.round(cC*9/5+32);}
+      calcRest(); buildPA(); calcDisplay();
+    }catch(e){}
+  }
+  window.__restoreState=restoreState;
+  document.addEventListener('input',saveState,true);
+  document.addEventListener('change',saveState,true);
+  // #44 — any entry change propagates instantly to related/derived fields across the app.
+  function syncAll(){try{calcDisplay();}catch(e){}try{buildPA();}catch(e){}try{if(typeof recalcBlock==='function')recalcBlock();}catch(e){}}
+  document.addEventListener('input',syncAll,true);
+  document.addEventListener('change',syncAll,true);
+
+  calcRest(); buildPA();
+  calcDisplay();
+  setInterval(calcDisplay,1000);
+})();
+
+/* restore the last loaded OFP so it survives app restarts / storage purges */
+try{var __savedOfp=localStorage.getItem('sm_ofptext'); if(__savedOfp && __savedOfp.trim()){ document.getElementById('paste').value=__savedOfp; generate(); }}catch(e){}
+try{ if(window.__restoreState) window.__restoreState(); }catch(e){}
+</script>
+</body>
+</html>
     
