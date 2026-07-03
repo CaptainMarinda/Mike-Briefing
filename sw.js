@@ -2,7 +2,7 @@
    Upload this file to the GitHub repo ROOT, next to index.html.
    Navigation is network-first (so a freshly uploaded index.html loads when online,
    and the cached copy loads when offline). Libraries/assets are cache-first. */
-const CACHE = 'skymatrix-v7';
+const CACHE = 'skymatrix-v8';
 const ASSETS = [
   './',
   './app.html',
