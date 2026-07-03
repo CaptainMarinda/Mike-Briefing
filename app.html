@@ -205,6 +205,14 @@
   #lockScreen .warn{margin-top:22px;font-size:11px;color:#ffb3b3;background:#2a1414;border:1px solid #5a2222;border-radius:8px;padding:10px;line-height:1.5}
   #lockScreen .by{margin-top:14px;font-size:11px;color:#7e90ad}
   #lockScreen .by a{color:#7ec8ff;text-decoration:none}
+  #setPinScreen,#loginScreen{display:none;position:fixed;inset:0;background:#0E1726;z-index:101;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;overflow:auto}
+  #setPinScreen .box,#loginScreen .box{max-width:400px;width:100%}
+  #setPinScreen input,#loginScreen input{width:100%;background:#13203A;border:1px solid #2a3c5e;color:#fff;border-radius:8px;padding:12px;font-size:17px;text-align:center;margin-bottom:10px}
+  #setPinScreen button,#loginScreen button{width:100%;padding:12px;font-size:15px}
+  .gnote{font-size:12px;color:#9fb3d1;margin:6px 0;line-height:1.5}
+  .gerr{color:#ff9aa2;font-size:12.5px;min-height:16px;margin-top:6px}
+  .gexp{display:none;background:#3a2412;border:1px solid #d99a1f;color:#ffe8c2;border-radius:8px;padding:9px;font-size:12.5px;margin-bottom:12px}
+  .gupd{display:none;background:#12324a;border:1px solid #2f8bff;color:#cfe6ff;border-radius:8px;padding:9px;font-size:12.5px;margin-bottom:12px}
   .clrow{display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid #20304f;font-size:14px}
   #almPop{display:none;position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:95;max-width:92%;background:#3a2412;border:1px solid #d99a1f;color:#ffe8c2;border-radius:10px;padding:12px 16px;box-shadow:0 8px 30px rgba(0,0,0,.5);font-weight:600;display:none;align-items:center;gap:12px}
   #almPop.show{display:flex}
@@ -234,6 +242,7 @@
     <div style="text-align:center;font-weight:800;font-size:24px;letter-spacing:5px;color:#eaf4ff;font-family:Arial,Helvetica,sans-serif;margin:0 0 4px">SKY MATRIX</div>
     <div class="tag" style="margin-bottom:2px">Flight briefing assistant</div>
     <div class="tag" style="color:#7fd8ff;letter-spacing:4px;font-size:11px;margin-top:0">FLY INFORMED</div>
+    <div id="lockExpiredBanner" style="display:none;background:#3a1414;border:1px solid #6b2020;color:#ffd2d2;border-radius:8px;padding:10px;font-size:13px;margin:8px 0 0;font-weight:600">Your code has time expired. Please buy a new code to continue.</div>
     <div class="by" style="margin:8px 0 6px">New here? Enter your email, then choose an option below. Your access code is emailed to you; your Device ID is filled in automatically.</div>
     <input id="lockEmail" type="email" placeholder="Your email" autocomplete="email" autocapitalize="off" spellcheck="false">
     <input id="lockDevField" type="text" value="••••••••••" readonly aria-label="Your device ID" style="text-align:center;font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:800;letter-spacing:2px;color:#7fd8ff">
@@ -242,6 +251,7 @@
       <button id="lockDevCopy" type="button" style="width:auto;flex:1;background:#13203A;border:1px solid #2a3c5e;color:#cfe0f5;font-size:13px;padding:9px">Copy ID</button>
     </div>
     <button id="lockTrial">Start my free 10-day trial</button>
+    <button id="lockSub" style="background:#12324a;border:1px solid #2f8bff;color:#cfe6ff;margin-top:8px">Subscribe</button>
     <button id="lockReq" style="background:#13203A;border:1px solid #2a3c5e;color:#cfe0f5;margin-top:8px">Email me my access code</button>
     <div id="lockReqMsg" style="font-size:13px;margin-top:6px;min-height:16px"></div>
     <div class="by" style="margin:14px 0 4px;border-top:1px solid #1b2942;padding-top:12px">Got your code from the email? Paste it below to activate.</div>
@@ -252,6 +262,39 @@
     <div class="by" style="margin-top:10px">Access is by a security code, locked to this device. Your access code is delivered to your email.</div>
     <div class="warn"><b>FOR REFERENCE ONLY.</b> This tool must NOT be used for operational purposes. The official hard copy of the OFP must be used for flight operations. For individual use only.</div>
     <div class="by">Prepared by Sky Matrix &middot; <a href="https://www.skymatrix.biz">www.skymatrix.biz</a></div>
+  </div>
+</div>
+
+<div id="setPinScreen">
+  <div class="box">
+    <div style="font-weight:800;font-size:22px;letter-spacing:4px;color:#eaf4ff;margin-bottom:6px">SET YOUR PIN</div>
+    <div class="gnote">Your access code is now saved on this device. Choose a PIN to open Sky Matrix. It stays only on this device.</div>
+    <input id="pinNew" type="password" inputmode="numeric" placeholder="New PIN (4 to 8 digits)" maxlength="8" autocomplete="new-password">
+    <input id="pinNew2" type="password" inputmode="numeric" placeholder="Confirm PIN" maxlength="8" autocomplete="new-password">
+    <label id="bioRow" style="display:none;align-items:center;gap:8px;justify-content:center;font-size:13px;color:#cfe0f5;margin:2px 0 12px"><input id="bioOpt" type="checkbox" style="width:auto;margin:0"> Also unlock with Face ID / fingerprint</label>
+    <button id="pinSave">Save PIN and open Sky Matrix</button>
+    <div id="pinErr" class="gerr"></div>
+  </div>
+</div>
+
+<div id="loginScreen">
+  <div class="box">
+    <div class="locklogo" id="loginLogo" style="width:min(300px,70%);margin:0 auto 14px;display:block"></div>
+    <div style="font-weight:800;font-size:22px;letter-spacing:5px;color:#eaf4ff;margin-bottom:2px">SKY MATRIX</div>
+    <div class="gnote" style="color:#7fd8ff;letter-spacing:3px;font-size:11px;margin:0 0 12px">FLY INFORMED</div>
+    <div id="loginExp" class="gexp"></div>
+    <div id="loginUpd" class="gupd"></div>
+    <input id="loginPin" type="password" inputmode="numeric" placeholder="Enter your PIN" maxlength="8" autocomplete="current-password">
+    <button id="loginBtn">Unlock</button>
+    <button id="loginBio" style="display:none;background:#13203A;border:1px solid #2a3c5e;color:#cfe0f5;margin-top:8px">Unlock with Face ID / fingerprint</button>
+    <div id="loginErr" class="gerr"></div>
+    <a id="loginForgot" href="#" style="display:block;margin-top:12px;color:#7fd8ff;font-size:13px;text-decoration:none">Forgot PIN?</a>
+    <div id="forgotBox" style="display:none;margin-top:10px;border-top:1px solid #1b2942;padding-top:10px">
+      <div class="gnote">Paste your access code to reset your PIN, or email support@skymatrix.biz.</div>
+      <input id="forgotCode" type="text" placeholder="Paste your access code" autocapitalize="off" spellcheck="false">
+      <button id="forgotBtn" style="background:#13203A;border:1px solid #2a3c5e;color:#cfe0f5">Reset PIN with code</button>
+      <div id="forgotErr" class="gerr"></div>
+    </div>
   </div>
 </div>
 
@@ -741,83 +784,57 @@ var LIC_PUBKEY = "BMxAfrty9p7_t79ebh4KowBcDiZVaiyBIRPPgMGaPK2Bt4yB9EU1W-4z9WQ4E4
    a year): it stops working after that day and is useless on any other device.
    No password is used. */
 (function(){
-  var lock=document.getElementById('lockScreen');
-  function unlock(){lock.style.display='none';if(typeof requestWake==='function')requestWake();}
-  var msg=document.getElementById('lockMsg');
-  if(sessionStorage.getItem('sm_unlocked')==='1'){unlock();}
+  var SC={lock:document.getElementById('lockScreen'),setpin:document.getElementById('setPinScreen'),login:document.getElementById('loginScreen')};
+  function hideAll(){for(var k in SC){if(SC[k])SC[k].style.display='none';}}
+  function show(k){hideAll();if(SC[k])SC[k].style.display='flex';}
+  function runApp(){hideAll();try{sessionStorage.setItem('sm_unlocked','1');}catch(e){}if(typeof requestWake==='function')requestWake();}
 
   var te=function(s){return new TextEncoder().encode(s);};
   function ub64u(s){s=String(s).replace(/-/g,'+').replace(/_/g,'/');var bin;try{bin=atob(s);}catch(e){return null;}var u=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
+  function b64(u){var s='';for(var i=0;i<u.length;i++)s+=String.fromCharCode(u[i]);return btoa(s);}
+  function ub64(s){try{var bin=atob(String(s));var u=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}catch(e){return null;}}
 
-  /* persistent per-device id (shown on the lock screen; the admin signs codes for it) */
-  function devId(){
-    var d=null;try{d=localStorage.getItem('sm_dev');}catch(e){}
-    if(!d){
-      var a=new Uint8Array(6);
-      if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(a);
-      else for(var q=0;q<a.length;q++)a[q]=Math.floor(Math.random()*256);
-      var B32='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s='';
-      for(var i=0;i<a.length;i++)s+=B32[a[i]&31];
-      d='SKM-'+s;try{localStorage.setItem('sm_dev',d);}catch(e){}
-    }
-    return d;
-  }
+  function devId(){var d=null;try{d=localStorage.getItem('sm_dev');}catch(e){}
+    if(!d){var a=new Uint8Array(6);if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(a);else for(var q=0;q<a.length;q++)a[q]=Math.floor(Math.random()*256);
+      var B32='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s='';for(var i=0;i<a.length;i++)s+=B32[a[i]&31];d='SKM-'+s;try{localStorage.setItem('sm_dev',d);}catch(e){}}
+    return d;}
   var DEV=devId();
-  /* Device ID is masked; "Show ID" reveals it in the field, "Copy ID" copies it. The user only types their email. */
-  var devEl=document.getElementById('lockDevField');
-  var devShow=document.getElementById('lockDevShow');
-  var devCopy=document.getElementById('lockDevCopy');
-  var __devShown=false;
-  function toggleDev(){ __devShown=!__devShown; if(devEl)devEl.value=__devShown?DEV:'••••••••••'; if(devShow)devShow.textContent=__devShown?'Hide ID':'Show ID'; }
+
+  var devEl=document.getElementById('lockDevField'),devShow=document.getElementById('lockDevShow'),devCopy=document.getElementById('lockDevCopy'),__devShown=false;
+  function toggleDev(){__devShown=!__devShown;if(devEl)devEl.value=__devShown?DEV:'••••••••••';if(devShow)devShow.textContent=__devShown?'Hide ID':'Show ID';}
   if(devShow)devShow.addEventListener('click',toggleDev);
-  if(devCopy)devCopy.addEventListener('click',function(){ try{ navigator.clipboard.writeText(DEV); }catch(e){} devCopy.textContent='Copied ✓'; setTimeout(function(){devCopy.textContent='Copy ID';},1400); });
-  /* In-app code request: emails a device-locked access code to THIS device (trial or access; delivered by email). */
+  if(devCopy)devCopy.addEventListener('click',function(){try{navigator.clipboard.writeText(DEV);}catch(e){}devCopy.textContent='Copied ✓';setTimeout(function(){devCopy.textContent='Copy ID';},1400);});
+
   var LIC_WORKER="https://skymatrix-trial.skymatrix.workers.dev";
   var reqMsg=document.getElementById('lockReqMsg');
-  function setReq(t,c){ if(reqMsg){reqMsg.textContent=t; reqMsg.style.color=c||'#9fb3d1';} }
-  function requestCode(btn, label){
-    var em=((document.getElementById('lockEmail')||{}).value||'').trim();
-    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ setReq('Enter a valid email address first.','#ff9aa2'); return; }
-    btn.disabled=true; setReq(label+'…');
+  function setReq(t,c){if(reqMsg){reqMsg.textContent=t;reqMsg.style.color=c||'#9fb3d1';}}
+  function requestCode(btn,label){var em=((document.getElementById('lockEmail')||{}).value||'').trim();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){setReq('Enter a valid email address first.','#ff9aa2');return;}
+    btn.disabled=true;setReq(label+'…');
     fetch(LIC_WORKER+'/trial',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:em,device:DEV})})
-      .then(function(r){ return r.json(); })
-      .then(function(j){ if(j.ok){ setReq('✓ Your access code has been emailed to '+em+'. Check your inbox, then paste it below.','#7be0a4'); } else { setReq(j.error||'Could not send a code right now. Please try again.','#ff9aa2'); } })
-      .catch(function(){ setReq('Network error. Check your connection and try again.','#ff9aa2'); })
-      .then(function(){ btn.disabled=false; });
-  }
-  var trialBtn=document.getElementById('lockTrial'); if(trialBtn)trialBtn.addEventListener('click',function(){ requestCode(trialBtn,'Starting your free 10-day trial'); });
-  var reqBtn=document.getElementById('lockReq'); if(reqBtn)reqBtn.addEventListener('click',function(){ requestCode(reqBtn,'Sending your access code'); });
+      .then(function(r){return r.json();})
+      .then(function(j){if(j.ok){setReq('✓ Your access code has been emailed to '+em+'. Check your inbox, then paste it below.','#7be0a4');}else{setReq(j.error||'Could not send a code right now. Please try again.','#ff9aa2');}})
+      .catch(function(){setReq('Network error. Check your connection and try again.','#ff9aa2');})
+      .then(function(){btn.disabled=false;});}
+  var trialBtn=document.getElementById('lockTrial');if(trialBtn)trialBtn.addEventListener('click',function(){requestCode(trialBtn,'Starting your free 10-day trial');});
+  var reqBtn=document.getElementById('lockReq');if(reqBtn)reqBtn.addEventListener('click',function(){requestCode(reqBtn,'Sending your access code');});
+  function goSubscribe(){location.href='https://skymatrix.biz/subscribe.html?device='+encodeURIComponent(DEV);}
+  var subBtn=document.getElementById('lockSub');if(subBtn)subBtn.addEventListener('click',goSubscribe);
 
-  /* trusted "today" in epoch-days: the larger of the device clock and the highest
-     day ever seen from a trusted internet source (guards against clock roll-back). */
   function seenDay(){try{return parseInt(localStorage.getItem('sm_lic_seen')||'0',10)||0;}catch(e){return 0;}}
   function markSeen(day){try{if(day>seenDay())localStorage.setItem('sm_lic_seen',String(day));}catch(e){}}
   function todayDay(){return Math.max(Math.floor(Date.now()/86400000),seenDay());}
   window.__licMarkSeen=function(ms){var d=Math.floor(ms/86400000);if(d>0)markSeen(d);};
-  /* opportunistic trusted time: GitHub Date header (same-origin) else a CORS time API */
-  (function(){
-    try{
-      var u=(location.protocol!=='file:'?(location.pathname||'/'):'https://captainmarinda.github.io/Mike-Briefing/')+'?_t='+Date.now();
-      fetch(u,{method:'HEAD',cache:'no-store'}).then(function(r){var d=r.headers.get('Date');if(d){var ms=Date.parse(d);if(ms)window.__licMarkSeen(ms);}}).catch(function(){
-        fetch('https://timeapi.io/api/Time/current/zone?timeZone=UTC',{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){if(j&&j.dateTime){var ms=Date.parse(j.dateTime+'Z');if(ms)window.__licMarkSeen(ms);}}).catch(function(){});
-      });
-    }catch(e){}
-  })();
+  (function(){try{var u=(location.protocol!=='file:'?(location.pathname||'/'):'https://captainmarinda.github.io/Mike-Briefing/')+'?_t='+Date.now();
+    fetch(u,{method:'HEAD',cache:'no-store'}).then(function(r){var d=r.headers.get('Date');if(d){var ms=Date.parse(d);if(ms)window.__licMarkSeen(ms);}}).catch(function(){
+      fetch('https://timeapi.io/api/Time/current/zone?timeZone=UTC',{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){if(j&&j.dateTime){var ms=Date.parse(j.dateTime+'Z');if(ms)window.__licMarkSeen(ms);}}).catch(function(){});
+    });}catch(e){}})();
 
-  /* ---- Admin temporary block: a device listed in blocked.json is locked out (checked when online) ---- */
   var __blocked=false;
-  try{ if(localStorage.getItem('sm_blocked_dev')===DEV) __blocked=true; }catch(e){}
-  function lockOut(){ try{lock.style.display='flex';}catch(e){} try{sessionStorage.removeItem('sm_unlocked');}catch(e){} if(msg)msg.textContent='Access suspended by the administrator. Please contact support@skymatrix.biz.'; }
-  function setBlocked(b){ __blocked=b; try{ if(b){localStorage.setItem('sm_blocked_dev',DEV);} else if(localStorage.getItem('sm_blocked_dev')===DEV){localStorage.removeItem('sm_blocked_dev');} }catch(e){} if(b)lockOut(); }
-  if(__blocked)lockOut();
-  (function(){
-    try{
-      var base=(location.protocol!=='file:'?(location.pathname.replace(/[^/]*$/,'')||'/'):'https://captainmarinda.github.io/Mike-Briefing/');
-      fetch(base+'blocked.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(list){
-        if(Array.isArray(list)) setBlocked(list.indexOf(DEV)>=0);
-      }).catch(function(){});
-    }catch(e){}
-  })();
+  try{if(localStorage.getItem('sm_blocked_dev')===DEV)__blocked=true;}catch(e){}
+  function setBlocked(b){__blocked=b;try{if(b){localStorage.setItem('sm_blocked_dev',DEV);}else if(localStorage.getItem('sm_blocked_dev')===DEV){localStorage.removeItem('sm_blocked_dev');}}catch(e){}if(b)route();}
+  (function(){try{var base=(location.protocol!=='file:'?(location.pathname.replace(/[^/]*$/,'')||'/'):'https://captainmarinda.github.io/Mike-Briefing/');
+    fetch(base+'blocked.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(list){if(Array.isArray(list))setBlocked(list.indexOf(DEV)>=0);}).catch(function(){});}catch(e){}})();
 
   async function verifyCode(code){
     if(!code)return {ok:false,reason:'empty'};
@@ -833,32 +850,111 @@ var LIC_PUBKEY = "BMxAfrty9p7_t79ebh4KowBcDiZVaiyBIRPPgMGaPK2Bt4yB9EU1W-4z9WQ4E4
     return {ok:true,exp:expDay};
   }
 
-  /* auto-unlock if a stored licence is still valid for THIS device */
-  (async function(){
+  async function sha(s){var h=await crypto.subtle.digest('SHA-256',te(s));var u=new Uint8Array(h),o='';for(var i=0;i<u.length;i++)o+=('0'+u[i].toString(16)).slice(-2);return o;}
+  function pinStored(){try{return localStorage.getItem('sm_pin');}catch(e){return null;}}
+  async function savePin(pin){try{localStorage.setItem('sm_pin',await sha(DEV+'|pin|'+pin));}catch(e){}}
+  async function checkPin(pin){try{return (await sha(DEV+'|pin|'+pin))===pinStored();}catch(e){return false;}}
+
+  function bioAvailable(){return !!(window.PublicKeyCredential&&navigator.credentials&&location.protocol==='https:');}
+  function bioEnrolled(){try{return localStorage.getItem('sm_bio')==='1'&&!!localStorage.getItem('sm_bio_cred');}catch(e){return false;}}
+  async function bioEnroll(){
+    if(!bioAvailable())throw new Error('unavailable');
+    var ch=crypto.getRandomValues(new Uint8Array(32));
+    var cred=await navigator.credentials.create({publicKey:{challenge:ch,rp:{name:'Sky Matrix',id:location.hostname},
+      user:{id:te(DEV),name:DEV,displayName:'Sky Matrix'},pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+      authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},timeout:60000,attestation:'none'}});
+    if(!cred)throw new Error('failed');
+    try{localStorage.setItem('sm_bio_cred',b64(new Uint8Array(cred.rawId)));localStorage.setItem('sm_bio','1');}catch(e){}
+    return true;}
+  async function bioVerify(){
+    if(!bioAvailable()||!bioEnrolled())throw new Error('unavailable');
+    var id=ub64(localStorage.getItem('sm_bio_cred'));if(!id)throw new Error('nocred');
+    var ch=crypto.getRandomValues(new Uint8Array(32));
+    var a=await navigator.credentials.get({publicKey:{challenge:ch,allowCredentials:[{type:'public-key',id:id}],userVerification:'required',timeout:60000,rpId:location.hostname}});
+    return !!a;}
+
+  function checkUpdate(el){if(!el)return;try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistration().then(function(reg){if(!reg)return;
+    function chk(){if(reg.waiting){el.style.display='block';el.textContent='An update is ready. Close and reopen the app to update.';}}
+    try{reg.update();}catch(e){}chk();
+    reg.addEventListener('updatefound',function(){var nw=reg.installing;if(nw)nw.addEventListener('statechange',function(){if(nw.state==='installed')chk();});});
+  }).catch(function(){});}}catch(e){}}
+
+  function onboardMsgEl(){return document.getElementById('lockMsg');}
+  function showOnboarding(expired){var b=document.getElementById('lockExpiredBanner');if(b)b.style.display=expired?'block':'none';show('lock');}
+  function showSetPin(){var row=document.getElementById('bioRow');if(row)row.style.display=bioAvailable()?'flex':'none';
+    var e=document.getElementById('pinErr');if(e){e.style.color='#ff9aa2';e.textContent='';}
+    var a=document.getElementById('pinNew'),b=document.getElementById('pinNew2');if(a)a.value='';if(b)b.value='';show('setpin');}
+  function showLogin(exp){var exN=document.getElementById('loginExp');
+    if(exN){var left=exp-todayDay();if(left<=7){exN.style.display='block';exN.textContent='Your access expires in '+Math.max(0,left)+' day'+(left===1?'':'s')+'. Subscribe to keep access.';}else exN.style.display='none';}
+    var bio=document.getElementById('loginBio');if(bio)bio.style.display=(bioAvailable()&&bioEnrolled())?'block':'none';
+    var pe=document.getElementById('loginErr');if(pe)pe.textContent='';
+    var pi=document.getElementById('loginPin');if(pi)pi.value='';
+    var fb=document.getElementById('forgotBox');if(fb)fb.style.display='none';
+    checkUpdate(document.getElementById('loginUpd'));show('login');}
+
+  async function route(){
+    if(__blocked){var m=onboardMsgEl();if(m)m.textContent='Access suspended by the administrator. Please contact support@skymatrix.biz.';showOnboarding(false);return;}
     var stored=null;try{stored=localStorage.getItem('sm_lic');}catch(e){}
-    if(__blocked||!stored)return;
+    if(!stored){showOnboarding(false);return;}
     var r=await verifyCode(stored);
-    if(r.ok&&!__blocked){sessionStorage.setItem('sm_unlocked','1');markSeen(todayDay());unlock();}
-    else if(r.reason==='expired'&&msg){msg.textContent='Your access has expired — paste a new code from the admin.';}
-  })();
+    if(r.reason==='expired'){showOnboarding(true);return;}
+    if(!r.ok){showOnboarding(false);return;}
+    window.__licExp=r.exp;markSeen(todayDay());
+    if(!pinStored()){showSetPin();return;}
+    showLogin(r.exp);
+  }
 
   async function tryActivate(){
-    if(__blocked){lockOut();return;}
-    var el=document.getElementById('lockCode');
-    var code=(el&&el.value||'').trim();
-    if(!code){if(msg)msg.textContent='Paste the access code from the admin.';return;}
+    var msg=onboardMsgEl();
+    if(__blocked){if(msg)msg.textContent='Access suspended. Contact support@skymatrix.biz.';return;}
+    var el=document.getElementById('lockCode');var code=(el&&el.value||'').trim();
+    if(!code){if(msg)msg.textContent='Paste the access code from your email.';return;}
     if(msg)msg.textContent='Checking…';
     var r=await verifyCode(code);
-    if(r.ok){try{localStorage.setItem('sm_lic',code);}catch(e){}sessionStorage.setItem('sm_unlocked','1');markSeen(todayDay());if(msg){var _exp=new Date(r.exp*86400000).toUTCString().slice(0,16);msg.textContent='✓ Activated — valid until '+_exp+' UTC on this device.';}unlock();return;}
-    var m={empty:'Paste the access code.',
-      malformed:'That code looks incomplete — copy the whole thing and try again.',
-      badsig:'This code is not for THIS device ('+DEV+'). Ask the admin for a code generated for this Device ID.',
-      expired:'This code has expired. Ask the admin for a new access code, or start a free trial.',
-      nocrypto:'Secure verification is unavailable in this build. (Android: use the WebViewAssetLoader build so the app runs as a secure context.)'}[r.reason]||'Invalid code.';
+    if(r.ok){try{localStorage.setItem('sm_lic',code);}catch(e){}window.__licExp=r.exp;markSeen(todayDay());
+      if(msg)msg.textContent='✓ Activated on this device.';
+      if(pinStored())showLogin(r.exp);else showSetPin();return;}
+    var m={empty:'Paste the access code.',malformed:'That code looks incomplete — copy the whole thing and try again.',
+      badsig:'This code is not for THIS device ('+DEV+'). Use a code issued for this Device ID.',
+      expired:'This code has expired. Subscribe or start a trial to get a new one.',
+      nocrypto:'Secure verification is unavailable here. Open the app over https (skymatrix.biz).'}[r.reason]||'Invalid code.';
     if(msg)msg.textContent=m;
   }
-  var btn=document.getElementById('lockBtn');if(btn)btn.addEventListener('click',tryActivate);
-  var inp=document.getElementById('lockCode');if(inp)inp.addEventListener('keydown',function(e){if(e.key==='Enter')tryActivate();});
+  var actBtn=document.getElementById('lockBtn');if(actBtn)actBtn.addEventListener('click',tryActivate);
+  var actInp=document.getElementById('lockCode');if(actInp)actInp.addEventListener('keydown',function(e){if(e.key==='Enter')tryActivate();});
+
+  var pinSave=document.getElementById('pinSave');
+  if(pinSave)pinSave.addEventListener('click',async function(){
+    var e=document.getElementById('pinErr');
+    var pn=(document.getElementById('pinNew')||{}).value||'';var p2=(document.getElementById('pinNew2')||{}).value||'';
+    if(!/^\d{4,8}$/.test(pn)){if(e){e.style.color='#ff9aa2';e.textContent='PIN must be 4 to 8 digits.';}return;}
+    if(pn!==p2){if(e){e.style.color='#ff9aa2';e.textContent='The two PINs do not match.';}return;}
+    await savePin(pn);
+    var opt=document.getElementById('bioOpt');
+    if(opt&&opt.checked&&bioAvailable()){pinSave.disabled=true;if(e){e.style.color='#9fb3d1';e.textContent='Setting up biometric…';}
+      try{await bioEnroll();}catch(err){if(e){e.style.color='#ff9aa2';e.textContent='Biometric setup was cancelled or is unavailable — your PIN still works.';}}
+      pinSave.disabled=false;}
+    runApp();
+  });
+
+  async function tryLogin(){var e=document.getElementById('loginErr');var pn=(document.getElementById('loginPin')||{}).value||'';
+    if(!pn){if(e)e.textContent='Enter your PIN.';return;}
+    if(await checkPin(pn)){runApp();return;}
+    if(e)e.textContent='Wrong PIN. Try again, or use Forgot PIN.';}
+  var loginBtn=document.getElementById('loginBtn');if(loginBtn)loginBtn.addEventListener('click',tryLogin);
+  var loginPinI=document.getElementById('loginPin');if(loginPinI)loginPinI.addEventListener('keydown',function(e){if(e.key==='Enter')tryLogin();});
+  var loginBio=document.getElementById('loginBio');if(loginBio)loginBio.addEventListener('click',function(){var e=document.getElementById('loginErr');bioVerify().then(function(ok){if(ok)runApp();else if(e)e.textContent='Biometric not recognised. Use your PIN.';}).catch(function(){if(e)e.textContent='Biometric unavailable. Use your PIN.';});});
+  var loginForgot=document.getElementById('loginForgot');if(loginForgot)loginForgot.addEventListener('click',function(ev){ev.preventDefault();var fb=document.getElementById('forgotBox');if(fb)fb.style.display=(fb.style.display==='none'||!fb.style.display)?'block':'none';});
+  var forgotBtn=document.getElementById('forgotBtn');if(forgotBtn)forgotBtn.addEventListener('click',async function(){
+    var e=document.getElementById('forgotErr');var code=((document.getElementById('forgotCode')||{}).value||'').trim();
+    if(!code){if(e){e.style.color='#ff9aa2';e.textContent='Paste your access code.';}return;}
+    var r=await verifyCode(code);
+    if(r.ok){try{localStorage.setItem('sm_lic',code);localStorage.removeItem('sm_pin');localStorage.removeItem('sm_bio');localStorage.removeItem('sm_bio_cred');}catch(err){}
+      if(e){e.style.color='#7be0a4';e.textContent='Code verified — set a new PIN.';}showSetPin();return;}
+    if(e){e.style.color='#ff9aa2';e.textContent=(r.reason==='badsig')?'That code is not for this device.':(r.reason==='expired')?'That code has expired.':'That code is not valid.';}
+  });
+
+  route();
 })();
 
 /* ---- Sky Matrix animated SVG logo (inline; no external image needed) ---- */
@@ -880,7 +976,7 @@ function smLogoSVG(u){return '<svg viewBox="0 0 620 200" xmlns="http://www.w3.or
 +'<text x="206" y="172" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="72" letter-spacing="3" fill="url(#tx'+u+')">MATRIX</text>'
 +'<g clip-path="url(#cp'+u+')"><rect x="0" y="0" width="620" height="200" fill="url(#sh'+u+')"/></g>'
 +'</svg>';}
-(function(){var i=0;['hdrLogo','lockLogo','footLogo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=smLogoSVG('L'+(i++));});})();
+(function(){var i=0;['hdrLogo','lockLogo','footLogo','loginLogo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=smLogoSVG('L'+(i++));});})();
 
 if (window.pdfjsLib) { try { pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch(e){} }
