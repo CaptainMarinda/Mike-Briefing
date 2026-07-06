@@ -22,13 +22,9 @@
   var uri="data:image/svg+xml,"+encodeURIComponent(svg);
   function addLink(rel,href){var l=document.createElement('link');l.setAttribute('rel',rel);l.setAttribute('href',href);document.head.appendChild(l);}
   addLink('apple-touch-icon',uri); addLink('icon',uri);
-  try{
-    var mani={name:"Sky Matrix",short_name:"Sky Matrix",display:"standalone",orientation:"any",
-      background_color:"#0E1726",theme_color:"#5A1846",start_url:"app.html",scope:"./",
-      icons:[{src:uri,sizes:"any",type:"image/svg+xml",purpose:"any"}]};
-    var b=new Blob([JSON.stringify(mani)],{type:'application/manifest+json'});
-    addLink('manifest',URL.createObjectURL(b));
-  }catch(e){}
+  /* Real manifest file (needed so the Web Share Target can register on Android).
+     manifest.webmanifest must be uploaded to the repo root next to app.html. */
+  try{ addLink('manifest','manifest.webmanifest'); }catch(e){}
   // Register the service worker so the app launches & runs OFFLINE (caches itself + PDF/OCR libraries). Needs sw.js uploaded to the repo root.
   try{ if('serviceWorker' in navigator){
     var __swReloaded=false, __hadCtrl=!!navigator.serviceWorker.controller;
@@ -332,9 +328,11 @@
         <input id="file" type="file" accept=".pdf,.txt,.text,application/pdf,text/plain">
       </div>
       <div class="hint">PDF text is extracted in-browser via PDF.js (needs internet the first time). Your last OFP is remembered until you load another.</div>
+      <div class="hint" style="margin-top:6px">Tip: on Android you can open your OFP email, tap <b>Share</b> and choose <b>Sky Matrix</b> to load it straight in. On iPhone/iPad, open the PDF and use the file picker above.</div>
       <textarea id="paste" style="display:none"></textarea>
       <div class="row">
         <button id="go">Generate briefing</button>
+        <button id="aiGo" type="button" style="background:#12324a;border:1px solid #2f8bff;color:#cfe6ff;margin-top:8px">Read with AI (beta)</button>
         <button id="print" class="ghost">Print / Save as PDF</button>
         <span id="msg" class="msg"></span>
       </div>
@@ -370,6 +368,22 @@
         <span class="hint" id="tr_msg" style="margin-top:0"></span>
       </div>
       <textarea id="tr_out" readonly placeholder="Translation…" style="min-height:90px;width:100%;margin-top:8px;font-family:var(--sans);font-size:13px;color:#E6ECF5"></textarea>
+    </div>
+    <div style="margin-top:14px;border-top:1px solid #20304f;padding-top:12px">
+      <label class="lab">Announcement Prep — fill a template with AI</label>
+      <p class="fsub" style="margin-top:2px">Upload an announcement template (photo/screenshot, PDF or text). The AI reads it, fills the blanks with this flight's data and your details, in your chosen language.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
+        <input id="ap_name" type="text" placeholder="Your name / rank (e.g. Capt. Mike)" style="flex:1;min-width:180px">
+        <select id="ap_lang"></select>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
+        <label class="ghost" style="cursor:pointer;padding:8px 14px;border-radius:8px;border:1px solid #2a3c5e">Upload template<input id="ap_file" type="file" accept="image/*,.pdf,.txt,text/plain" style="display:none"></label>
+        <button id="ap_go" type="button" style="background:#12324a;border:1px solid #2f8bff;color:#cfe6ff">Fill with AI</button>
+        <span class="hint" id="ap_msg" style="margin-top:0"></span>
+      </div>
+      <textarea id="ap_tmpl" placeholder="…or paste the template text here (blanks as ____ or [BRACKETS])" style="min-height:80px;width:100%;margin-top:8px;font-family:var(--sans);font-size:13px;color:#E6ECF5"></textarea>
+      <textarea id="ap_out" readonly placeholder="Completed announcement…" style="min-height:110px;width:100%;margin-top:8px;font-family:var(--sans);font-size:13px;color:#E6ECF5"></textarea>
+      <div style="margin-top:8px"><button id="ap_copy" type="button" class="ghost">Copy result</button></div>
     </div>
   </div>
 </div>
@@ -486,14 +500,14 @@
   <div class="subview2" id="disp-nav">
   <div class="fcard">
     <h2>Airport weather &amp; NOTAMs</h2>
-    <p class="fsub">Live METAR / TAF / D-ATIS for any airport (needs internet). NOTAMs are read from your loaded OFP. Enter an ICAO and tap a button.</p>
+    <p class="fsub">Live METAR / TAF / D-ATIS for any airport (needs internet), colour-coded with the active time window. If a live METAR / TAF is unavailable it falls back to your loaded OFP. NOTAMs are read from your OFP and colour-coded (red = active now, green = clear, amber = window). Enter an ICAO and tap a button.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <input id="wxIcao" type="text" maxlength="4" placeholder="ICAO e.g. OTHH" style="text-transform:uppercase;width:140px">
       <button id="wxGet" type="button">METAR / TAF</button>
       <button id="wxAtis" type="button" class="ghost">D-ATIS</button>
       <button id="wxNotam" type="button" class="ghost">NOTAMs</button>
     </div>
-    <pre id="wxOut" style="display:none;white-space:pre-wrap;word-break:break-word;background:#0f1b31;border:1px solid #2a3c5e;border-radius:8px;padding:10px;margin-top:10px;font-family:var(--mono);font-size:11.5px;color:#cfe;min-height:40px"></pre>
+    <div id="wxOut" style="display:none;white-space:pre-wrap;word-break:break-word;background:#0f1b31;border:1px solid #2a3c5e;border-radius:8px;padding:10px;margin-top:10px;font-family:var(--mono);font-size:11.5px;color:#cfe;min-height:40px"></div>
   </div>
   <div class="fcard">
     <h2>Position &amp; next waypoint <span class="hint" style="font-weight:400">— GPS vs OFP plan</span></h2>
@@ -573,7 +587,8 @@
       <div class="dispgrid">
         <div class="dispbox"><div class="v" id="warmTtg">--:--</div><div class="l">Warm-up left (from off-blocks)</div></div>
       </div>
-      <p class="hint">A 5-minute count starts automatically at off-blocks (chocks-off / ATD). Sound + pop-up when complete.</p>
+      <div class="feat-field" style="margin-top:8px"><label class="lab">Warm-up time (minutes)</label><input id="warmMin" type="number" value="5" min="0" max="60" step="1" style="max-width:130px"></div>
+      <p class="hint">The count starts automatically at off-blocks (chocks-off / ATD). Sound + pop-up when complete. Adjust the minutes above.</p>
     </div>
     <div class="fcard">
       <h2>Cabin announcement</h2>
@@ -617,7 +632,8 @@
       <div class="dispgrid">
         <div class="dispbox"><div class="v" id="coolTtg">--:--</div><div class="l">Cool-down left (from landing)</div></div>
       </div>
-      <p class="hint">A 5-minute count starts automatically at landing. Sound + pop-up when complete.</p>
+      <div class="feat-field" style="margin-top:8px"><label class="lab">Cool-down time (minutes)</label><input id="coolMin" type="number" value="5" min="0" max="60" step="1" style="max-width:130px"></div>
+      <p class="hint">The count starts automatically at landing. Sound + pop-up when complete. Adjust the minutes above.</p>
     </div>
     <div class="fcard">
       <h2>Cabin announcement</h2>
@@ -795,8 +811,16 @@ var LIC_PUBKEY = "BMxAfrty9p7_t79ebh4KowBcDiZVaiyBIRPPgMGaPK2Bt4yB9EU1W-4z9WQ4E4
   function ub64(s){try{var bin=atob(String(s));var u=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}catch(e){return null;}}
 
   function devId(){var d=null;try{d=localStorage.getItem('sm_dev');}catch(e){}
+    if(d)return d; // existing installs keep their id unchanged
+    var B32='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    /* Android app: derive a STABLE id from ANDROID_ID (via the native bridge) so the device id
+       survives uninstall/reinstall — the same access code keeps working, no new code needed. */
+    try{ if(window.SMNative && SMNative.getDeviceId){ var nid=String(SMNative.getDeviceId()||'');
+      if(nid && nid.length>=8){ var h=2166136261>>>0; for(var i=0;i<nid.length;i++){h^=nid.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}
+        var s='';for(var j=0;j<6;j++){h=Math.imul(h,16777619)>>>0;s+=B32[h&31];h=h>>>5;} d='SKM-'+s; } } }catch(e){}
     if(!d){var a=new Uint8Array(6);if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(a);else for(var q=0;q<a.length;q++)a[q]=Math.floor(Math.random()*256);
-      var B32='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s='';for(var i=0;i<a.length;i++)s+=B32[a[i]&31];d='SKM-'+s;try{localStorage.setItem('sm_dev',d);}catch(e){}}
+      var s2='';for(var k=0;k<a.length;k++)s2+=B32[a[k]&31];d='SKM-'+s2;}
+    try{localStorage.setItem('sm_dev',d);}catch(e){}
     return d;}
   var DEV=devId();
 
@@ -835,6 +859,8 @@ var LIC_PUBKEY = "BMxAfrty9p7_t79ebh4KowBcDiZVaiyBIRPPgMGaPK2Bt4yB9EU1W-4z9WQ4E4
   function setBlocked(b){__blocked=b;try{if(b){localStorage.setItem('sm_blocked_dev',DEV);}else if(localStorage.getItem('sm_blocked_dev')===DEV){localStorage.removeItem('sm_blocked_dev');}}catch(e){}if(b)route();}
   (function(){try{var base=(location.protocol!=='file:'?(location.pathname.replace(/[^/]*$/,'')||'/'):'https://captainmarinda.github.io/Mike-Briefing/');
     fetch(base+'blocked.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(list){if(Array.isArray(list))setBlocked(list.indexOf(DEV)>=0);}).catch(function(){});}catch(e){}})();
+  /* server-side revocation: refunds auto-add the device to the Worker blocklist (fail-open if offline) */
+  (function(){try{fetch('https://skymatrix-trial.skymatrix.workers.dev/blocked?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(list){if(Array.isArray(list)&&list.indexOf(DEV)>=0)setBlocked(true);}).catch(function(){});}catch(e){}})();
 
   async function verifyCode(code){
     if(!code)return {ok:false,reason:'empty'};
@@ -1150,6 +1176,37 @@ function parseNotamValidity(s){
     eMin:open?Infinity:toMin(eDay,+r[8].slice(0,2),+r[8].slice(2)),open};
 }
 
+/* ---- Item 6: pre-render QA / data-quality check ----
+   Runs on the parsed OFP before it is shown, and flags gaps or inconsistent
+   figures so doubtful data is highlighted for the pilot, not shown silently. */
+function qaCheck(data){
+  var f=[]; function miss(v){return v===undefined||v===null||String(v).trim()===''; }
+  if(miss(data.dep)||miss(data.dest)) f.push({s:'r',t:'Departure/destination not read, verify the route.'});
+  if(miss(data.acType)) f.push({s:'a',t:'Aircraft type not read from the OFP, enter/verify manually.'});
+  if(miss(data.fltCs)) f.push({s:'a',t:'Flight callsign not detected.'});
+  if(miss(data.date)) f.push({s:'a',t:'Date of departure not detected.'});
+  if(data.towOver) f.push({s:'r',t:'ETOW exceeds MTOW, check take-off weight.'});
+  if(data.elwOver) f.push({s:'r',t:'Estimated landing weight exceeds MLW.'});
+  if(data.ezfw && data.mzfw && (+data.ezfw>+data.mzfw)) f.push({s:'r',t:'EZFW exceeds MZFW.'});
+  [['ETOW',data.etow],['MTOW',data.mtow],['EZFW',data.ezfw],['MLW',data.mlwt]].forEach(function(x){
+    var n=+x[1]; if(x[1] && (n<20000||n>650000)) f.push({s:'a',t:x[0]+' looks unusual ('+x[1]+' kg), verify units/value.'});
+  });
+  var b=+data.blk, tp=+String(data.tripT||'').slice(0,4);
+  if(b>0 && tp>0 && b<tp) f.push({s:'a',t:'Block time is less than trip time, check STD/STA.'});
+  var fl=+data.initFL; if(data.initFL && (fl<50||fl>450)) f.push({s:'a',t:'Initial cruise level FL'+data.initFL+' looks unusual.'});
+  if(data.fRamp && data.fTrip && (+data.fRamp<+data.fTrip)) f.push({s:'a',t:'Ramp fuel is less than trip fuel, verify fuel figures.'});
+  if(data.confidence && typeof data.confidence==='object'){ for(var k in data.confidence){ var cv=data.confidence[k];
+    if((typeof cv==='number'&&cv<0.5)||cv==='low') f.push({s:'a',t:'AI was unsure about "'+k+'", verify.'}); } }
+  return f;
+}
+function qaBanner(data){
+  var f=qaCheck(data);
+  if(!f.length) return '<div class="body"><p class="item"><span class="chip g">Data check passed</span> No obvious gaps or inconsistencies found. Always verify against the released OFP.</p></div>';
+  var err=f.filter(function(x){return x.s==='r';}).length;
+  var head=err?('<span class="chip r">'+err+' to check</span>'):('<span class="chip a">'+f.length+' to review</span>');
+  var rows=f.map(function(x){return '<div class="flag" style="margin:4px 0"><span class="chip '+x.s+'">'+(x.s==='r'?'CHECK':'REVIEW')+'</span> '+esc(x.t)+'</div>';}).join('');
+  return '<div class="body"><p class="item"><b>Data check</b> &nbsp;'+head+' &nbsp;<span style="color:#9fb3d1">verify the flagged items against the released OFP.</span></p>'+rows+'</div>';
+}
 function parseOFP(text, opts){
   const T=text.replace(/\r/g,'');
   const data={raw:T};
@@ -1160,8 +1217,10 @@ function parseOFP(text, opts){
   data.depMonth= MON[(data.date||'').slice(2,5)]||0;
   let depdest  = /\b([A-Z]{4})\/([A-Z]{4})\b/.exec(T);
   data.dep = depdest?depdest[1]:''; data.dest = depdest?depdest[2]:'';
-  data.acType  = m(/[A-Z]{4}\/[A-Z]{4}\s+([A-Z0-9]{3,4})\b/,T) || m(/AIRCRAFT TYPE\s*:\s*(\S+)/,T);
-  data.tail    = m(/REG[.:]\s*([A-Z0-9-]{4,8})/,T) || m(/\b([A-Z]{1,2}-[A-Z]{2,5})\b/,T);
+  data.acType  = m(/[A-Z]{4}\/[A-Z]{4}\s+([A-Z][0-9][0-9A-Z]{1,2})\b/,T) || m(/\b([A-Z][0-9][0-9A-Z]{1,2})\s+[A-Z]{1,2}[0-9]?-?[A-Z]{2,4}\b/,T) || m(/AIRCRAFT\s*TYPE\s*:?\s*([A-Z][0-9][0-9A-Z]{1,2})\b/,T);
+  data.tail    = m(/Reg[.:]?\s*([A-Z0-9-]{4,8})/i,T) || m(/\b[A-Z][0-9][0-9A-Z]{1,2}\s+([A-Z]{1,2}[0-9]?-?[A-Z]{2,4})\b/,T);
+  /* guard: a real aircraft type is a letter then a digit (B77W, A388); reject stray words like C-BAND, NAT, INTL, FAHD */
+  if(data.acType && !/^[A-Z][0-9][0-9A-Z]{1,2}$/.test(data.acType)) data.acType='';
   data.ofpNo   = m(/OFP:\s*([\d/]+)\//,T) || m(/OFP:\s*([\d/]+)/,T);
   data.etops   = m(/ETOPS:\s*(\d+\s*MIN)/,T);
   data.std = m(/\bSTD\s+(\d+\/\d+)/,T);
@@ -1459,6 +1518,8 @@ function build(data){
   const ident=`${esc(data.fltCs||'')} ${esc(data.date||'')} ${esc(data.dep||'')}–${esc(data.dest||'')} • OFP ${esc(data.ofpNo||'')} • ${esc(data.tail||'')}`;
 
   let s1=sheet('OFP QUICK-EXTRACT CARD',(data.acType?data.acType+' — planning summary':'Planning summary'));
+  s1+=sec('Data check');
+  s1+=qaBanner(data);
   s1+=sec('Flight identification');
   s1+=grid('g4',[c('Date of dep',data.date),c('Flight callsign',data.fltCs),c('ATC callsign',data.atcCs),c('OFP number',data.ofpNo)]);
   s1+=grid('g3',[c('Dep (ICAO)',data.dep),c('Dest (ICAO)',data.dest),c('Dest time zone',tz(data.dest))]);
@@ -1728,6 +1789,34 @@ window.__renderIdent=function(){
     : `<span>Callsign <b>${esc(d.atcCs||'—')}</b></span>`+route;
 };
 document.getElementById('go').onclick=generate;
+/* ---- Read with AI: sends the OFP text to the backend AI reader and fills the visible fields (safe/additive) ---- */
+(function(){
+  var AI_URL="https://skymatrix-trial.skymatrix.workers.dev/ofp/parse";
+  var aiBtn=document.getElementById('aiGo'); if(!aiBtn)return;
+  function setF(id,v){ if(v==null||v==='')return; var e=document.getElementById(id); if(e){ e.value=v; e.dataset.touched='1'; try{e.dispatchEvent(new Event('input',{bubbles:true}));}catch(_){} } }
+  function m2hhmm(min){ min=parseInt(min,10); if(isNaN(min))return ''; return Math.floor(min/60)+'h '+String(min%60).padStart(2,'0')+'m'; }
+  aiBtn.addEventListener('click',function(){
+    var text=((document.getElementById('paste')||{}).value||'').trim();
+    if(!text){ setMsg('Load or paste an OFP first, then Read with AI.','err'); return; }
+    aiBtn.disabled=true; setMsg('Reading the OFP with AI…','');
+    fetch(AI_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:text.slice(0,60000)})})
+      .then(function(r){return r.json();})
+      .then(function(j){
+        if(!j||!j.ok){ setMsg((j&&j.error)||'AI reader unavailable right now.','err'); return; }
+        var d=j.data||{}, w=d.weights||{};
+        setF('dep_from',d.dep); setF('dep_to',d.dest); setF('dep_fnum',d.fltCs); setF('dep_date',d.date);
+        setF('dep_std',d.std); setF('dep_fl',d.initFL);
+        if(d.tripTimeMin!=null)setF('dep_ft',m2hhmm(d.tripTimeMin));
+        if(d.blockTimeMin!=null)setF('dep_block',m2hhmm(d.blockTimeMin));
+        setF('dep_zfw',w.zfw); setF('dep_tow',w.tow); setF('dep_lwt',w.lw); setF('ar_mlwt',w.mlw); setF('ar_lwt',w.lw);
+        var low=[],cf=d.confidence||{}; for(var k in cf){ if(cf[k]==='low')low.push(k); }
+        setMsg('AI read this OFP'+(d.acType?(' ('+d.acType+(d.reg?(' '+d.reg):'')+')'):'')+'. Departure/Arrival fields filled'+(low.length?(' — please double-check: '+low.join(', ')):' (all high-confidence)')+'.', low.length?'':'ok');
+        if(typeof saveState==='function')saveState();
+      })
+      .catch(function(){ setMsg('AI reader needs internet (and the Worker key set up).','err'); })
+      .then(function(){ aiBtn.disabled=false; });
+  });
+})();
 document.getElementById('print').onclick=()=>window.print();
 document.getElementById('print2').onclick=()=>window.print();
 document.getElementById('reset').onclick=()=>{try{localStorage.removeItem('sm_ofptext');localStorage.removeItem('sm_fields');localStorage.removeItem('sm_ofpid');}catch(e){}location.reload();};
@@ -2355,9 +2444,9 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
     const now=utcNow(); const nowM=now.getUTCHours()*60+now.getUTCMinutes()+now.getUTCSeconds()/60;
     const atdEl=$('ofp_atd'); const atd=toM((atdEl&&atdEl.value)||($('dep_chocks')?$('dep_chocks').value:''));
     const ldg=toM($('gpsLdg')?$('gpsLdg').value:'');
-    if(atd!=null){ let e=nowM-atd; if(e<-720)e+=1440; if($('warmTtg'))$('warmTtg').textContent=e<0?'--:--':(e>=5?'done':mmss(Math.max(0,Math.round((5-e)*60)))); if(e>=5&&e<60&&__warmFor!==atd){__warmFor=atd;fireAlert('Warm-up time (5 min from off-blocks) completed.');} }
+    var WM=Math.max(0,parseFloat(($('warmMin')||{}).value)||5); if(atd!=null){ let e=nowM-atd; if(e<-720)e+=1440; if($('warmTtg'))$('warmTtg').textContent=e<0?'--:--':(e>=WM?'done':mmss(Math.max(0,Math.round((WM-e)*60)))); if(e>=WM&&e<WM+55&&__warmFor!==atd){__warmFor=atd;fireAlert('Warm-up time ('+WM+' min from off-blocks) completed.');} }
     else if($('warmTtg'))$('warmTtg').textContent='--:--';
-    if(ldg!=null){ let e=nowM-ldg; if(e<-720)e+=1440; if($('coolTtg'))$('coolTtg').textContent=e<0?'--:--':(e>=5?'done':mmss(Math.max(0,Math.round((5-e)*60)))); if(e>=5&&e<60&&__coolFor!==ldg){__coolFor=ldg;fireAlert('Cool-down time (5 min from landing) completed.');} }
+    var CM=Math.max(0,parseFloat(($('coolMin')||{}).value)||5); if(ldg!=null){ let e=nowM-ldg; if(e<-720)e+=1440; if($('coolTtg'))$('coolTtg').textContent=e<0?'--:--':(e>=CM?'done':mmss(Math.max(0,Math.round((CM-e)*60)))); if(e>=CM&&e<CM+55&&__coolFor!==ldg){__coolFor=ldg;fireAlert('Cool-down time ('+CM+' min from landing) completed.');} }
     else if($('coolTtg'))$('coolTtg').textContent='--:--';
   }
 
@@ -2392,6 +2481,21 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
   function wxShow(t){const o=$('wxOut');if(o){o.style.display='block';o.textContent=t;}}
   function wxHTML(h){const o=$('wxOut');if(o){o.style.display='block';o.innerHTML=h;}}
   function wxIc(){let v=(($('wxIcao')||{}).value||'').trim().toUpperCase();if(!v && typeof OFP!=='undefined' && OFP && OFP.dest)v=OFP.dest;return v;}
+  /* METAR flight-category colour (VFR green / MVFR amber / IFR & LIFR red) from visibility + ceiling */
+  function metarCat(m){ if(!m)return {kind:'n',lab:'—'}; m=(''+m).toUpperCase();
+    let vis=null; const us=m.match(/\b(\d{1,2})SM\b/); if(us)vis=+us[1]; else if(/\bM?\d\/\dSM\b/.test(m))vis=0.5;
+    const mt=m.match(/\s(\d{4})(?:\s|$)/); if(vis==null&&mt)vis=+mt[1]/1609;
+    if(/\bCAVOK\b/.test(m))vis=10; if(/\b9999\b/.test(m)&&vis==null)vis=10;
+    let ceil=null; const re=/\b(?:BKN|OVC|VV)(\d{3})\b/g; let x; while((x=re.exec(m))){const ft=+x[1]*100; if(ceil==null||ft<ceil)ceil=ft;}
+    let cat,kind;
+    if((vis!=null&&vis<1)||(ceil!=null&&ceil<500)){cat='LIFR';kind='r';}
+    else if((vis!=null&&vis<3)||(ceil!=null&&ceil<1000)){cat='IFR';kind='r';}
+    else if((vis!=null&&vis<5)||(ceil!=null&&ceil<3000)){cat='MVFR';kind='a';}
+    else if(vis!=null||ceil!=null||/\bCAVOK\b/.test(m)){cat='VFR';kind='g';}
+    else {cat='—';kind='n';}
+    return {kind:kind,lab:cat}; }
+  function tafWin(t){ const x=(''+t).match(/\b(\d{2})(\d{2})\/(\d{2})(\d{2})\b/); return x?('valid '+x[1]+'/'+x[2]+'Z→'+x[3]+'/'+x[4]+'Z'):''; }
+  function wxNow(){ const n=utcNow(); return {mon:n.getUTCMonth()+1, rel:n.getUTCHours()*60+n.getUTCMinutes()}; }
   // Try the URL directly first; if the browser blocks it (CORS) or it errors, retry through public CORS proxies.
   function tryFetch(url,i){
     i=i||0;
@@ -2406,9 +2510,17 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
       tryFetch('https://aviationweather.gov/api/data/metar?ids='+ic+'&format=raw').then(r=>r.text()).catch(()=>''),
       tryFetch('https://aviationweather.gov/api/data/taf?ids='+ic+'&format=raw').then(r=>r.text()).catch(()=>'')
     ]).then(([metar,taf])=>{
-      const m=(metar||'').trim(), t=(taf||'').trim();
-      if(!m&&!t){ wxShow('No data returned for '+ic+' — check the ICAO, or the weather service is unreachable right now.'); return; }
-      wxShow('METAR '+ic+':\n'+(m||'(none)')+'\n\nTAF '+ic+':\n'+(t||'(none)'));
+      let m=(metar||'').trim(), t=(taf||'').trim(), mSrc='live', tSrc='live';
+      const O=window.__OFP, ow=(O&&O.wx&&O.wx[ic])||null;
+      if(!m&&ow&&ow.metar){ m=(''+ow.metar).replace(/^METAR\s+/i,'').trim(); mSrc='OFP'; }
+      if(!t&&ow&&ow.taf){ t=(''+ow.taf).replace(/^TAF\s+/i,'').trim(); tSrc='OFP'; }
+      if(!m&&!t){ wxShow('No METAR / TAF for '+ic+' from the live service or your OFP.'); return; }
+      const cat=metarCat(m), tw=tafWin(t);
+      let h='<div class="body" style="padding:0;background:transparent;border:0">';
+      h+='<p class="item"><b>METAR '+esc(ic)+'</b> <span class="chip '+cat.kind+'">'+cat.lab+'</span>'+(mSrc==='OFP'?' <span class="chip n">from OFP</span>':'')+'<br><span class="mono">'+esc(m||'(none)')+'</span></p>';
+      h+='<p class="item"><b>TAF '+esc(ic)+'</b>'+(tw?' <span class="chip a">'+esc(tw)+'</span>':'')+(tSrc==='OFP'?' <span class="chip n">from OFP</span>':'')+'<br><span class="mono">'+esc(t||'(none)')+'</span></p>';
+      h+='</div>';
+      wxHTML(h);
     }).catch(e=>wxShow('Could not fetch weather (needs internet): '+e.message));
   });
   function parseAtisGuru(html){
@@ -2455,6 +2567,12 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
       }
     }
     if(list && list.length){
+      const nw=wxNow();
+      let __h='<div class="body" style="padding:0;background:transparent;border:0"><p class="item"><b>NOTAMs '+esc(ic)+'</b> — '+list.length+' from OFP</p>';
+      list.forEach(n=>{ const tg=notamTag(n.vobj, nw.rel, nw.mon); __h+='<p class="item"><span class="chip '+tg.kind+'">'+esc(tg.txt)+'</span> <span class="mono" style="color:#6B7280">'+esc(n.valid||'')+'</span><br>'+esc((n.text||'').slice(0,260))+'</p>'; });
+      __h+='</div>'; wxHTML(__h); return;
+    }
+    if(false){
       wxShow('NOTAMs '+ic+' (from OFP — '+list.length+'):\n\n'+list.map(n=>'• '+(n.valid?('VALID '+n.valid+'\n  '):'')+n.text).join('\n\n')+(raw?('\n\n— full airport block —\n'+raw):''));
     } else if(raw){
       wxShow('NOTAMs '+ic+' (from OFP):\n\n'+raw);
@@ -2485,8 +2603,23 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
     else lines.push('Not currently airborne.');
     acShow(lines.join('\n'));
   }
-  /* Flightradar24: search for the flight, then pull its full detail (most accurate) */
+  /* Flightradar24: paid API via the Worker proxy (token stays server-side); unofficial web endpoints as fallback */
+  var SM_WORKER="https://skymatrix-trial.skymatrix.workers.dev";
   async function fr24(cs){
+    // Primary: official paid FR24 API through the Worker (/fr24/lookup)
+    try{
+      var j=await acJ(SM_WORKER+'/fr24/lookup?callsign='+encodeURIComponent(cs));
+      var p=j&&j.ok&&j.data&&j.data.data&&j.data.data[0];
+      if(p){ return {
+        airline:(p.operating_as||p.painted_as)?{name:(p.operating_as||p.painted_as)}:null,
+        identification:{number:{default:p.flight||p.callsign}},
+        airport:{origin:p.orig_icao?{code:{iata:p.orig_iata||'',icao:p.orig_icao}}:null, destination:p.dest_icao?{code:{iata:p.dest_iata||'',icao:p.dest_icao}}:null},
+        aircraft:{model:{code:p.type||'',text:acType(p.type||'')}, registration:p.reg||''},
+        status:{text:(p.alt!=null?('Airborne · FL'+Math.round((+p.alt||0)/100)):'')},
+        trail:(p.alt!=null?[{alt:p.alt, spd:p.gspeed}]:null) };
+      }
+    }catch(e){}
+    // Fallback: unofficial FR24 web search + clickhandler
     var s=await acJ('https://www.flightradar24.com/v1/search/web/find?limit=8&query='+encodeURIComponent(cs));
     var rs=(s&&s.results)||[];
     var r=rs.filter(function(x){return x&&x.id&&(x.type==='live'||x.type==='schedule');})[0]
@@ -2650,6 +2783,60 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
   }
   if($('pa_welcome_btn'))$('pa_welcome_btn').addEventListener('click',function(){openPA('welcome');});
   if($('pa_descent_btn'))$('pa_descent_btn').addEventListener('click',function(){openPA('descent');});
+  /* ---- Announcement Prep: AI fills an uploaded template's blanks with flight data + your details ---- */
+  (function(){
+    var AN_URL="https://skymatrix-trial.skymatrix.workers.dev/announce";
+    var go=$('ap_go'); if(!go)return;
+    var lang=$('ap_lang'), tmpl=$('ap_tmpl'), out=$('ap_out'), msg=$('ap_msg');
+    function setM(t){ if(msg)msg.textContent=t||''; }
+    function fillLangs(){ var tl=$('tr_lang'); if(lang&&tl&&tl.options.length&&!lang.options.length)lang.innerHTML=tl.innerHTML; }
+    fillLangs(); setTimeout(fillLangs,600);
+    try{ var nm=localStorage.getItem('sm_ap_name'); if(nm&&$('ap_name'))$('ap_name').value=nm; }catch(e){}
+    if($('ap_name'))$('ap_name').addEventListener('input',function(){try{localStorage.setItem('sm_ap_name',$('ap_name').value);}catch(e){}});
+    if($('ap_file'))$('ap_file').addEventListener('change',function(){
+      var f=$('ap_file').files&&$('ap_file').files[0]; if(!f)return;
+      var nm=(f.name||'').toLowerCase();
+      if((f.type||'').indexOf('image')===0){
+        if(!window.Tesseract){setM('OCR needs internet.');return;}
+        setM('Reading image…');
+        Tesseract.recognize(f,'eng').then(function(res){ tmpl.value=((res&&res.data&&res.data.text)||'').trim(); setM('Template read — review, then Fill with AI.'); }).catch(function(e){setM('OCR failed: '+e.message);});
+      } else if(nm.slice(-4)==='.pdf'||(f.type||'').indexOf('pdf')>=0){
+        if(!window.pdfjsLib){setM('PDF reader needs internet.');return;}
+        setM('Reading PDF…');
+        var rd=new FileReader(); rd.onload=function(){ pdfjsLib.getDocument({data:new Uint8Array(rd.result)}).promise.then(function(pdf){
+          var chain=Promise.resolve(''); for(var p=1;p<=Math.min(pdf.numPages,3);p++){ (function(pn){ chain=chain.then(function(acc){ return pdf.getPage(pn).then(function(pg){return pg.getTextContent();}).then(function(tc){ return acc+tc.items.map(function(i){return i.str;}).join(' ')+'\n'; }); }); })(p); }
+          chain.then(function(txt){ tmpl.value=txt.trim(); setM('Template read — review, then Fill with AI.'); });
+        }).catch(function(e){setM('PDF read failed: '+e.message);}); };
+        rd.readAsArrayBuffer(f);
+      } else {
+        var r=new FileReader(); r.onload=function(){ tmpl.value=String(r.result||'').trim(); setM('Template loaded — review, then Fill with AI.'); }; r.readAsText(f);
+      }
+      $('ap_file').value='';
+    });
+    function flightData(){
+      var O=window.__OFP||{}, g=function(id){return (($(id)||{}).value||'').trim();};
+      var L=[];
+      L.push('Flight number: '+(g('dep_fnum')||O.fltCs||''));
+      L.push('From: '+(g('dep_from')||O.dep||'')+'   To: '+(g('dep_to')||O.dest||''));
+      L.push('Date: '+(g('dep_date')||O.date||''));
+      L.push('Aircraft: '+(O.acType||'')+(O.tail?(' '+O.tail):''));
+      L.push('Flight time: '+g('dep_ft'));
+      L.push('Cruise level: '+(g('dep_fl')||O.initFL||''));
+      L.push('Speaker name / rank: '+(($('ap_name')||{}).value||''));
+      return L.join('\n');
+    }
+    go.addEventListener('click',function(){
+      var t=(tmpl.value||'').trim();
+      if(t.length<10){ setM('Upload or paste an announcement template first.'); return; }
+      go.disabled=true; setM('Filling with AI…');
+      fetch(AN_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({template:t.slice(0,8000), data:flightData(), lang:(lang&&lang.value)||'English'})})
+        .then(function(r){return r.json();})
+        .then(function(j){ if(j&&j.ok){ out.value=j.text||''; setM('Done — review before use.'); } else setM((j&&j.error)||'AI unavailable right now.'); })
+        .catch(function(){ setM('Needs internet and the Worker key set up.'); })
+        .then(function(){ go.disabled=false; });
+    });
+    if($('ap_copy'))$('ap_copy').addEventListener('click',function(){ try{navigator.clipboard.writeText(out.value||'');}catch(e){} setM('Copied ✓'); });
+  })();
   if($('paClose'))$('paClose').addEventListener('click',function(){$('paModal').classList.remove('open');});
   if($('paModal'))$('paModal').addEventListener('click',function(e){if(e.target===$('paModal'))$('paModal').classList.remove('open');});
   /* ---- Translate announcement (Load tab) ---- */
@@ -2745,7 +2932,7 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
   ['dep_date','dep_fnum','dep_from','dep_to','dep_block','dep_ft','dep_fl','dep_std','dep_delay','dep_chocks','dep_zfw','dep_tow','dep_lwt','dep_atis','dep_rwy','dep_intx','dep_notes','ar_atis','ar_stand','ar_arrfuel','ar_freq','ar_mlwt','ar_lwt','ar_dispatch','ar_notes'].forEach(id=>{const e=$(id);if(e)e.addEventListener('input',()=>{e.dataset.touched='1';});});
 
   /* ---- persist all typed field values (survive restart/purge) ---- */
-  const PERSIST_IDS=['d_to','d_trip','gpsLdg','r_to','r_type','r_start','r_end','r_gap',
+  const PERSIST_IDS=['warmMin','coolMin','d_to','d_trip','gpsLdg','r_to','r_type','r_start','r_end','r_gap',
     'dep_date','dep_fnum','dep_from','dep_to','dep_block','dep_ft','dep_fl','dep_std','dep_delay','dep_chocks','dep_zfw','dep_tow','dep_lwt','dep_atis','dep_rwy','dep_intx','dep_notes',
     'ar_atis','ar_tempc','ar_stand','ar_arrfuel','ar_freq','ar_mlwt','ar_lwt','ar_dispatch','ar_notes','ar_ata','ar_block',
     'p_speaker','p_greet','p_capt','p_fo','p_csd','p_ac','p_no','p_destn','p_airline','p_dur','p_fl','p_wx','p_tc','wxIcao'];
@@ -2779,6 +2966,39 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
 /* restore the last loaded OFP so it survives app restarts / storage purges */
 try{var __savedOfp=localStorage.getItem('sm_ofptext'); if(__savedOfp && __savedOfp.trim()){ document.getElementById('paste').value=__savedOfp; generate(); }}catch(e){}
 try{ if(window.__restoreState) window.__restoreState(); }catch(e){}
+
+/* ---- Item 8: receive a shared OFP (no OAuth) ----
+   Two delivery paths, both feed the existing loadFile():
+   1) Web Share Target (Android PWA): the service worker stashes the shared file
+      in the 'sm-share' cache and redirects here with ?shared=1; we pick it up below.
+   2) Native Android APK: MainActivity reads the ACTION_SEND file and calls
+      window.__loadSharedBase64(name, base64, mime) via the WebView bridge. */
+window.__loadSharedBase64=function(name,b64,mime){
+  try{
+    var bin=atob(b64), len=bin.length, arr=new Uint8Array(len);
+    for(var i=0;i<len;i++)arr[i]=bin.charCodeAt(i);
+    var f=new File([arr],name||'shared-ofp.pdf',{type:mime||'application/pdf'});
+    if(typeof loadFile==='function')loadFile(f);
+  }catch(e){}
+};
+try{
+  if(/[?&]shared=1/.test(location.search)){
+    if(window.history&&history.replaceState)history.replaceState({},'','app.html');
+    if(window.caches&&caches.open){
+      caches.open('sm-share').then(function(c){
+        return c.match('shared-ofp').then(function(r){
+          if(!r)return;
+          var fn=r.headers.get('X-Filename')||'shared-ofp.pdf';
+          return r.blob().then(function(b){
+            var f=new File([b],fn,{type:b.type||'application/pdf'});
+            if(typeof loadFile==='function')loadFile(f);
+            try{c.delete('shared-ofp');}catch(e){}
+          });
+        });
+      }).catch(function(){});
+    }
+  }
+}catch(e){}
 </script>
 </body>
 </html>

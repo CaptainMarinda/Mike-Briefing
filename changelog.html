@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Changelog | Sky Matrix</title>
+<meta name="description" content="What's new in Sky Matrix, release notes and improvements to the flight-briefing app.">
+<meta name="theme-color" content="#0e1726">
+<link rel="canonical" href="https://www.skymatrix.biz/changelog.html">
+<style>
+ :root{--blue:#1f6dff;--sky:#39b4ff;--navy:#0e1726;--panel:#13203a;--line:#2a3c5e;--ink:#e6ecf5;--soft:#9fb3d1;--grey:#5a6b86;--burg:#b23a5d;--good:#7be0a4}
+ *{box-sizing:border-box}
+ body{margin:0;background:var(--navy);color:var(--ink);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.65}
+ a{color:var(--sky);text-decoration:none}a:hover{text-decoration:underline}
+ .wrap{max-width:780px;margin:0 auto;padding:0 22px}
+ header.nav{position:sticky;top:0;z-index:50;background:rgba(14,23,38,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+ .nav .wrap{max-width:1080px;display:flex;align-items:center;justify-content:space-between;height:60px}
+ .brand{font-weight:800;letter-spacing:.5px;color:#fff}
+ .brand small{display:block;font-size:9px;letter-spacing:3px;color:var(--burg);font-weight:700}
+ .nav a.back{color:var(--soft);font-size:14px;font-weight:600}
+ .hd{padding:56px 0 6px;text-align:center}
+ .kicker{color:var(--sky);letter-spacing:3px;text-transform:uppercase;font-size:12px;font-weight:700;margin-bottom:8px}
+ h1{font-size:34px;color:#fff;margin:0 0 10px;font-weight:800}
+ .lead{color:var(--soft);max-width:560px;margin:0 auto}
+ .log{padding:30px 0 60px}
+ .rel{border-left:2px solid var(--line);padding:0 0 26px 22px;position:relative;margin-left:6px}
+ .rel::before{content:"";position:absolute;left:-7px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--sky);box-shadow:0 0 0 4px rgba(57,180,255,.15)}
+ .rel .ver{font-weight:800;color:#fff;font-size:18px}
+ .rel .date{color:var(--grey);font-size:13px;margin:2px 0 12px}
+ .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:2px 9px;border-radius:20px;margin-right:8px}
+ .tag.new{color:var(--good);background:rgba(123,224,164,.12)}
+ .tag.imp{color:var(--sky);background:rgba(57,180,255,.12)}
+ .tag.fix{color:#ffcf7b;background:rgba(255,207,123,.12)}
+ ul{margin:6px 0 0;padding-left:20px}li{margin:6px 0;color:var(--soft);font-size:15px}
+ li b{color:var(--ink)}
+ footer{padding:36px 0 60px;color:var(--grey);font-size:13px;text-align:center;border-top:1px solid var(--line)}
+ .disc{max-width:640px;margin:0 auto 12px;color:var(--soft);font-size:12px}
+</style></head>
+<body>
+<header class="nav"><div class="wrap"><a class="brand" href="index.html">SKY MATRIX<small>FLY INFORMED</small></a><a class="back" href="index.html">&larr; Back to site</a></div></header>
+
+<div class="hd"><div class="wrap"><div class="kicker">Release notes</div><h1>Changelog</h1><p class="lead">What's new and improved in Sky Matrix. We ship steadily, most updates arrive automatically the next time you open the app.</p></div></div>
+
+<div class="log"><div class="wrap">
+
+  <div class="rel">
+    <div class="ver">New login &amp; AI features</div>
+    <div class="date">July 2026</div>
+    <ul>
+      <li><span class="tag new">New</span><b>PIN &amp; biometric login.</b> Set a PIN once after activation, then unlock with PIN or Face ID / fingerprint. Your licence code is never re-requested, including across updates.</li>
+      <li><span class="tag new">New</span><b>Read with AI (beta).</b> An AI OFP reader parses less-common flight-plan layouts and flags any fields it's unsure about.</li>
+      <li><span class="tag new">New</span><b>Announcement Prep.</b> Upload an announcement template (photo, PDF or text) and have it filled with this flight's data and your name, in your chosen language.</li>
+      <li><span class="tag new">New</span><b>Colour-coded, time-windowed NOTAMs, METAR/TAF and D-ATIS</b> on the inflight Nav screen, with automatic fallback to OFP weather when a live source is unavailable.</li>
+      <li><span class="tag imp">Improved</span><b>Official Flightradar24</b> aircraft lookup for more reliable type and route data.</li>
+      <li><span class="tag imp">Improved</span><b>Adjustable warm-up / cool-down timers</b> (default 5 minutes) on the Departure and Arrival cards.</li>
+      <li><span class="tag fix">Fixed</span>Aircraft type occasionally misread from certain OFPs, the parser now validates against real aircraft designators.</li>
+    </ul>
+  </div>
+
+  <div class="rel">
+    <div class="ver">Accounts, pricing &amp; guide</div>
+    <div class="date">July 2026</div>
+    <ul>
+      <li><span class="tag new">New</span><b>Self-service trials and subscriptions</b> from the welcome screen, with a reminder 7 days before expiry.</li>
+      <li><span class="tag imp">Improved</span>Simplified plans: <b>Monthly $25, 6-month $130, Yearly $250</b>, with a 7-day money-back guarantee.</li>
+      <li><span class="tag imp">Improved</span>Refreshed marketing site and an updated user guide covering the new login and pricing.</li>
+    </ul>
+  </div>
+
+  <div class="rel">
+    <div class="ver">Foundation</div>
+    <div class="date">Mid 2026</div>
+    <ul>
+      <li><span class="tag new">New</span><b>OFP briefing</b> with weights, fuel, NOTAMs, weather, route and enroute data.</li>
+      <li><span class="tag new">New</span><b>Inflight display</b> with internet UTC clock, timers, ETA and reminder banners; <b>crew-rest planner</b>; <b>dangerous-goods reference</b>; <b>announcement guide</b>.</li>
+      <li><span class="tag new">New</span>Offline-capable install (PWA) and an Android app; device-locked licensing.</li>
+    </ul>
+  </div>
+
+</div></div>
+
+<footer><div class="wrap">
+  <div class="disc"><b>For reference only, not for operational use.</b> The official hard-copy OFP must be used for flight operations. Sky Matrix is for individual use only.</div>
+  <div><a href="index.html">Home</a> &middot; <a href="faq.html">FAQ</a> &middot; <a href="privacy.html">Privacy &amp; Security</a> &middot; <a href="subscribe.html">Subscribe</a></div>
+  <div style="margin-top:8px">&copy; <span id="yr"></span> Sky Matrix &middot; <a href="https://www.skymatrix.biz">www.skymatrix.biz</a></div>
+</div></footer>
+<script>document.getElementById('yr').textContent=new Date().getFullYear();</script>
+</body></html>

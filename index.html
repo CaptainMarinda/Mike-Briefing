@@ -4,6 +4,20 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sky Matrix, Fly Informed | Flight Briefing Assistant</title>
 <meta name="description" content="Sky Matrix is a flight briefing assistant that turns your OFP into a clear, inflight companion, weather, NOTAMs, inflight display, rest planning and more. Fly informed.">
+<meta name="keywords" content="pilot OFP briefing app, operational flight plan reader, flight crew rest planner, inflight NOTAM weather METAR TAF, EFB briefing tool, cockpit companion app, aircrew announcement tool, aviation flight bag">
+<meta name="author" content="Sky Matrix">
+<meta name="theme-color" content="#0e1726">
+<link rel="canonical" href="https://www.skymatrix.biz/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Sky Matrix">
+<meta property="og:title" content="Sky Matrix, Fly Informed | Flight Briefing Assistant">
+<meta property="og:description" content="Turn your OFP into a clear inflight companion: weather, NOTAMs, inflight display, crew rest and announcements. Device-licensed, offline-capable, for reference use.">
+<meta property="og:url" content="https://www.skymatrix.biz/">
+<meta property="og:image" content="https://www.skymatrix.biz/app-icon.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Sky Matrix, Fly Informed | Flight Briefing Assistant">
+<meta name="twitter:description" content="Turn your OFP into a clear inflight companion: weather, NOTAMs, inflight display, crew rest and announcements.">
+<meta name="robots" content="index,follow">
 <style>
  :root{
    --blue:#1f6dff;--sky:#39b4ff;--navy:#0e1726;--panel:#13203a;--line:#2a3c5e;
@@ -124,6 +138,7 @@
       <a href="#download">Download</a>
       <a href="#pricing">Pricing</a>
       <a href="#products">Our Products</a>
+      <a href="faq.html">FAQ</a>
       <a href="#contact">Contact</a>
       <a class="cta" href="subscribe.html">Subscribe</a>
     </nav>
@@ -151,6 +166,53 @@
   </div>
 </div>
 
+<!-- SEE IT WORK: before / after -->
+<style>
+  #how .cmp{display:grid;grid-template-columns:1fr auto 1fr;gap:18px;align-items:center}
+  #how .cmp .arw{display:flex;flex-direction:column;align-items:center;color:var(--sky)}
+  #how .fld{background:#0e1930;border:1px solid var(--line);border-radius:9px;padding:9px 11px}
+  #how .fld .k{font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--soft)}
+  #how .fld .v{font-size:15px;font-weight:700;color:#fff}
+  #how .fld .v small{font-size:11px;color:var(--soft);font-weight:600}
+  @media(max-width:760px){#how .cmp{grid-template-columns:1fr}#how .cmp .arw{transform:rotate(90deg);margin:2px 0}}
+</style>
+<section id="how">
+  <div class="wrap">
+    <div class="kicker">From paper to briefing</div>
+    <h2>A dense OFP becomes a clean, categorized brief</h2>
+    <p class="sub">Load the operational flight plan you already get. Sky Matrix pulls out the numbers that matter and lays them out by phase of flight, so you stop hunting through pages.</p>
+    <div class="cmp">
+      <div style="background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;position:relative;overflow:hidden">
+        <span style="display:inline-block;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--grey);background:rgba(90,107,134,.15);padding:3px 10px;border-radius:20px;margin-bottom:10px">Raw OFP PDF</span>
+        <pre style="margin:0;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;line-height:1.55;color:#7e90ad;white-space:pre-wrap;word-break:break-word;max-height:230px;overflow:hidden">OFP: 04/07  ABC123/AB123  STATION COPY  PIC ....
+OERK/EGLL  B77W  A7-....  ETOPS: 180 MIN
+STD 12/30  STA 18/40  BLK 0710  TRIP 74210 0710
+TAXI 600 0012  CONT 1484 0009  ALTN 3120 0031
+MZFW 237682 EZFW 210300 MTOW 351533 ETOW 280300
+MLWT 251290 ELWT 206090  FL340/M084 FL360/M082
+WPT ...  N51.. W002..  SR 3  TROPO 383  WC M012
+REMARKS: CREW TO CHECK .. MEL .. PERF .. FUEL ..</pre>
+        <div style="position:absolute;left:0;right:0;bottom:0;height:70px;background:linear-gradient(transparent,var(--panel))"></div>
+      </div>
+      <div class="arw">
+        <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <span style="font-size:11px;color:var(--soft);margin-top:4px">Sky Matrix</span>
+      </div>
+      <div style="background:var(--panel);border:1px solid var(--sky);box-shadow:0 0 0 1px rgba(57,180,255,.25) inset;border-radius:14px;padding:16px">
+        <span style="display:inline-block;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--sky);background:rgba(57,180,255,.12);padding:3px 10px;border-radius:20px;margin-bottom:12px">Sky Matrix briefing</span>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="fld"><div class="k">Route</div><div class="v">OERK → EGLL</div></div>
+          <div class="fld"><div class="k">Aircraft</div><div class="v">B77W</div></div>
+          <div class="fld"><div class="k">ETOW</div><div class="v">280,300 <small>kg</small></div></div>
+          <div class="fld"><div class="k">Taxi fuel</div><div class="v">600 <small>kg</small></div></div>
+          <div class="fld"><div class="k">Trip fuel</div><div class="v">74,210 <small>kg</small></div></div>
+          <div class="fld"><div class="k">ETOW vs MTOW</div><div class="v" style="color:var(--good)">within limits</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- FEATURES -->
 <section id="features">
   <div class="wrap">
@@ -164,6 +226,20 @@
       <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg></div><h3>Crew rest planning</h3><p>Plan and time inflight rest cleanly, with the numbers worked out for you so the flight deck stays fresh for arrival.</p></div>
       <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M8.5 12.5l2 2 4-4"/></svg></div><h3>Checklists &amp; DGR</h3><p>An editable checklist tab plus dangerous goods reference at your fingertips, build the flow that suits how you work.</p></div>
       <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 10v4h4l5 4V6L7 10H3z"/><path d="M16 8a5 5 0 0 1 0 8"/></svg></div><h3>Cabin announcements</h3><p>Generate clean, consistent passenger announcements drawn from the flight's own details, ready to read out.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- PRECISION ENGINE -->
+<section id="precision">
+  <div class="wrap">
+    <div class="kicker">Precision engine</div>
+    <h2>Real numbers, not scraped text</h2>
+    <p class="sub">Most tools just dump the PDF's text on screen. Sky Matrix parses it: figures like <b style="color:var(--ink)">ETOW</b> and <b style="color:var(--ink)">Taxi fuel</b> are captured as discrete, validated numeric values, then cross-checked and flagged if anything looks off.</p>
+    <div class="grid">
+      <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></div><h3>Discrete values</h3><p>ETOW, Taxi, Trip, ZFW and the weight limits are read as real numbers you can compare and compute with, not a wall of copied text.</p></div>
+      <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div><h3>Cross-checked</h3><p>ETOW vs MTOW and estimated landing weight vs MLW are compared automatically, with a clear caution the moment a limit would be exceeded.</p></div>
+      <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div><h3>Flagged when doubtful</h3><p>A pre-render data check highlights missing or out-of-range fields, so a mis-read number is surfaced for you to verify, never shown silently.</p></div>
     </div>
   </div>
 </section>
@@ -233,7 +309,7 @@
       <div class="card" style="display:flex;flex-direction:column;text-align:center">
         <h3>6 months</h3>
         <div style="font-size:32px;font-weight:800;color:#fff;margin:8px 0">$130<span style="font-size:14px;color:var(--soft);font-weight:600"> /6mo</span></div>
-        <p style="flex:1">Billed every six months.</p>
+        <p style="flex:1">Save ~13% vs monthly. Billed every six months.</p>
         <a class="btn primary" href="subscribe.html?plan=half" style="margin-top:12px">Subscribe</a>
       </div>
     </div>
@@ -245,9 +321,10 @@
   <div class="wrap">
     <div class="kicker">More from us</div>
     <h2>Our other products</h2>
-    <p class="sub">We're building more tools for the flight deck. New products will appear here soon.</p>
-    <div class="video" style="aspect-ratio:auto;min-height:150px;padding:26px">
-      <div><b style="color:var(--ink)">Coming soon</b><br>Our other products will be listed here.</div>
+    <p class="sub">We're building more tools for the flight deck. Our first companion app is here, with more in progress.</p>
+    <div class="grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="card"><span style="display:inline-block;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--good);background:rgba(123,224,164,.12);padding:3px 10px;border-radius:20px;margin-bottom:12px">Free &middot; Android</span><h3>Sky Matrix Clock</h3><p>A pilot-friendly clock &amp; alarms app. It runs on internet time, so it's immune to unwanted device time-zone changes, and lets you set alarms in UTC or local time.</p><div style="display:flex;align-items:center;gap:14px;margin-top:14px"><a class="btn primary" href="https://github.com/CaptainMarinda/Mike-Briefing/releases/download/v1/sky-matrix-clock.apk" download style="padding:9px 18px;font-size:14px">Download free</a></div></div>
+      <div class="card"><span style="display:inline-block;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--sky);background:rgba(57,180,255,.12);padding:3px 10px;border-radius:20px;margin-bottom:12px">Work in progress</span><h3>Matrix Budget</h3><p>A simple budgeting companion, in development. Details coming soon.</p></div>
     </div>
     <div class="btns" style="margin-top:20px">
       <a class="btn ghost" href="mailto:support@skymatrix.biz?subject=Sky%20Matrix%20products">Get notified</a>
@@ -273,6 +350,7 @@
   <div class="wrap">
     <div class="disc"><b>For reference only, not for operational use.</b> The official hard copy OFP must be used for flight operations. Sky Matrix is for individual use only.</div>
     <div id="footlogo" style="display:flex;justify-content:center;margin-bottom:10px"></div>
+    <div style="margin-bottom:8px"><a href="faq.html">FAQ</a> &middot; <a href="privacy.html">Privacy &amp; Security</a> &middot; <a href="changelog.html">Changelog</a> &middot; <a href="subscribe.html">Subscribe</a> &middot; <a href="user-guide.pdf">User Guide</a></div>
     <div>&copy; <span id="yr"></span> Sky Matrix &middot; <a href="https://www.skymatrix.biz">www.skymatrix.biz</a> &middot; <a href="mailto:support@skymatrix.biz">support@skymatrix.biz</a></div>
   </div>
 </footer>

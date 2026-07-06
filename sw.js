@@ -2,10 +2,12 @@
    Upload this file to the GitHub repo ROOT, next to index.html.
    Navigation is network-first (so a freshly uploaded index.html loads when online,
    and the cached copy loads when offline). Libraries/assets are cache-first. */
-const CACHE = 'skymatrix-v8';
+const CACHE = 'skymatrix-v9';
+const SHARE_CACHE = 'sm-share';
 const ASSETS = [
   './',
   './app.html',
+  './manifest.webmanifest',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/2.1.5/tesseract.min.js'
@@ -20,12 +22,27 @@ self.addEventListener('install', function (e) {
 
 self.addEventListener('activate', function (e) {
   e.waitUntil(caches.keys().then(function (ks) {
-    return Promise.all(ks.filter(function (k) { return k !== CACHE; }).map(function (k) { return caches.delete(k); }));
+    return Promise.all(ks.filter(function (k) { return k !== CACHE && k !== SHARE_CACHE; }).map(function (k) { return caches.delete(k); }));
   }).then(function () { return self.clients.claim(); }));
 });
 
 self.addEventListener('fetch', function (e) {
   var req = e.request;
+  // Web Share Target: an OFP shared into Sky Matrix arrives as a POST to /share-target.
+  // There is no server, so we capture the file here, stash it, and redirect the app to pick it up.
+  if (req.method === 'POST' && req.url.indexOf('/share-target') !== -1) {
+    e.respondWith((function () {
+      return req.formData().then(function (form) {
+        var f = form.get('ofp');
+        if (!f) return Response.redirect('app.html', 303);
+        return caches.open(SHARE_CACHE).then(function (c) {
+          var headers = { 'Content-Type': f.type || 'application/octet-stream', 'X-Filename': (f.name || 'shared-ofp.pdf') };
+          return c.put('shared-ofp', new Response(f, { headers: headers }));
+        }).then(function () { return Response.redirect('app.html?shared=1', 303); });
+      }).catch(function () { return Response.redirect('app.html', 303); });
+    })());
+    return;
+  }
   if (req.method !== 'GET') return;
   // pw.json is the live admin-password source of truth — ALWAYS network-first,
   // never served stale from cache (a stale hash here = the right password being rejected).

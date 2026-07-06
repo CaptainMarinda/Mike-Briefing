@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Privacy &amp; Security | Sky Matrix</title>
+<meta name="description" content="How Sky Matrix handles your data, the third-party services it uses, the APK checksum for safe sideloading, and its security model.">
+<meta name="theme-color" content="#0e1726">
+<link rel="canonical" href="https://www.skymatrix.biz/privacy.html">
+<style>
+ :root{--blue:#1f6dff;--sky:#39b4ff;--navy:#0e1726;--panel:#13203a;--line:#2a3c5e;--ink:#e6ecf5;--soft:#9fb3d1;--grey:#5a6b86;--burg:#b23a5d;--good:#7be0a4}
+ *{box-sizing:border-box}
+ body{margin:0;background:var(--navy);color:var(--ink);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.7}
+ a{color:var(--sky);text-decoration:none}a:hover{text-decoration:underline}
+ .wrap{max-width:820px;margin:0 auto;padding:0 22px}
+ header.nav{position:sticky;top:0;z-index:50;background:rgba(14,23,38,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+ .nav .wrap{max-width:1080px;display:flex;align-items:center;justify-content:space-between;height:60px}
+ .brand{font-weight:800;letter-spacing:.5px;color:#fff}
+ .brand small{display:block;font-size:9px;letter-spacing:3px;color:var(--burg);font-weight:700}
+ .nav a.back{color:var(--soft);font-size:14px;font-weight:600}
+ .hd{padding:56px 0 6px}
+ .kicker{color:var(--sky);letter-spacing:3px;text-transform:uppercase;font-size:12px;font-weight:700;margin-bottom:8px}
+ h1{font-size:34px;color:#fff;margin:0 0 8px;font-weight:800}
+ .upd{color:var(--grey);font-size:13px}
+ .body{padding:26px 0 60px}
+ h2{font-size:21px;color:#fff;margin:34px 0 10px;font-weight:800}
+ p{color:var(--soft);margin:0 0 12px}
+ .body b{color:var(--ink)}
+ ul{color:var(--soft);margin:0 0 12px;padding-left:20px}li{margin:5px 0}
+ table{width:100%;border-collapse:collapse;margin:10px 0 16px;font-size:14px}
+ th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+ th{background:var(--panel);color:#fff}td{color:var(--soft)}
+ .chk{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:14px 0}
+ .chk .hash{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;color:var(--good);word-break:break-all;background:#0b1322;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-top:8px}
+ footer{padding:36px 0 60px;color:var(--grey);font-size:13px;text-align:center;border-top:1px solid var(--line)}
+ .disc{max-width:640px;margin:0 auto 12px;color:var(--soft);font-size:12px}
+</style></head>
+<body>
+<header class="nav"><div class="wrap"><a class="brand" href="index.html">SKY MATRIX<small>FLY INFORMED</small></a><a class="back" href="index.html">&larr; Back to site</a></div></header>
+
+<div class="hd"><div class="wrap"><div class="kicker">Trust</div><h1>Privacy &amp; Security</h1><div class="upd">Last updated: 6 July 2026</div></div></div>
+
+<div class="body"><div class="wrap">
+
+  <p>Sky Matrix is built to keep your data on your device and to use outside services only where a feature genuinely needs them. This page explains what stays local, what leaves the device, the third parties involved, and how to verify the Android app before installing it.</p>
+
+  <h2>What stays on your device</h2>
+  <p>Your flight data lives only in your browser/app storage on your device:</p>
+  <ul>
+    <li>The OFP text you load and every field you type (times, weights, crew, notes).</li>
+    <li>Your PIN, stored only as a one-way hash, and your biometric enrolment, which stays in your device's secure hardware and is never sent to us.</li>
+    <li>Documents you add to the in-app DOCS store and your saved announcements.</li>
+  </ul>
+  <p>None of this is uploaded to any Sky Matrix server. Clearing the app's data removes it.</p>
+
+  <h2>What leaves the device, and why</h2>
+  <p>A few features need the internet and send the minimum data required:</p>
+  <ul>
+    <li><b>Licensing &amp; trials</b>, your Device ID and email are sent to our licensing service to issue or validate an access code.</li>
+    <li><b>AI OFP reading &amp; announcement fill</b>, when you tap these, the relevant OFP text or announcement template is sent to our service to be processed and returned. It is not used to build a public profile of you.</li>
+    <li><b>Aircraft, weather &amp; NOTAM lookups</b>, a flight number/registration or airport code is sent to the relevant data provider to fetch results.</li>
+    <li><b>Payments</b>, handled entirely on the checkout provider's site; we never see or store your card details.</li>
+  </ul>
+
+  <h2>Third-party services</h2>
+  <table>
+    <tr><th>Service</th><th>Purpose</th><th>Data shared</th></tr>
+    <tr><td>Cloudflare (Workers)</td><td>Licensing, trials, and the AI/data endpoints</td><td>Device ID, email, OFP/announcement text</td></tr>
+    <tr><td>Anthropic (Claude)</td><td>AI OFP reading and announcement fill</td><td>OFP text / template text you submit</td></tr>
+    <tr><td>Flightradar24</td><td>Aircraft type and route lookup</td><td>Flight number or registration</td></tr>
+    <tr><td>Lemon Squeezy</td><td>Checkout &amp; billing (merchant of record)</td><td>Your payment &amp; contact details (with them, not us)</td></tr>
+    <tr><td>Resend</td><td>Sending your access-code emails</td><td>Your email address</td></tr>
+    <tr><td>GitHub Pages</td><td>Hosting the app and website</td><td>Standard web request logs</td></tr>
+  </table>
+  <p>Each provider processes data under its own privacy policy. We share only what the feature you invoked requires.</p>
+
+  <h2>Security model</h2>
+  <ul>
+    <li>Licences are protected with an <b>ECDSA P-256</b> digital signature, only our server holds the private key, so codes can't be forged, and each is bound to one device.</li>
+    <li>Your PIN is stored as a salted one-way hash; biometric unlock uses the platform authenticator (WebAuthn) and never exposes your fingerprint/face to the app.</li>
+    <li>The app is served only over HTTPS. Sensitive data is never placed in URLs.</li>
+    <li>Honest caveat: any client-side gate deters casual access but is not a guarantee against a determined attacker. Use a strong PIN and keep your device secured.</li>
+  </ul>
+
+  <h2>Android APK, verify before you install</h2>
+  <p>If you sideload the Android app, confirm the file is authentic by checking its SHA-256 checksum against the value below before installing.</p>
+  <div class="chk">
+    <div><b>File:</b> skymatrix.apk</div>
+    <div><b>SHA-256:</b></div>
+    <div class="hash">fe539e63730fe1f12232461554eb088287768416ec18d7ee87ca0990964fe06d</div>
+    <p style="margin:12px 0 0;font-size:13px">Windows: <code>certutil -hashfile skymatrix.apk SHA256</code> &nbsp;&middot;&nbsp; macOS/Linux: <code>shasum -a 256 skymatrix.apk</code>. The output must match exactly. This checksum is for the current published build; it changes whenever the app is rebuilt.</p>
+  </div>
+  <p style="font-size:13px">Only install the APK from our official Download link. Because it is sideloaded, Android will warn about "unknown sources", that is expected; the checksum above is how you confirm it hasn't been tampered with.</p>
+
+  <h2>Your choices</h2>
+  <p>You can stop all outbound data by simply not using the online features, the core briefing works offline. To delete your data, clear the app's storage on your device. For a licence transfer or account/data request, email <a href="mailto:admin@skymatrix.biz">admin@skymatrix.biz</a>.</p>
+
+  <h2>Contact</h2>
+  <p>Questions about privacy or security: <a href="mailto:support@skymatrix.biz">support@skymatrix.biz</a>.</p>
+
+</div></div>
+
+<footer><div class="wrap">
+  <div class="disc"><b>For reference only, not for operational use.</b> The official hard-copy OFP must be used for flight operations. Sky Matrix is for individual use only.</div>
+  <div><a href="index.html">Home</a> &middot; <a href="faq.html">FAQ</a> &middot; <a href="changelog.html">Changelog</a> &middot; <a href="subscribe.html">Subscribe</a></div>
+  <div style="margin-top:8px">&copy; <span id="yr"></span> Sky Matrix &middot; <a href="https://www.skymatrix.biz">www.skymatrix.biz</a></div>
+</div></footer>
+<script>document.getElementById('yr').textContent=new Date().getFullYear();</script>
+</body></html>
