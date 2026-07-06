@@ -335,17 +335,16 @@
       <div class="hint">PDF text is extracted in-browser via PDF.js (needs internet the first time). Your last OFP is remembered until you load another.</div>
       <div class="hint" style="margin-top:6px">Tip: on Android you can open your OFP email, tap <b>Share</b> and choose <b>Sky Matrix</b> to load it straight in. On iPhone/iPad, open the PDF and use the file picker above.</div>
       <textarea id="paste" style="display:none"></textarea>
-      <div class="row">
-        <button id="go">Generate briefing</button>
-        <button id="aiGo" type="button" style="background:#12324a;border:1px solid #2f8bff;color:#cfe6ff;margin-top:8px">Read with AI (beta)</button>
-        <button id="print" class="ghost">Print / Save as PDF</button>
-        <span id="msg" class="msg"></span>
+      <div class="row" style="display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;margin-top:4px">
+        <button id="go" type="button" style="flex:1;min-width:150px;background:#1f6dff;border:1px solid #1f6dff;color:#fff">Generate briefing</button>
+        <button id="aiGo" type="button" style="flex:1;min-width:150px;background:#0e2a44;border:1px solid #2f8bff;color:#cfe6ff">Read with AI (beta)</button>
+        <button id="reset" type="button" style="flex:1;min-width:150px;background:#3a2140;border:1px solid #b23a5d;color:#f4c9d8">Load another OFP</button>
       </div>
+      <div id="msg" class="msg" style="margin-top:10px"></div>
     </div>
   </div>
   <div class="toolbar" id="tb" style="display:none">
     <button id="print2">Print / Save as PDF</button>
-    <button id="reset" class="ghost">Load another OFP</button>
   </div>
   <div class="fcard">
     <h2>Crew roster (OCR)</h2>
@@ -1028,8 +1027,9 @@ async function readFile(file){
   });
   const head = new Uint8Array(buf.slice(0,5));
   const isPdf = head[0]===0x25 && head[1]===0x50 && head[2]===0x44 && head[3]===0x46;
-  if(!isPdf) return new TextDecoder('utf-8').decode(buf);
+  if(!isPdf){ try{window.__ofpPdfBuf=null;}catch(e){} return new TextDecoder('utf-8').decode(buf); }
   if(!window.pdfjsLib) throw new Error('This looks like a binary PDF and PDF.js failed to load (offline?). Paste the OFP text instead.');
+  try{ window.__ofpPdfBuf = buf.slice(0); }catch(e){ window.__ofpPdfBuf=null; }
   const pdf = await pdfjsLib.getDocument({data:buf}).promise;
   let out=[];
   for(let p=1;p<=pdf.numPages;p++){
@@ -1766,8 +1766,7 @@ async function loadFile(f){
     lastText=await readFile(f);
     if(!lastText||!lastText.trim()) throw new Error('File looks empty after reading.');
     paste.value=lastText.slice(0,200000);
-    setMsg('Loaded '+f.name+' — generating…','ok');
-    generate();
+    setMsg('Loaded '+f.name+'. Now choose: “Generate briefing” or “Read with AI”.','ok');
   }catch(e){ setMsg('Could not read file: '+e.message+'  (Try pasting the OFP text below instead.)','err'); }
 }
 function setMsg(t,k){msg.textContent=t;msg.className='msg '+(k||'');}
@@ -1834,11 +1833,33 @@ document.getElementById('go').onclick=generate;
     data.confidence=d.confidence||{};
     return data;
   }
+  /* render the first few OFP pages to JPEGs so the AI can READ THE DOCUMENT (vision) — avoids text-column scrambling */
+  function ofpPageImages(){
+    return new Promise(function(resolve){
+      if(!window.__ofpPdfBuf || !window.pdfjsLib){ resolve([]); return; }
+      pdfjsLib.getDocument({data:window.__ofpPdfBuf.slice(0)}).promise.then(function(pdf){
+        var n=Math.min(pdf.numPages,5), imgs=[], p=1;
+        function next(){
+          if(p>n){ resolve(imgs); return; }
+          pdf.getPage(p).then(function(page){
+            var v1=page.getViewport({scale:1}), scale=Math.min(2,1500/Math.max(v1.width,v1.height)), vp=page.getViewport({scale:scale});
+            var cv=document.createElement('canvas'); cv.width=Math.round(vp.width); cv.height=Math.round(vp.height);
+            return page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise.then(function(){
+              try{ imgs.push(cv.toDataURL('image/jpeg',0.72).split(',')[1]); }catch(e){}
+              p++; next();
+            });
+          }).catch(function(){ p++; next(); });
+        }
+        next();
+      }).catch(function(){ resolve([]); });
+    });
+  }
   aiBtn.addEventListener('click',function(){
     var text=((document.getElementById('paste')||{}).value||'').trim();
-    if(!text){ setMsg('Load or paste an OFP first, then Read with AI.','err'); return; }
-    aiBtn.disabled=true; setMsg('Reading the OFP with AI…','');
-    fetch(AI_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:text.slice(0,60000)})})
+    if(!text && !window.__ofpPdfBuf){ setMsg('Load an OFP first, then Read with AI.','err'); return; }
+    aiBtn.disabled=true; setMsg(window.__ofpPdfBuf?'Reading the OFP pages with AI…':'Reading the OFP with AI…','');
+    ofpPageImages()
+      .then(function(images){ return fetch(AI_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:text.slice(0,60000), images:images})}); })
       .then(function(r){return r.json();})
       .then(function(j){
         if(!j||!j.ok){ setMsg((j&&j.error)||'AI reader unavailable right now.','err'); return; }
@@ -1866,7 +1887,7 @@ document.getElementById('go').onclick=generate;
       .then(function(){ aiBtn.disabled=false; });
   });
 })();
-document.getElementById('print').onclick=()=>window.print();
+var _pb=document.getElementById('print'); if(_pb)_pb.onclick=()=>window.print();
 document.getElementById('print2').onclick=()=>window.print();
 document.getElementById('reset').onclick=()=>{try{localStorage.removeItem('sm_ofptext');localStorage.removeItem('sm_fields');localStorage.removeItem('sm_ofpid');}catch(e){}location.reload();};
 
