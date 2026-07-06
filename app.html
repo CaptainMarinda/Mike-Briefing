@@ -248,7 +248,6 @@
     </div>
     <button id="lockTrial">Start my free 10-day trial</button>
     <button id="lockSub" style="background:#12324a;border:1px solid #2f8bff;color:#cfe6ff;margin-top:8px">Subscribe</button>
-    <button id="lockReq" style="background:#13203A;border:1px solid #2a3c5e;color:#cfe0f5;margin-top:8px">Email me my access code</button>
     <div id="lockReqMsg" style="font-size:13px;margin-top:6px;min-height:16px"></div>
     <div class="by" style="margin:14px 0 4px;border-top:1px solid #1b2942;padding-top:12px">Got your code from the email? Paste it below to activate.</div>
     <input id="lockCode" type="text" placeholder="Paste your access code" autocomplete="off" autocapitalize="off" spellcheck="false">
@@ -1811,6 +1810,30 @@ document.getElementById('go').onclick=generate;
   var aiBtn=document.getElementById('aiGo'); if(!aiBtn)return;
   function setF(id,v){ if(v==null||v==='')return; var e=document.getElementById(id); if(e){ e.value=v; e.dataset.touched='1'; try{e.dispatchEvent(new Event('input',{bubbles:true}));}catch(_){} } }
   function m2hhmm(min){ min=parseInt(min,10); if(isNaN(min))return ''; return Math.floor(min/60)+'h '+String(min%60).padStart(2,'0')+'m'; }
+  function min2hhmm(min){ min=parseInt(min,10); if(isNaN(min))return ''; var h=Math.floor(min/60),m=min%60; return (h<10?'0':'')+h+(m<10?'0':'')+m; }
+  function hhmmColon(t){ t=String(t==null?'':t).replace(/\D/g,''); if(t.length===3)t='0'+t; if(t.length!==4)return String(t==null?'':t); return t.slice(0,2)+':'+t.slice(2); }
+  /* overlay the AI's accurate header/weights/fuel/times onto a data object (from the offline parse),
+     leaving the offline route/NOTAM/ETOPS structure intact, then the whole briefing re-renders from it */
+  function applyAI(data,d){
+    var w=d.weights||{}, f=d.fuel||{};
+    function s(k,v){ if(v!=null&&v!=='')data[k]=String(v); }
+    s('dep',d.dep); s('dest',d.dest); s('fltCs',d.fltCs); s('atcCs',d.atcCs||d.fltCs);
+    s('tail',d.reg); s('acType',d.acType); s('date',d.date);
+    try{ if(typeof MON!=='undefined'&&d.date)data.depMonth=MON[(d.date||'').slice(2,5)]||data.depMonth||0; }catch(e){}
+    if(d.std!=null&&d.std!=='')s('std',hhmmColon(d.std));
+    if(d.sta!=null&&d.sta!=='')s('sta',hhmmColon(d.sta));
+    if(d.blockTimeMin!=null){var b=min2hhmm(d.blockTimeMin); if(b)data.blk=b;}
+    if(d.tripTimeMin!=null){var tp=min2hhmm(d.tripTimeMin); if(tp)data.tripT=tp;}
+    s('fTaxi',f.taxi); s('fTrip',f.trip); s('fCont',f.cont); s('fAltn',f.altn); s('fExtra',f.extra); s('fRamp',f.ramp);
+    s('ezfw',w.zfw); s('mzfw',w.mzfw); s('etow',w.tow); s('mtow',w.mtow); s('elwt',w.lw); s('mlwt',w.mlw);
+    data.elwOver=(data.elwt&&data.mlwt)?(+data.elwt>+data.mlwt):null;
+    data.towOver=(data.etow&&data.mtow)?(+data.etow>+data.mtow):null;
+    s('initFL',d.initFL); if(d.initFL&&!data.highFL)s('highFL',d.initFL);
+    if(Array.isArray(d.altn)&&d.altn[0])s('altnIcao',d.altn[0]);
+    s('remarks',d.remarks); s('speedCI',d.ci);
+    data.confidence=d.confidence||{};
+    return data;
+  }
   aiBtn.addEventListener('click',function(){
     var text=((document.getElementById('paste')||{}).value||'').trim();
     if(!text){ setMsg('Load or paste an OFP first, then Read with AI.','err'); return; }
@@ -1820,13 +1843,23 @@ document.getElementById('go').onclick=generate;
       .then(function(j){
         if(!j||!j.ok){ setMsg((j&&j.error)||'AI reader unavailable right now.','err'); return; }
         var d=j.data||{}, w=d.weights||{};
-        setF('dep_from',d.dep); setF('dep_to',d.dest); setF('dep_fnum',d.fltCs); setF('dep_date',d.date);
-        setF('dep_std',d.std); setF('dep_fl',d.initFL);
+        // build the FULL briefing from AI: offline parse gives route/NOTAM/ETOPS structure; AI overrides the header fields
+        var data; try{ data=parseOFP(text,{known:'',qseats:0}); }catch(e){ data={raw:text,etopsPts:[]}; }
+        if(!data.etopsPts)data.etopsPts=[];
+        applyAI(data,d);
+        try{ build(data); }catch(e){}
+        window.__OFP=data;
+        try{ localStorage.setItem('sm_ofptext',text); }catch(e){}
+        var tb=document.getElementById('tb'); if(tb)tb.style.display='flex';
+        var sn=document.getElementById('subnav'); if(sn)sn.style.display='flex';
+        // also fill the editable Departure / Arrival cards
+        setF('dep_from',data.dep); setF('dep_to',data.dest); setF('dep_fnum',data.fltCs); setF('dep_date',data.date);
+        setF('dep_std',hhmmColon(d.std)); setF('dep_fl',data.initFL);
         if(d.tripTimeMin!=null)setF('dep_ft',m2hhmm(d.tripTimeMin));
         if(d.blockTimeMin!=null)setF('dep_block',m2hhmm(d.blockTimeMin));
         setF('dep_zfw',w.zfw); setF('dep_tow',w.tow); setF('dep_lwt',w.lw); setF('ar_mlwt',w.mlw); setF('ar_lwt',w.lw);
         var low=[],cf=d.confidence||{}; for(var k in cf){ if(cf[k]==='low')low.push(k); }
-        setMsg('AI read this OFP'+(d.acType?(' ('+d.acType+(d.reg?(' '+d.reg):'')+')'):'')+'. Departure/Arrival fields filled'+(low.length?(' — please double-check: '+low.join(', ')):' (all high-confidence)')+'.', low.length?'':'ok');
+        setMsg('AI briefing ready'+(d.acType?(' ('+d.acType+(d.reg?(' '+d.reg):'')+')'):'')+'.'+(low.length?(' Check: '+low.join(', ')):' All high-confidence.'),low.length?'':'ok');
         if(typeof saveState==='function')saveState();
       })
       .catch(function(){ setMsg('AI reader needs internet (and the Worker key set up).','err'); })
