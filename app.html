@@ -1841,24 +1841,52 @@ document.getElementById('go').onclick=generate;
     data.confidence=d.confidence||{};
     return data;
   }
-  /* render the first few OFP pages to JPEGs so the AI can READ THE DOCUMENT (vision) — avoids text-column scrambling */
+  /* render the MOST RELEVANT OFP pages to high-res JPEGs so the AI reads the document (vision).
+     Scans the first pages for the fuel/weights, NOTAM, weather and ETOPS sections and sends those,
+     so it works even when those sections sit deep in a 200-page OFP. */
   function ofpPageImages(){
     return new Promise(function(resolve){
       if(!window.__ofpPdfBuf || !window.pdfjsLib){ resolve([]); return; }
       pdfjsLib.getDocument({data:window.__ofpPdfBuf.slice(0)}).promise.then(function(pdf){
-        var n=Math.min(pdf.numPages,5), imgs=[], p=1;
-        function next(){
-          if(p>n){ resolve(imgs); return; }
-          pdf.getPage(p).then(function(page){
-            var v1=page.getViewport({scale:1}), scale=Math.min(2,1500/Math.max(v1.width,v1.height)), vp=page.getViewport({scale:scale});
-            var cv=document.createElement('canvas'); cv.width=Math.round(vp.width); cv.height=Math.round(vp.height);
-            return page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise.then(function(){
-              try{ imgs.push(cv.toDataURL('image/jpeg',0.72).split(',')[1]); }catch(e){}
-              p++; next();
-            });
-          }).catch(function(){ p++; next(); });
+        var total=pdf.numPages, scanN=Math.min(total,60), scores=[], i=1;
+        function pageText(pn){ return pdf.getPage(pn).then(function(pg){return pg.getTextContent();}).then(function(tc){return tc.items.map(function(it){return it.str;}).join(' ');}); }
+        function scan(){
+          if(i>scanN){ pick(); return; }
+          pageText(i).then(function(t){
+            scores.push({ p:i,
+              sum:(t.match(/ZFW|MZFW|MTOW|ETOW|TAXI|TRIP|RAMP|PAYLOAD|BLOCK\s*FUEL|MASS/gi)||[]).length,
+              notam:(/NOTAM/i.test(t))?1:0, wx:(/METAR|\bTAF\b|SIGMET/i.test(t))?1:0,
+              etops:(/ETOPS|\bEEP\b|\bETP\b|\bEXP\b|\bFIR\b|\bUIR\b/i.test(t))?1:0 });
+            i++; scan();
+          }).catch(function(){ i++; scan(); });
         }
-        next();
+        function best(key){ var b=null; scores.forEach(function(s){ if(s[key] && (!b || s[key]>b[key])) b=s; }); return b?b.p:null; }
+        function pick(){
+          var want={}; want[1]=1; if(total>=2)want[2]=1;
+          var bs=best('sum'); if(bs)want[bs]=1;
+          var bn=best('notam'); if(bn){ want[bn]=1; if(bn+1<=total)want[bn+1]=1; }
+          var bw=best('wx'); if(bw)want[bw]=1;
+          var be=best('etops'); if(be)want[be]=1;
+          var pages=Object.keys(want).map(Number).sort(function(a,b){return a-b;}).slice(0,8);
+          if(!pages.length)pages=[1];
+          renderPages(pages);
+        }
+        function renderPages(pages){
+          var imgs=[], k=0;
+          function next(){
+            if(k>=pages.length){ resolve(imgs); return; }
+            pdf.getPage(pages[k]).then(function(page){
+              var v1=page.getViewport({scale:1}), scale=Math.min(2.5,1900/Math.max(v1.width,v1.height)), vp=page.getViewport({scale:scale});
+              var cv=document.createElement('canvas'); cv.width=Math.round(vp.width); cv.height=Math.round(vp.height);
+              return page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise.then(function(){
+                try{ imgs.push(cv.toDataURL('image/jpeg',0.85).split(',')[1]); }catch(e){}
+                k++; next();
+              });
+            }).catch(function(){ k++; next(); });
+          }
+          next();
+        }
+        scan();
       }).catch(function(){ resolve([]); });
     });
   }
