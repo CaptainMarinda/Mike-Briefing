@@ -285,6 +285,12 @@
     <button id="loginBio" style="display:none;background:#13203A;border:1px solid #2a3c5e;color:#cfe0f5;margin-top:8px">Unlock with Face ID / fingerprint</button>
     <div id="loginErr" class="gerr"></div>
     <a id="loginForgot" href="#" style="display:block;margin-top:12px;color:#7fd8ff;font-size:13px;text-decoration:none">Forgot PIN?</a>
+    <a id="loginShowDev" href="#" style="display:block;margin-top:8px;color:#7fd8ff;font-size:13px;text-decoration:none">Show my Device ID (to subscribe)</a>
+    <div id="loginDevBox" style="display:none;margin-top:8px">
+      <input id="loginDevField" type="text" readonly aria-label="Your device ID" style="text-align:center;font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:800;letter-spacing:2px;color:#7fd8ff">
+      <button id="loginDevCopy" type="button" style="background:#13203A;border:1px solid #2a3c5e;color:#cfe0f5;margin-top:6px;font-size:13px;padding:9px">Copy Device ID</button>
+      <div class="gnote" style="margin-top:6px">Use this at skymatrix.biz to subscribe, or email support with it.</div>
+    </div>
     <div id="forgotBox" style="display:none;margin-top:10px;border-top:1px solid #1b2942;padding-top:10px">
       <div class="gnote">Paste your access code to reset your PIN, or email support@skymatrix.biz.</div>
       <input id="forgotCode" type="text" placeholder="Paste your access code" autocapitalize="off" spellcheck="false">
@@ -979,6 +985,16 @@ var LIC_PUBKEY = "BMxAfrty9p7_t79ebh4KowBcDiZVaiyBIRPPgMGaPK2Bt4yB9EU1W-4z9WQ4E4
       if(e){e.style.color='#7be0a4';e.textContent='Code verified — set a new PIN.';}showSetPin();return;}
     if(e){e.style.color='#ff9aa2';e.textContent=(r.reason==='badsig')?'That code is not for this device.':(r.reason==='expired')?'That code has expired.':'That code is not valid.';}
   });
+
+  /* let an already-activated user reveal their Device ID from the login screen (needed to subscribe / for support) */
+  var loginShowDev=document.getElementById('loginShowDev');
+  if(loginShowDev)loginShowDev.addEventListener('click',function(ev){ev.preventDefault();
+    var box=document.getElementById('loginDevBox'),f=document.getElementById('loginDevField');
+    if(f)f.value=DEV;
+    if(box)box.style.display=(box.style.display==='none'||!box.style.display)?'block':'none';});
+  var loginDevCopy=document.getElementById('loginDevCopy');
+  if(loginDevCopy)loginDevCopy.addEventListener('click',function(){try{navigator.clipboard.writeText(DEV);}catch(e){}
+    loginDevCopy.textContent='Copied ✓';setTimeout(function(){loginDevCopy.textContent='Copy Device ID';},1500);});
 
   route();
 })();
