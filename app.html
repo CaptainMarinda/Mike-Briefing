@@ -335,8 +335,9 @@
       <div class="hint">PDF text is extracted in-browser via PDF.js (needs internet the first time). Your last OFP is remembered until you load another.</div>
       <div class="hint" style="margin-top:6px">Tip: on Android you can open your OFP email, tap <b>Share</b> and choose <b>Sky Matrix</b> to load it straight in. On iPhone/iPad, open the PDF and use the file picker above.</div>
       <textarea id="paste" style="display:none"></textarea>
-      <div class="row" style="display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;margin-top:4px">
-        <button id="go" type="button" style="flex:1;min-width:150px;background:#1f6dff;border:1px solid #1f6dff;color:#fff">Generate briefing</button>
+      <div class="hint" style="margin-top:10px">Once your OFP is loaded, choose <b>one</b>: <b>Offline Briefing</b> (fast, works without internet, best on Qatar OFPs) or <b>Read with AI</b> (reads the OFP pages for the most accurate result across all airlines, needs internet).</div>
+      <div class="row" style="display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;margin-top:6px">
+        <button id="go" type="button" style="flex:1;min-width:150px;background:#1f6dff;border:1px solid #1f6dff;color:#fff">Offline Briefing</button>
         <button id="aiGo" type="button" style="flex:1;min-width:150px;background:#0e2a44;border:1px solid #2f8bff;color:#cfe6ff">Read with AI (beta)</button>
         <button id="reset" type="button" style="flex:1;min-width:150px;background:#3a2140;border:1px solid #b23a5d;color:#f4c9d8">Load another OFP</button>
       </div>
@@ -1766,7 +1767,7 @@ async function loadFile(f){
     lastText=await readFile(f);
     if(!lastText||!lastText.trim()) throw new Error('File looks empty after reading.');
     paste.value=lastText.slice(0,200000);
-    setMsg('Loaded '+f.name+'. Now choose: “Generate briefing” or “Read with AI”.','ok');
+    setMsg('Loaded '+f.name+'. Now choose one: “Offline Briefing” or “Read with AI”.','ok');
   }catch(e){ setMsg('Could not read file: '+e.message+'  (Try pasting the OFP text below instead.)','err'); }
 }
 function setMsg(t,k){msg.textContent=t;msg.className='msg '+(k||'');}
@@ -1830,6 +1831,13 @@ document.getElementById('go').onclick=generate;
     s('initFL',d.initFL); if(d.initFL&&!data.highFL)s('highFL',d.initFL);
     if(Array.isArray(d.altn)&&d.altn[0])s('altnIcao',d.altn[0]);
     s('remarks',d.remarks); s('speedCI',d.ci);
+    // route structure, runways, SID/STAR, FIR crossings, ETOPS — the AI reads these from the page images
+    s('depRwy',d.depRwy); s('arrRwy',d.arrRwy); s('sid',d.sid); s('star',d.star);
+    if(d.route)data.routeRaw=String(d.route);
+    if(Array.isArray(d.firs)) data.firs=d.firs.map(function(f){return {name:String((f&&f.name)||''),code:String((f&&f.code)||''),country:String((f&&f.country)||'')};}).filter(function(f){return f.name||f.code;});
+    if(Array.isArray(d.etopsPts)) data.etopsPts=d.etopsPts.map(function(p){return {posn:String((p&&p.posn)||''),lat:String((p&&p.lat)||''),lon:String((p&&p.lon)||''),altn:String((p&&p.altn)||''),eet:String((p&&p.eet)||'')};}).filter(function(p){return p.posn||p.lat;});
+    if(d.wx && typeof d.wx==='object'){ data.wx=data.wx||{}; for(var ic in d.wx){ if(!/^[A-Z]{4}$/.test(ic))continue; var wv=d.wx[ic]||{}; var pv=data.wx[ic]||{}; data.wx[ic]={name:pv.name||'',metar:(wv.metar||pv.metar||''),taf:(wv.taf||pv.taf||'')}; } }
+    if(d.notamsRaw && String(d.notamsRaw).trim()) data.notamRaw=String(d.notamsRaw);
     data.confidence=d.confidence||{};
     return data;
   }
@@ -1867,6 +1875,8 @@ document.getElementById('go').onclick=generate;
         // build the FULL briefing from AI: offline parse gives route/NOTAM/ETOPS structure; AI overrides the header fields
         var data; try{ data=parseOFP(text,{known:'',qseats:0}); }catch(e){ data={raw:text,etopsPts:[]}; }
         if(!data.etopsPts)data.etopsPts=[];
+        // the offline parse mis-reads route/FIR/runway/SID/STAR on non-Qatar OFPs — clear them so the AI owns them (blank beats wrong)
+        data.firs=[]; data.etopsPts=[]; data.depRwy=''; data.arrRwy=''; data.sid=''; data.star='';
         applyAI(data,d);
         try{ build(data); }catch(e){}
         window.__OFP=data;
