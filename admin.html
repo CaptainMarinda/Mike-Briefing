@@ -137,8 +137,12 @@
 <!-- FEEDBACK -->
 <section id="tab-fb" class="hide">
   <div class="card">
-    <button id="loadFb" style="flex:0 0 auto">Load feedback</button>
-    <div class="hint">Shows feedback from the in-app form and any mail routed to support@ / feedback@ (once you point those addresses at the Worker in Cloudflare Email Routing).</div>
+    <div class="row">
+      <button id="loadFb" style="flex:0 0 auto">Load feedback</button>
+      <label style="flex:0 0 auto;display:flex;align-items:center;gap:6px;font-weight:600;color:var(--soft)"><input type="checkbox" id="fbAll" style="width:auto"> Select all</label>
+      <button id="fbDelSel" class="warn" style="flex:0 0 auto">Delete selected</button>
+    </div>
+    <div class="hint">Shows feedback from the in-app form and any mail routed to support@ / feedback@. Tick messages and use <b>Delete selected</b>, or delete one at a time.</div>
     <div id="msgFb" class="msg"></div>
     <div id="fbList"></div>
   </div>
@@ -236,24 +240,42 @@ $('mailBtn').addEventListener('click',function(){
 });
 
 /* ---- FEEDBACK ---- */
+function senderEmail(s){ var m=String(s||'').match(/<([^>]+@[^>]+)>/); return (m?m[1]:String(s||'')).trim()||'unknown'; }
 function loadFb(){
   var k=tok(); if(!k){ set($('msgFb'),'Enter your admin token first.','err'); return; }
   set($('msgFb'),'Loading…','');
   H(k,'/admin/feedback').then(function(j){
-    if(j&&j.ok){ var it=j.feedback||[];
+    if(j&&j.ok){ var it=j.feedback||[]; $('fbAll').checked=false;
       $('fbList').innerHTML=it.map(function(f){
         var when=f.at?new Date(f.at).toLocaleString():'';
-        return '<div class="fb"><div class="meta"><span><b>'+esc(f.from||'unknown')+'</b> · '+esc(f.via||'')+(f.device?(' · '+esc(f.device)):'')+'</span><span>'+esc(when)+' <button class="warn sm" data-del="'+esc(f.id)+'">Delete</button></span></div><div style="font-size:12.5px;color:#cfe6ff;margin-bottom:3px">'+esc(f.subject||'')+'</div><div class="bd">'+esc(f.body||'')+'</div></div>';
+        return '<div class="fb"><div class="meta">'+
+          '<span style="display:flex;align-items:center;gap:8px"><input type="checkbox" class="fbchk" data-id="'+esc(f.id)+'" style="width:auto"> <b>'+esc(senderEmail(f.from))+'</b></span>'+
+          '<span>'+esc(when)+' <button class="warn sm" data-del="'+esc(f.id)+'">Delete</button></span></div>'+
+          '<div style="font-size:12.5px;color:#cfe6ff;margin:2px 0 3px"><b>Subject:</b> '+esc(f.subject||'(none)')+'</div>'+
+          '<div class="bd">'+esc(f.body||'')+'</div></div>';
       }).join('') || '<p class="hint">No feedback yet.</p>';
       set($('msgFb'),it.length+' message(s).','ok');
     } else set($('msgFb'),(j&&j.error)||'Failed.','err');
   }).catch(function(){ set($('msgFb'),'Network error.','err'); });
 }
+function delFb(ids){
+  var k=tok(); if(!k){ set($('msgFb'),'Enter your admin token first.','err'); return; }
+  if(!ids.length){ set($('msgFb'),'Select at least one message.','err'); return; }
+  set($('msgFb'),'Deleting '+ids.length+'…','');
+  var chain=Promise.resolve();
+  ids.forEach(function(id){ chain=chain.then(function(){ return H(k,'/admin/feedback?id='+encodeURIComponent(id),{method:'DELETE'}); }); });
+  chain.then(function(){ loadFb(); }).catch(function(){ set($('msgFb'),'Some deletes failed.','err'); loadFb(); });
+}
 $('loadFb').addEventListener('click',loadFb);
+$('fbAll').addEventListener('change',function(){ Array.prototype.forEach.call(document.querySelectorAll('.fbchk'),function(c){ c.checked=$('fbAll').checked; }); });
+$('fbDelSel').addEventListener('click',function(){
+  var ids=Array.prototype.map.call(document.querySelectorAll('.fbchk:checked'),function(c){return c.getAttribute('data-id');});
+  if(ids.length && confirm('Delete '+ids.length+' selected message(s)?')) delFb(ids);
+  else if(!ids.length) set($('msgFb'),'Tick the messages to delete first.','err');
+});
 $('fbList').addEventListener('click',function(e){
   var id=e.target.getAttribute('data-del'); if(!id)return;
-  var k=tok(); if(!k)return;
-  H(k,'/admin/feedback?id='+encodeURIComponent(id),{method:'DELETE'}).then(function(){ loadFb(); });
+  if(confirm('Delete this message?')) delFb([id]);
 });
 </script>
 </body></html>
