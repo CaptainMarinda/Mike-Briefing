@@ -1558,8 +1558,9 @@ function build(data){
   s1+=qaBanner(data);
   s1+=sec('Flight identification');
   s1+=grid('g4',[c('Date of dep',data.date),c('Flight callsign',data.fltCs),c('ATC callsign',data.atcCs),c('OFP number',data.ofpNo)]);
-  s1+=grid('g3',[c('Dep (ICAO)',data.dep),c('Dest (ICAO)',data.dest),c('Dest time zone',tz(data.dest))]);
-  s1+=grid('g3',[c('Aircraft type',data.acType),c('Aircraft tail',data.tail),c('Dep time zone',tz(data.dep))]);
+  s1+=grid('g3',[c('Dep (ICAO)',data.dep),c('Dest (ICAO)',data.dest),c('Alternate (ICAO)',data.altnIcao)]);
+  s1+=grid('g3',[c('Dep time zone',tz(data.dep)),c('Dest time zone',tz(data.dest)),c('Altn time zone',tz(data.altnIcao))]);
+  s1+=grid('g2',[c('Aircraft type',data.acType),c('Aircraft tail',data.tail)]);
   s1+=sec('Levels & performance');
   s1+=grid('g6',[c('Initial FL','FL'+(data.initFL||'')),c('Highest FL','FL'+(data.highFL||'')),c('Gnd dist (NM)',data.gndDist),c('Speed / CI','CI '+(data.speedCI||'')),c('TOC temp',data.tocTemp),c('Lowest tropo',data.tropo?data.tropo.fl:'—')]);
   s1+=sec('Wind shear — cruise-level SR > 4');
