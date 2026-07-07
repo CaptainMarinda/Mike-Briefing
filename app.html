@@ -111,7 +111,7 @@
   .toolbar{position:sticky;top:0;z-index:5;background:#0E1726;padding:10px 0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
   @media print{
     body{background:#fff}
-    header.app,nav.topnav,nav.subnav,.siderail,.identbar,.wrap>.panel,.toolbar,.hint,#io{display:none!important}
+    header.app,nav.topnav,nav.subnav,.siderail,.subrail,.identbar,.wrap>.panel,.toolbar,.hint,#io{display:none!important}
     .applayout{display:block!important;max-width:none;padding:0;margin:0}.maincol{min-width:0}
     .wrap{max-width:none;padding:0;margin:0}
     .view:not(.active){display:none!important}
@@ -149,13 +149,29 @@
   .siderail button.rail.active{background:linear-gradient(180deg,#2a1240,#3a1a52);border-color:var(--plum2);color:#fff;box-shadow:0 4px 16px rgba(90,24,70,.4)}
   .maincol{flex:1;min-width:0}
   .maincol>.wrap{max-width:none;padding:4px 0 20px}
-  .maincol nav.subnav{margin:4px 0 14px}
+  /* right-hand vertical sub-tab rail; swaps to the left via .applayout.mirror */
+  .subrail{position:sticky;top:58px;flex:0 0 auto;display:none;flex-direction:column;gap:10px;width:150px;z-index:4}
+  .subrail .railswap{width:100%;background:#0f1b31;border:1px dashed #3a5680;color:#9fb3d1;border-radius:10px;padding:9px;font-size:12px;font-weight:700;cursor:pointer}
+  .subrail .railswap:hover{background:#16243f;color:#cfe6ff}
+  #subrail nav.subnav{display:none;flex-direction:column;flex-wrap:nowrap;gap:8px;margin:0}
+  #subrail nav.subnav button{width:100%;padding:14px 12px;font-size:13.5px;font-weight:700;border-radius:12px;text-align:center}
+  .applayout.mirror{flex-direction:row-reverse}
+  /* bigger + distinct colours for the three top tabs */
+  nav.topnav button{padding:15px 20px;font-size:14px;font-weight:700}
+  nav.topnav button[data-v="load"]{color:#7db8ff}
+  nav.topnav button[data-v="load"].active{color:#dbeaff;border-bottom-color:#1f6dff;background:rgba(31,109,255,.16)}
+  nav.topnav button[data-v="cldg"]{color:#e6b757}
+  nav.topnav button[data-v="cldg"].active{color:#ffe6b0;border-bottom-color:#E0A33A;background:rgba(224,163,58,.16)}
+  nav.topnav button[data-v="rest"]{color:#5fd0a8}
+  nav.topnav button[data-v="rest"].active{color:#c6f2da;border-bottom-color:#2e9e5b;background:rgba(46,158,91,.16)}
   @media (max-width:640px){
     .applayout{gap:8px;padding:8px 8px 0}
-    .siderail{width:86px;top:50px}
-    .siderail button.rail{min-height:86px;font-size:11px;padding:12px 6px;gap:6px}
+    .siderail{width:84px;top:50px}
+    .siderail button.rail{min-height:84px;font-size:11px;padding:12px 6px;gap:6px}
     .siderail button.rail .nico{width:24px;height:24px}
-    nav.topnav button{padding:13px 13px;font-size:13px}
+    .subrail{width:84px;top:50px}
+    #subrail nav.subnav button{padding:12px 6px;font-size:11px}
+    nav.topnav button{padding:13px 12px;font-size:13px}
   }
   .fcard{background:#13203A;border:1px solid #20304f;border-radius:10px;padding:16px;margin-bottom:16px}
   .fcard h2{margin:0 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:#9FB3D1}
@@ -341,12 +357,6 @@
     <button data-v="disp" class="rail"><svg class="nico fill" viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0 0 11.5 2 1.5 1.5 0 0 0 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg><span>Inflight Display</span></button>
   </nav>
   <div class="maincol" id="maincol">
-  <nav class="subnav" id="subnav" style="display:none">
-    <button data-s="ofp" class="active">OFP</button>
-    <button data-s="route">Route</button>
-    <button data-s="wx">Weather Alerts</button>
-    <button data-s="notam">NOTAMs &amp; Enroute</button>
-  </nav>
 
 <div class="wrap view active" id="view-load">
   <div id="io">
@@ -435,10 +445,6 @@
 </div>
 
 <div class="wrap view" id="view-cldg">
-  <nav class="subnav" id="cldgnav">
-    <button data-cd="cl" class="active">Checklist</button>
-    <button data-cd="dg">Dangerous Goods</button>
-  </nav>
   <div class="subview2 active" id="cd-cl">
     <div class="fcard">
       <h2>Checklist</h2>
@@ -479,12 +485,6 @@
   <div id="clkWarn"></div>
   <div id="windPop" style="display:none;align-items:center;gap:10px;background:#16243f;border:1px solid #2f6df0;color:#dce8ff;border-radius:8px;padding:9px 12px;font-size:12.5px;font-weight:600;margin:0 0 12px"><svg width="16" height="16" viewBox="0 0 24 24" style="flex:0 0 auto;fill:none;stroke:#7ec8ff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2"/><path d="M12.59 19.41A2 2 0 1 0 14 16H2"/><path d="M17.73 7.73A2.5 2.5 0 1 1 19.5 12H2"/></svg><span id="windPopTxt" style="flex:1">Winds update due.</span><button type="button" onclick="this.parentNode.style.display='none'" style="padding:5px 12px">Dismiss</button></div>
   <div class="banner" id="bnr"><svg class="bnico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="bnrTxt"></span><button id="bnrAck">Acknowledge</button></div>
-  <nav class="subnav" id="dispnav">
-    <button data-d="dep">Departure</button>
-    <button data-d="live" class="active">Live</button>
-    <button data-d="nav">Nav</button>
-    <button data-d="arr">Arrival</button>
-  </nav>
   <div class="subview2 active" id="disp-live">
   <div class="fcard">
     <h2>Inflight Display <span id="dispOfp" class="ofpchip off">no OFP loaded</span></h2>
@@ -712,6 +712,25 @@
   </div>
 </div>
   </div><!-- /maincol -->
+  <div class="subrail" id="subrail">
+    <button type="button" class="railswap" id="railSwap" title="Move the sub-bar to the other side">&#8646; Swap side</button>
+    <nav class="subnav" id="subnav" style="display:none">
+      <button data-s="ofp" class="active">OFP</button>
+      <button data-s="route">Route</button>
+      <button data-s="wx">Weather Alerts</button>
+      <button data-s="notam">NOTAMs &amp; Enroute</button>
+    </nav>
+    <nav class="subnav" id="dispnav" style="display:none">
+      <button data-d="dep">Departure</button>
+      <button data-d="live" class="active">Live</button>
+      <button data-d="nav">Nav</button>
+      <button data-d="arr">Arrival</button>
+    </nav>
+    <nav class="subnav" id="cldgnav" style="display:none">
+      <button data-cd="cl" class="active">Checklist</button>
+      <button data-cd="dg">Dangerous Goods</button>
+    </nav>
+  </div><!-- /subrail -->
 </div><!-- /applayout -->
 
 
@@ -1851,9 +1870,9 @@ function generate(ev){
     build(data);
     try{localStorage.setItem('sm_ofptext',text);}catch(e){}
     document.getElementById('tb').style.display='flex';
-    document.getElementById('subnav').style.display='flex';
     setMsg('Briefing generated. Review fields, then Print / Save as PDF.','ok');
     window.__OFP=data;
+    if(window.__updateSubrail)window.__updateSubrail();
     if(window.__renderIdent)window.__renderIdent();
     if(window.__goView && ev!==false)window.__goView('briefing');
     window.dispatchEvent(new CustomEvent('ofp-parsed'));
@@ -1992,7 +2011,7 @@ document.getElementById('go').onclick=generate;
         window.__OFP=data;
         try{ localStorage.setItem('sm_ofptext',text); }catch(e){}
         var tb=document.getElementById('tb'); if(tb)tb.style.display='flex';
-        var sn=document.getElementById('subnav'); if(sn)sn.style.display='flex';
+        if(window.__updateSubrail)window.__updateSubrail();
         // also fill the editable Departure / Arrival cards
         setF('dep_from',data.dep); setF('dep_to',data.dest); setF('dep_fnum',data.fltCs); setF('dep_date',data.date);
         setF('dep_std',hhmmColon(d.std)); setF('dep_fl',data.initFL);
@@ -2099,6 +2118,20 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
   var v=document.getElementById('cd-'+b.dataset.cd); if(v)v.classList.add('active');
 }));
 
+/* ---- right-hand sub-tab rail: show only the active mode's sub-bar; remember the swap side ---- */
+window.__updateSubrail=function(){
+  var a=document.querySelector('.view.active'); var v=a?a.id.replace('view-',''):'';
+  var map={briefing:'subnav',disp:'dispnav',cldg:'cldgnav'};
+  ['subnav','dispnav','cldgnav'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display='none';});
+  var id=map[v], show=id?(id==='subnav'?!!window.__OFP:true):false;
+  if(id&&show){var e=document.getElementById(id);if(e)e.style.display='flex';}
+  var sr=document.getElementById('subrail'); if(sr)sr.style.display=(id&&show)?'flex':'none';
+};
+(function(){
+  var ap=document.querySelector('.applayout'), sw=document.getElementById('railSwap');
+  try{ if(localStorage.getItem('sm_railside')==='mirror'&&ap)ap.classList.add('mirror'); }catch(e){}
+  if(sw&&ap)sw.addEventListener('click',function(){ ap.classList.toggle('mirror'); try{localStorage.setItem('sm_railside',ap.classList.contains('mirror')?'mirror':'normal');}catch(e){} });
+})();
 (function(){
   const VIEWS=['load','briefing','disp','cldg','rest'];
   function goView(v){
@@ -2107,7 +2140,7 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
     document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('view-'+v).classList.add('active');
-    const sn=document.getElementById('subnav'); if(sn) sn.style.display=(v==='briefing' && window.__OFP)?'flex':'none';
+    if(window.__updateSubrail)window.__updateSubrail();
     window.scrollTo({top:0,behavior:'smooth'});
     if(window.__renderIdent)window.__renderIdent();
     try{localStorage.setItem('sm_view',v);}catch(e){}
