@@ -2,7 +2,7 @@
    Upload this file to the GitHub repo ROOT, next to index.html.
    Navigation is network-first (so a freshly uploaded index.html loads when online,
    and the cached copy loads when offline). Libraries/assets are cache-first. */
-const CACHE = 'skymatrix-v9';
+const CACHE = 'skymatrix-v10';
 const SHARE_CACHE = 'sm-share';
 const ASSETS = [
   './',
@@ -52,9 +52,10 @@ self.addEventListener('fetch', function (e) {
   }
   var isNav = req.mode === 'navigate' || req.destination === 'document';
   if (isNav) {
-    // network-first so the newest app loads online; cached index offline
+    // network-first with {cache:'reload'} — bypass Safari's HTTP cache so the SAME bookmark always loads the
+    // freshest uploaded app.html when online (no need to re-bookmark); the cached copy is served offline.
     e.respondWith(
-      fetch(req).then(function (res) {
+      fetch(req.url, { cache: 'reload', credentials: 'same-origin' }).then(function (res) {
         var cp = res.clone();
         caches.open(CACHE).then(function (c) { c.put('./app.html', cp).catch(function () {}); });
         return res;

@@ -37,6 +37,8 @@
         setInterval(function(){try{reg.update();}catch(e){}},30*60*1000);
       }).catch(function(){});
     });
+    // re-check for a new version every time the bookmark/app is reopened (iOS-friendly)
+    document.addEventListener('visibilitychange',function(){ if(!document.hidden){ try{ navigator.serviceWorker.getRegistration().then(function(reg){ if(reg)try{reg.update();}catch(e){} }); }catch(e){} } });
   } }catch(e){}
 })();
 </script>
