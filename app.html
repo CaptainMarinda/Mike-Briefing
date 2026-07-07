@@ -1831,7 +1831,8 @@ document.getElementById('go').onclick=generate;
     data.towOver=(data.etow&&data.mtow)?(+data.etow>+data.mtow):null;
     s('initFL',d.initFL); if(d.initFL&&!data.highFL)s('highFL',d.initFL);
     if(Array.isArray(d.altn)&&d.altn[0])s('altnIcao',d.altn[0]);
-    s('remarks',d.remarks); s('speedCI',d.ci);
+    s('remarks',d.remarks); s('speedCI',d.ci); s('tocTemp',d.tocTemp);
+    if(d.tropopause && (d.tropopause.fl||d.tropopause.wpt)) data.tropo={fl:String(d.tropopause.fl||''),wpt:String(d.tropopause.wpt||''),elapsed:(data.tropo&&data.tropo.elapsed)||''};
     // route structure, runways, SID/STAR, FIR crossings, ETOPS — the AI reads these from the page images
     s('depRwy',d.depRwy); s('arrRwy',d.arrRwy); s('sid',d.sid); s('star',d.star);
     if(d.route)data.routeRaw=String(d.route);
