@@ -1950,6 +1950,7 @@ document.getElementById('go').onclick=generate;
         try{ if(window.__renderIdent)window.__renderIdent(); }catch(e){}
         try{ window.dispatchEvent(new CustomEvent('ofp-parsed')); }catch(e){}
         try{ if(typeof calcDisplay==='function')calcDisplay(); }catch(e){}
+        try{ if(window.__snapAI)window.__snapAI(); }catch(e){}
         var low=[],cf=d.confidence||{}; for(var k in cf){ if(cf[k]==='low')low.push(k); }
         setMsg('AI briefing ready'+(d.acType?(' ('+d.acType+(d.reg?(' '+d.reg):'')+')'):'')+'.'+(low.length?(' Check: '+low.join(', ')):' All high-confidence.'),low.length?'':'ok');
         if(typeof saveState==='function')saveState();
@@ -3102,6 +3103,43 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
   calcRest(); buildPA();
   calcDisplay();
   setInterval(calcDisplay,1000);
+})();
+
+/* ---- Teach the AI: edit an AI-filled field -> offer to save it as a correction that feeds every future read ---- */
+(function(){
+  var LBL={dep_from:'departure (ICAO)',dep_to:'destination (ICAO)',dep_fnum:'flight number',dep_date:'date',dep_std:'STD',dep_fl:'cruise FL',dep_ft:'flight time',dep_block:'block time',dep_zfw:'ZFW',dep_tow:'TOW',dep_lwt:'landing weight',ar_mlwt:'MLW',ar_lwt:'landing weight'};
+  var IDS=Object.keys(LBL);
+  window.__snapAI=function(){ setTimeout(function(){ try{ var O=window.__OFP||{}; window.__aiSnap={ air:(String(O.fltCs||'').match(/^[A-Z]+/)||[''])[0]||'', dep:O.dep||'', dest:O.dest||'', vals:{} }; IDS.forEach(function(id){ var e=document.getElementById(id); if(e)window.__aiSnap.vals[id]=(e.value||''); }); }catch(_){} },500); };
+  function teachSubmit(note,bar){
+    var tok=''; try{tok=localStorage.getItem('sm_admin_tok')||'';}catch(e){}
+    if(!tok){ tok=((window.prompt&&window.prompt('Enter your admin token to save AI corrections (asked once, then remembered):'))||'').trim(); if(tok){try{localStorage.setItem('sm_admin_tok',tok);}catch(e){}} }
+    if(!tok){ if(bar&&bar.parentNode)bar.parentNode.removeChild(bar); return; }
+    fetch('https://skymatrix-trial.skymatrix.workers.dev/ofp/correct',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':tok},body:JSON.stringify({note:note})})
+      .then(function(r){return r.json();}).then(function(j){ if(bar){ bar.innerHTML=(j&&j.ok)?'<span style="color:#7be0a4">Taught the AI &#10003; — it will apply this next time.</span>':'<span style="color:#ff9aa2">'+esc((j&&j.error)||'Failed (check admin token).')+'</span>'; setTimeout(function(){if(bar.parentNode)bar.parentNode.removeChild(bar);},2600); } })
+      .catch(function(){ if(bar)bar.innerHTML='<span style="color:#ff9aa2">Network error.</span>'; });
+  }
+  function showTeach(id,ov,nv,snap){
+    var lbl=LBL[id]||id, air=snap.air||'this airline';
+    var note='For '+air+' OFPs (e.g. '+snap.dep+'-'+snap.dest+'): '+lbl+' should read '+nv+(ov?(' not '+ov):'')+'.';
+    var old=document.getElementById('teachBar'); if(old&&old.parentNode)old.parentNode.removeChild(old);
+    var bar=document.createElement('div'); bar.id='teachBar';
+    bar.style.cssText='position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#13203a;border:1px solid #2f8bff;border-radius:12px;padding:11px 14px;box-shadow:0 10px 30px rgba(0,0,0,.5);color:#e6ecf5;font-size:13px;display:flex;gap:10px;align-items:center;flex-wrap:wrap';
+    var span=document.createElement('span'); span.style.cssText='flex:1;min-width:160px'; span.innerHTML='Teach the AI this fix? <b>'+esc(lbl)+'</b> &rarr; <b>'+esc(nv)+'</b>';
+    var save=document.createElement('button'); save.textContent='Teach AI ✓'; save.style.cssText='background:#123a24;border:1px solid #2e9e5b;color:#bff0d0;font-size:13px;padding:8px 14px;border-radius:8px;cursor:pointer';
+    var no=document.createElement('button'); no.textContent='Dismiss'; no.style.cssText='background:#2a1420;border:1px solid #b23a5d;color:#f4c9d8;font-size:13px;padding:8px 14px;border-radius:8px;cursor:pointer';
+    save.onclick=function(){ teachSubmit(note,bar); };
+    no.onclick=function(){ if(bar.parentNode)bar.parentNode.removeChild(bar); };
+    bar.appendChild(span); bar.appendChild(save); bar.appendChild(no); document.body.appendChild(bar);
+    clearTimeout(window.__teachT); window.__teachT=setTimeout(function(){ if(bar.parentNode)bar.parentNode.removeChild(bar); },18000);
+  }
+  document.addEventListener('change',function(e){
+    var t=e.target; if(!t||!t.id)return; var snap=window.__aiSnap;
+    if(!snap||!snap.vals||!(t.id in snap.vals))return;
+    var nv=(t.value||'').trim(), ov=(snap.vals[t.id]||'').trim();
+    if(!nv||nv===ov)return;
+    snap.vals[t.id]=nv;
+    showTeach(t.id,ov,nv,snap);
+  });
 })();
 
 /* restore the last loaded OFP so it survives app restarts / storage purges */
