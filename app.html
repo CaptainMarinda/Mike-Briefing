@@ -985,6 +985,17 @@ var LIC_PUBKEY = "BMxAfrty9p7_t79ebh4KowBcDiZVaiyBIRPPgMGaPK2Bt4yB9EU1W-4z9WQ4E4
     var fb=document.getElementById('forgotBox');if(fb)fb.style.display='none';
     checkUpdate(document.getElementById('loginUpd'));show('login');}
 
+  // let the Worker know this device is live (so it appears in the admin list) — once per day, fire-and-forget, needs a valid code
+  function registerDevice(code){
+    try{
+      var today=String(Math.floor(Date.now()/86400000)), last='';
+      try{last=localStorage.getItem('sm_reg_day')||'';}catch(e){}
+      if(last===today) return;
+      var em=''; try{em=localStorage.getItem('sm_email')||'';}catch(e){}
+      fetch(LIC_WORKER+'/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:DEV,email:em,code:code})})
+        .then(function(){try{localStorage.setItem('sm_reg_day',today);}catch(e){}}).catch(function(){});
+    }catch(e){}
+  }
   async function route(){
     if(__blocked){var m=onboardMsgEl();if(m)m.textContent='Access suspended by the administrator. Please contact support@skymatrix.biz.';showOnboarding(false);return;}
     var stored=null;try{stored=localStorage.getItem('sm_lic');}catch(e){}
@@ -992,7 +1003,7 @@ var LIC_PUBKEY = "BMxAfrty9p7_t79ebh4KowBcDiZVaiyBIRPPgMGaPK2Bt4yB9EU1W-4z9WQ4E4
     var r=await verifyCode(stored);
     if(r.reason==='expired'){showOnboarding(true);return;}
     if(!r.ok){showOnboarding(false);return;}
-    window.__licExp=r.exp;markSeen(todayDay());
+    window.__licExp=r.exp;markSeen(todayDay());registerDevice(stored);
     if(!pinStored()){showSetPin();return;}
     showLogin(r.exp);
   }
@@ -1004,7 +1015,7 @@ var LIC_PUBKEY = "BMxAfrty9p7_t79ebh4KowBcDiZVaiyBIRPPgMGaPK2Bt4yB9EU1W-4z9WQ4E4
     if(!code){if(msg)msg.textContent='Paste the access code from your email.';return;}
     if(msg)msg.textContent='Checking…';
     var r=await verifyCode(code);
-    if(r.ok){try{localStorage.setItem('sm_lic',code);}catch(e){}window.__licExp=r.exp;markSeen(todayDay());
+    if(r.ok){try{localStorage.setItem('sm_lic',code);}catch(e){}window.__licExp=r.exp;markSeen(todayDay());registerDevice(code);
       if(msg)msg.textContent='✓ Activated on this device.';
       if(pinStored())showLogin(r.exp);else showSetPin();return;}
     var m={empty:'Paste the access code.',malformed:'That code looks incomplete — copy the whole thing and try again.',
