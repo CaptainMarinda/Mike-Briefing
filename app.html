@@ -1729,8 +1729,9 @@ function wcell(label,val,lim){
   const tag=w?(w.over?('OVER +'+Math.abs(w.diff)):(w.cls==='a'?(w.diff+' margin'):(w.diff+' under'))):'';
   return `<div class="cell" style="border-left:4px solid ${border};padding-left:7px">`+
     `<label>${esc(label)} (max ${esc(lim||'?')})</label>`+
-    `<div style="display:flex;align-items:center;gap:6px"><input class="hl" style="flex:1;min-width:0" value="${esc(val==null?'':val)}">`+
-    (w?`<span class="chip ${w.cls}" style="white-space:nowrap">${esc(tag)}</span>`:'')+`</div></div>`;
+    `<input class="hl" style="width:100%;box-sizing:border-box" value="${esc(val==null?'':val)}">`+
+    (w?`<div style="margin-top:4px"><span class="chip ${w.cls}" style="white-space:nowrap">${esc(tag)}</span></div>`:'')+
+    `</div>`;
 }
 function fmtHHMM(v){if(!v)return'';v=String(v);if(v.includes(':'))return v;if(v.length<=2)return v;
   return v.slice(0,-2)+':'+v.slice(-2);}
