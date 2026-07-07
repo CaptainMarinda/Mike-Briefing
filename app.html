@@ -391,6 +391,16 @@
       <div style="margin-top:8px"><button id="ap_copy" type="button" class="ghost">Copy result</button></div>
     </div>
   </div>
+  <div class="fcard">
+    <h2>Send feedback</h2>
+    <p class="fsub">Tell us what to improve or report a problem — it goes straight to the Sky Matrix team.</p>
+    <textarea id="fb_msg" placeholder="Your feedback…" style="min-height:90px;width:100%;font-family:var(--sans);font-size:13px;color:#E6ECF5"></textarea>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
+      <input id="fb_email" type="email" placeholder="Your email (optional, for a reply)" style="flex:1;min-width:180px">
+      <button id="fb_send" type="button">Send feedback</button>
+      <span class="hint" id="fb_msgOut" style="margin-top:0"></span>
+    </div>
+  </div>
 </div>
 
 <div class="wrap view" id="view-briefing">
@@ -3235,6 +3245,20 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
     if(!nv||nv===ov)return;
     snap.vals[t.id]=nv;
     showTeach(t.id,ov,nv,snap);
+  });
+})();
+
+/* ---- Send feedback -> admin console (/feedback) ---- */
+(function(){ var b=document.getElementById('fb_send'); if(!b)return;
+  b.addEventListener('click',function(){
+    var m=((document.getElementById('fb_msg')||{}).value||'').trim(), out=document.getElementById('fb_msgOut');
+    if(m.length<2){ if(out)out.textContent='Type your feedback first.'; return; }
+    b.disabled=true; if(out)out.textContent='Sending…';
+    var dev=''; try{ dev=(typeof DEV!=='undefined'&&DEV)||''; }catch(e){}
+    fetch('https://skymatrix-trial.skymatrix.workers.dev/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:m,email:((document.getElementById('fb_email')||{}).value||'').trim(),device:dev,subject:'App feedback'})})
+      .then(function(r){return r.json();}).then(function(j){ if(j&&j.ok){ if(out)out.textContent='Thanks — feedback sent ✓'; document.getElementById('fb_msg').value=''; } else if(out)out.textContent='Could not send (needs internet).'; })
+      .catch(function(){ if(out)out.textContent='Could not send (needs internet).'; })
+      .then(function(){ b.disabled=false; });
   });
 })();
 

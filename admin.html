@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sky Matrix — Admin Console</title>
+<meta name="robots" content="noindex,nofollow">
+<style>
+ :root{--blue:#1f6dff;--sky:#39b4ff;--navy:#0e1726;--panel:#13203a;--line:#2a3c5e;--ink:#e6ecf5;--soft:#9fb3d1;--good:#7be0a4;--bad:#ff9aa2;--burg:#b23a5d}
+ *{box-sizing:border-box}
+ body{margin:0;background:var(--navy);color:var(--ink);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.55;padding:18px;max-width:1040px;margin:0 auto}
+ h1{font-size:20px;margin:0 0 2px}.sub{color:var(--soft);font-size:13px;margin:0 0 14px}
+ .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px;margin:0 0 14px}
+ label{display:block;font-size:12px;color:var(--soft);margin:0 0 4px;font-weight:600}
+ input,textarea,select{width:100%;background:#0e1930;border:1px solid var(--line);color:#fff;border-radius:9px;padding:10px;font-size:14px;font-family:inherit}
+ textarea{min-height:120px;font-family:inherit;line-height:1.5}
+ button{background:var(--blue);color:#fff;border:0;border-radius:9px;padding:10px 16px;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px}
+ button.ghost{background:#12324a;border:1px solid #2f8bff;color:#cfe6ff}
+ button.warn{background:#3a2140;border:1px solid var(--burg);color:#f4c9d8}
+ button.sm{padding:6px 10px;font-size:12px;margin:0}
+ .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+ .row>div{flex:1;min-width:150px}
+ .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}
+ .tabs button{background:#0e1930;border:1px solid var(--line);color:var(--soft);font-weight:700;margin:0}
+ .tabs button.on{background:var(--blue);border-color:var(--blue);color:#fff}
+ .msg{font-size:13px;min-height:18px;margin-top:8px}.err{color:var(--bad)}.ok{color:var(--good)}
+ .hint{color:var(--soft);font-size:12px;margin-top:6px}
+ code{background:#0b1322;padding:1px 5px;border-radius:4px}
+ table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12.5px}
+ th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:middle;white-space:nowrap}
+ th{background:#0e1930;color:#cfe6ff;position:sticky;top:0}
+ td.wrap{white-space:normal}
+ .pill{display:inline-block;padding:1px 8px;border-radius:20px;font-size:11px;font-weight:700}
+ .pill.act{background:#123a24;color:var(--good)}.pill.exp{background:#3a2a12;color:#f0c890}.pill.blk{background:#3a1420;color:var(--bad)}
+ .tblwrap{max-height:60vh;overflow:auto;border-radius:8px}
+ .stat{display:inline-block;margin-right:16px;font-size:13px;color:var(--soft)}.stat b{color:#fff;font-size:16px}
+ .fb{border:1px solid var(--line);border-radius:9px;padding:10px 12px;margin:8px 0;background:#0e1930}
+ .fb .meta{font-size:12px;color:var(--soft);margin-bottom:4px;display:flex;justify-content:space-between;gap:8px}
+ .fb .bd{font-size:13px;white-space:pre-wrap;word-break:break-word;max-height:200px;overflow:auto}
+ .hide{display:none}
+</style></head>
+<body>
+<h1>Sky Matrix — Admin Console</h1>
+<p class="sub">Grant licences, block users, see who's active, email users, and read feedback. Everything here needs your Worker <code>ADMIN_TOKEN</code>.</p>
+
+<div class="card">
+  <label for="tok">Admin token</label>
+  <div class="row">
+    <div><input id="tok" type="password" placeholder="Your Worker ADMIN_TOKEN" autocomplete="off"></div>
+    <button id="saveTok" class="ghost" style="flex:0 0 auto">Save token</button>
+  </div>
+  <div class="hint">Stored on this device only. Same secret set with <code>wrangler secret put ADMIN_TOKEN</code>.</div>
+  <div id="msgTok" class="msg"></div>
+</div>
+
+<div class="tabs">
+  <button data-tab="users" class="on">Users</button>
+  <button data-tab="grant">Grant licence</button>
+  <button data-tab="mail">Contact users</button>
+  <button data-tab="fb">Feedback</button>
+</div>
+
+<!-- USERS -->
+<section id="tab-users">
+  <div class="card">
+    <div class="row">
+      <button id="loadUsers" style="flex:0 0 auto">Load users</button>
+      <div><input id="uSearch" type="text" placeholder="Filter by device, email or plan…"></div>
+    </div>
+    <div style="margin-top:10px">
+      <span class="stat">Total <b id="stTotal">–</b></span>
+      <span class="stat">Active <b id="stActive">–</b></span>
+      <span class="stat">Blocked <b id="stBlocked">–</b></span>
+    </div>
+    <div id="msgUsers" class="msg"></div>
+    <div class="tblwrap"><table id="uTable"><thead><tr>
+      <th>Device ID</th><th>Email</th><th>Plan</th><th>Start</th><th>End</th><th>Days left</th><th>Status</th><th>Source</th><th>Action</th>
+    </tr></thead><tbody></tbody></table></div>
+  </div>
+  <div class="card">
+    <label for="blkDev">Block / unblock a device manually</label>
+    <div class="row">
+      <div><input id="blkDev" type="text" placeholder="SKM-XXXXXX" style="text-transform:uppercase"></div>
+      <button id="blkBtn" class="warn" style="flex:0 0 auto">Block</button>
+      <button id="unblkBtn" class="ghost" style="flex:0 0 auto">Unblock</button>
+    </div>
+    <div id="msgBlk" class="msg"></div>
+  </div>
+</section>
+
+<!-- GRANT -->
+<section id="tab-grant" class="hide">
+  <div class="card">
+    <div class="row">
+      <div><label for="gDev">Device ID</label><input id="gDev" type="text" placeholder="SKM-XXXXXX" style="text-transform:uppercase"></div>
+      <div><label for="gEmail">Email (optional — emails the code)</label><input id="gEmail" type="email" placeholder="user@example.com"></div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div><label for="gPlan">Plan</label><select id="gPlan">
+        <option value="Trial|10">Trial — 10 days</option>
+        <option value="Monthly|31">Monthly — 31 days</option>
+        <option value="6-month|186">6-month — 186 days</option>
+        <option value="Yearly|366">Yearly — 366 days</option>
+        <option value="custom">Custom days…</option>
+      </select></div>
+      <div id="gCustomWrap" class="hide"><label for="gDays">Custom days</label><input id="gDays" type="number" min="1" max="3650" placeholder="e.g. 90"></div>
+      <button id="grantBtn" style="flex:0 0 auto">Grant licence</button>
+    </div>
+    <div class="hint">Issues a device-locked code (overrides any prior trial). If an email is given, the code is emailed automatically.</div>
+    <div id="msgGrant" class="msg"></div>
+    <div id="grantCode" class="hint" style="font-family:ui-monospace,Consolas,monospace;word-break:break-all"></div>
+  </div>
+</section>
+
+<!-- MAIL -->
+<section id="tab-mail" class="hide">
+  <div class="card">
+    <div class="row">
+      <div><label for="mFrom">From</label><select id="mFrom">
+        <option value="support">Support — support@skymatrix.biz</option>
+        <option value="admin">Admin — admin@skymatrix.biz</option>
+      </select></div>
+      <div><label for="mTo">Recipients</label><select id="mTo">
+        <option value="active">All active users</option>
+        <option value="all">All users (incl. expired)</option>
+        <option value="blocked">Blocked users</option>
+        <option value="specific">Specific emails…</option>
+      </select></div>
+    </div>
+    <div id="mSpecWrap" class="hide" style="margin-top:8px"><label for="mEmails">Emails (comma or newline separated)</label><textarea id="mEmails" style="min-height:70px" placeholder="a@x.com, b@y.com"></textarea></div>
+    <div style="margin-top:8px"><label for="mSubj">Subject</label><input id="mSubj" type="text" placeholder="e.g. Sky Matrix — update for pilots"></div>
+    <div style="margin-top:8px"><label for="mBody">Message (basic HTML allowed)</label><textarea id="mBody" placeholder="Write your message… &lt;b&gt;bold&lt;/b&gt; and links are fine."></textarea></div>
+    <button id="mailBtn">Send email</button>
+    <div class="hint">Sends individually (recipients never see each other). Capped at 95 per send to stay within limits — for a bigger list, send in batches.</div>
+    <div id="msgMail" class="msg"></div>
+  </div>
+</section>
+
+<!-- FEEDBACK -->
+<section id="tab-fb" class="hide">
+  <div class="card">
+    <button id="loadFb" style="flex:0 0 auto">Load feedback</button>
+    <div class="hint">Shows feedback from the in-app form and any mail routed to support@ / feedback@ (once you point those addresses at the Worker in Cloudflare Email Routing).</div>
+    <div id="msgFb" class="msg"></div>
+    <div id="fbList"></div>
+  </div>
+</section>
+
+<script>
+var W="https://skymatrix-trial.skymatrix.workers.dev";
+var $=function(id){return document.getElementById(id);};
+function set(el,t,cls){ el.textContent=t||''; el.className='msg '+(cls||''); }
+function tok(){ var v=($('tok').value||'').trim(); try{localStorage.setItem('sm_admin_tok',v);}catch(e){} return v; }
+try{ var t=localStorage.getItem('sm_admin_tok'); if(t)$('tok').value=t; }catch(e){}
+$('saveTok').addEventListener('click',function(){ tok(); set($('msgTok'),'Saved on this device ✓','ok'); });
+function H(k,path,opts){ opts=opts||{}; opts.headers=Object.assign({'x-admin-token':k},opts.headers||{}); return fetch(W+path,opts).then(function(r){return r.json();}); }
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+/* tabs */
+Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(b){
+  b.addEventListener('click',function(){
+    Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(x){x.classList.remove('on');});
+    b.classList.add('on');
+    ['users','grant','mail','fb'].forEach(function(id){ $('tab-'+id).classList.toggle('hide', id!==b.dataset.tab); });
+  });
+});
+
+/* ---- USERS ---- */
+var USERS=[];
+function renderUsers(){
+  var q=(($('uSearch').value||'').toLowerCase());
+  var rows=USERS.filter(function(u){ return !q || (u.device+' '+u.email+' '+u.plan).toLowerCase().indexOf(q)>=0; });
+  var tb=$('uTable').querySelector('tbody');
+  tb.innerHTML=rows.map(function(u){
+    var status = u.blocked?'<span class="pill blk">blocked</span>':(u.active?'<span class="pill act">active</span>':'<span class="pill exp">expired</span>');
+    var act = u.blocked ? '<button class="ghost sm" data-unblk="'+esc(u.device)+'">Unblock</button>'
+                        : '<button class="warn sm" data-blk="'+esc(u.device)+'">Block</button>';
+    var dl = (u.daysLeft==null)?'–':(u.daysLeft<0?('exp '+(-u.daysLeft)+'d ago'):(u.daysLeft+'d'));
+    return '<tr><td>'+esc(u.device)+'</td><td class="wrap">'+esc(u.email||'—')+'</td><td>'+esc(u.plan||'—')+'</td><td>'+esc(u.start||'—')+'</td><td>'+esc(u.end||'—')+'</td><td>'+dl+'</td><td>'+status+'</td><td>'+esc(u.source||'—')+'</td><td>'+act+'</td></tr>';
+  }).join('') || '<tr><td colspan="9" style="text-align:center;color:#9fb3d1">No users.</td></tr>';
+}
+function loadUsers(){
+  var k=tok(); if(!k){ set($('msgUsers'),'Enter your admin token first.','err'); return; }
+  set($('msgUsers'),'Loading…','');
+  H(k,'/admin/users').then(function(j){
+    if(j&&j.ok){ USERS=j.users||[]; $('stTotal').textContent=j.count; $('stActive').textContent=j.active; $('stBlocked').textContent=j.blocked; renderUsers(); set($('msgUsers'),'Loaded ✓','ok'); }
+    else set($('msgUsers'),(j&&j.error)||'Failed (check the token).','err');
+  }).catch(function(){ set($('msgUsers'),'Network error.','err'); });
+}
+$('loadUsers').addEventListener('click',loadUsers);
+$('uSearch').addEventListener('input',renderUsers);
+$('uTable').addEventListener('click',function(e){
+  var d=e.target.getAttribute('data-blk'), u=e.target.getAttribute('data-unblk');
+  if(d) blockDevice(d,'/admin/block'); if(u) blockDevice(u,'/admin/unblock');
+});
+function blockDevice(dev,path){
+  var k=tok(); if(!k){ set($('msgBlk'),'Enter your admin token first.','err'); return; }
+  set($('msgBlk'),'Working…','');
+  H(k,path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:dev})}).then(function(j){
+    if(j&&j.ok){ set($('msgBlk'),(path.indexOf('unblock')>=0?'Unblocked ':'Blocked ')+dev+' ✓','ok'); loadUsers(); }
+    else set($('msgBlk'),(j&&j.error)||'Failed.','err');
+  }).catch(function(){ set($('msgBlk'),'Network error.','err'); });
+}
+$('blkBtn').addEventListener('click',function(){ var d=($('blkDev').value||'').trim().toUpperCase(); if(!/^SKM-[A-Z0-9]{6}$/.test(d)){set($('msgBlk'),'Enter a valid Device ID.','err');return;} blockDevice(d,'/admin/block'); });
+$('unblkBtn').addEventListener('click',function(){ var d=($('blkDev').value||'').trim().toUpperCase(); if(!/^SKM-[A-Z0-9]{6}$/.test(d)){set($('msgBlk'),'Enter a valid Device ID.','err');return;} blockDevice(d,'/admin/unblock'); });
+
+/* ---- GRANT ---- */
+$('gPlan').addEventListener('change',function(){ $('gCustomWrap').classList.toggle('hide', $('gPlan').value!=='custom'); });
+$('grantBtn').addEventListener('click',function(){
+  var k=tok(); if(!k){ set($('msgGrant'),'Enter your admin token first.','err'); return; }
+  var dev=($('gDev').value||'').trim().toUpperCase();
+  if(!/^SKM-[A-Z0-9]{6}$/.test(dev)){ set($('msgGrant'),'Enter a valid Device ID (SKM-XXXXXX).','err'); return; }
+  var sel=$('gPlan').value, plan, days;
+  if(sel==='custom'){ plan='Custom'; days=parseInt($('gDays').value,10); if(!days||days<1){ set($('msgGrant'),'Enter the custom day count.','err'); return; } }
+  else { var parts=sel.split('|'); plan=parts[0]; days=parseInt(parts[1],10); }
+  set($('msgGrant'),'Granting…',''); $('grantCode').textContent='';
+  H(k,'/admin/grant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:dev, email:($('gEmail').value||'').trim(), plan:plan, days:days})}).then(function(j){
+    if(j&&j.ok){ set($('msgGrant'),plan+' licence granted to '+dev+' — valid to '+j.expiry+(($('gEmail').value||'').trim()?' (code emailed).':'.'),'ok'); $('grantCode').textContent='Code: '+j.code; }
+    else set($('msgGrant'),(j&&j.error)||'Failed.','err');
+  }).catch(function(){ set($('msgGrant'),'Network error.','err'); });
+});
+
+/* ---- MAIL ---- */
+$('mTo').addEventListener('change',function(){ $('mSpecWrap').classList.toggle('hide', $('mTo').value!=='specific'); });
+$('mailBtn').addEventListener('click',function(){
+  var k=tok(); if(!k){ set($('msgMail'),'Enter your admin token first.','err'); return; }
+  var subject=($('mSubj').value||'').trim(), html=($('mBody').value||'').trim();
+  if(!subject||!html){ set($('msgMail'),'Subject and message are required.','err'); return; }
+  var to;
+  if($('mTo').value==='specific'){ to=($('mEmails').value||'').split(/[\s,;]+/).map(function(s){return s.trim();}).filter(Boolean); if(!to.length){ set($('msgMail'),'Add at least one email.','err'); return; } }
+  else to=$('mTo').value;
+  if(!confirm('Send this email now?')) return;
+  set($('msgMail'),'Sending…','');
+  H(k,'/admin/mail',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from:$('mFrom').value, to:to, subject:subject, html:html})}).then(function(j){
+    if(j&&j.ok) set($('msgMail'),'Sent to '+j.sent+' of '+j.total+(j.failed?(' ('+j.failed+' failed)'):'')+' ✓','ok');
+    else set($('msgMail'),(j&&j.error)||'Failed.','err');
+  }).catch(function(){ set($('msgMail'),'Network error.','err'); });
+});
+
+/* ---- FEEDBACK ---- */
+function loadFb(){
+  var k=tok(); if(!k){ set($('msgFb'),'Enter your admin token first.','err'); return; }
+  set($('msgFb'),'Loading…','');
+  H(k,'/admin/feedback').then(function(j){
+    if(j&&j.ok){ var it=j.feedback||[];
+      $('fbList').innerHTML=it.map(function(f){
+        var when=f.at?new Date(f.at).toLocaleString():'';
+        return '<div class="fb"><div class="meta"><span><b>'+esc(f.from||'unknown')+'</b> · '+esc(f.via||'')+(f.device?(' · '+esc(f.device)):'')+'</span><span>'+esc(when)+' <button class="warn sm" data-del="'+esc(f.id)+'">Delete</button></span></div><div style="font-size:12.5px;color:#cfe6ff;margin-bottom:3px">'+esc(f.subject||'')+'</div><div class="bd">'+esc(f.body||'')+'</div></div>';
+      }).join('') || '<p class="hint">No feedback yet.</p>';
+      set($('msgFb'),it.length+' message(s).','ok');
+    } else set($('msgFb'),(j&&j.error)||'Failed.','err');
+  }).catch(function(){ set($('msgFb'),'Network error.','err'); });
+}
+$('loadFb').addEventListener('click',loadFb);
+$('fbList').addEventListener('click',function(e){
+  var id=e.target.getAttribute('data-del'); if(!id)return;
+  var k=tok(); if(!k)return;
+  H(k,'/admin/feedback?id='+encodeURIComponent(id),{method:'DELETE'}).then(function(){ loadFb(); });
+});
+</script>
+</body></html>
