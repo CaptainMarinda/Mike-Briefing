@@ -1213,16 +1213,36 @@ function qaCheck(data){
   if(data.fRamp && data.fTrip && (+data.fRamp<+data.fTrip)) f.push({s:'a',t:'Ramp fuel is less than trip fuel, verify fuel figures.'});
   if(data.confidence && typeof data.confidence==='object'){ for(var k in data.confidence){ var cv=data.confidence[k];
     if((typeof cv==='number'&&cv<0.5)||cv==='low') f.push({s:'a',t:'AI was unsure about "'+k+'", verify.'}); } }
+  var kb=(data.dep||'')+'|'+(data.dest||'')+'|'+(data.date||'')+'|'+(data.fltCs||'');
+  f.forEach(function(x){ x.key=kb+'|'+x.t; });
   return f;
 }
+function qaAccepted(){ try{ return JSON.parse(localStorage.getItem('sm_qa_ok')||'[]'); }catch(e){ return []; } }
 function qaBanner(data){
-  var f=qaCheck(data);
-  if(!f.length) return '<div class="body"><p class="item"><span class="chip g">Data check passed</span> No obvious gaps or inconsistencies found. Always verify against the released OFP.</p></div>';
+  var all=qaCheck(data), ok=qaAccepted();
+  var f=all.filter(function(x){ return ok.indexOf(x.key)<0; });
+  if(!f.length) return '<div class="body" id="qaBody"><p class="item"><span class="chip g">Data check passed</span> No open items. Always verify against the released OFP.</p></div>';
   var err=f.filter(function(x){return x.s==='r';}).length;
   var head=err?('<span class="chip r">'+err+' to check</span>'):('<span class="chip a">'+f.length+' to review</span>');
-  var rows=f.map(function(x){return '<div class="flag" style="margin:4px 0"><span class="chip '+x.s+'">'+(x.s==='r'?'CHECK':'REVIEW')+'</span> '+esc(x.t)+'</div>';}).join('');
-  return '<div class="body"><p class="item"><b>Data check</b> &nbsp;'+head+' &nbsp;<span style="color:#9fb3d1">verify the flagged items against the released OFP.</span></p>'+rows+'</div>';
+  var rows=f.map(function(x){return '<div class="flag" style="margin:5px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+
+    '<span class="chip '+x.s+'">'+(x.s==='r'?'CHECK':'REVIEW')+'</span>'+
+    '<span style="flex:1;min-width:130px">'+esc(x.t)+'</span>'+
+    '<button type="button" class="qaok" data-k="'+esc(x.key)+'" style="background:#123a24;border:1px solid #2e9e5b;color:#bff0d0;font-size:12px;padding:5px 12px;border-radius:7px;cursor:pointer">Accept &#10003;</button>'+
+    '<button type="button" class="qadismiss" style="background:#12324a;border:1px solid #2f8bff;color:#cfe6ff;font-size:12px;padding:5px 12px;border-radius:7px;cursor:pointer">Change</button>'+
+    '</div>';}).join('');
+  return '<div class="body" id="qaBody"><p class="item"><b>Data check</b> &nbsp;'+head+' &nbsp;<span style="color:#9fb3d1">Accept = verified &amp; correct (won&#39;t show again for this flight). Change = you&#39;ll edit it.</span></p>'+rows+'</div>';
 }
+/* one-time: handle Accept (remember + hide) / Change (hide) on the data-check flags */
+document.addEventListener('click',function(e){
+  var t=e.target; if(!t||!t.classList)return;
+  var isOk=t.classList.contains('qaok'), isDis=t.classList.contains('qadismiss');
+  if(!isOk&&!isDis)return;
+  if(isOk){ var k=t.getAttribute('data-k')||''; if(k){ try{ var a=qaAccepted(); if(a.indexOf(k)<0){ a.push(k); a=a.slice(-400); localStorage.setItem('sm_qa_ok',JSON.stringify(a)); } }catch(_){} } }
+  var row=t.closest?t.closest('.flag'):null; if(row)row.style.display='none';
+  var body=document.getElementById('qaBody');
+  if(body){ var rows=body.querySelectorAll('.flag'), any=false; for(var i=0;i<rows.length;i++){ if(rows[i].style.display!=='none'){ any=true; break; } }
+    if(!any){ var p=body.querySelector('p.item'); if(p)p.innerHTML='<span class="chip g">Data check clear</span> All items accepted or being changed.'; } }
+});
 function parseOFP(text, opts){
   const T=text.replace(/\r/g,'');
   const data={raw:T};
@@ -1821,18 +1841,22 @@ document.getElementById('go').onclick=generate;
     s('dep',d.dep); s('dest',d.dest); s('fltCs',d.fltCs); s('atcCs',d.atcCs||d.fltCs);
     s('tail',d.reg); s('acType',d.acType); s('date',d.date);
     try{ if(typeof MON!=='undefined'&&d.date)data.depMonth=MON[(d.date||'').slice(2,5)]||data.depMonth||0; }catch(e){}
-    if(d.std!=null&&d.std!=='')s('std',hhmmColon(d.std));
-    if(d.sta!=null&&d.sta!=='')s('sta',hhmmColon(d.sta));
+    // STD/STA must be "dd/HHMM" so the app's stdMin()/stdHHMM() (and the Delay calc on BLOCKS OFF) can parse them
+    var _dd=(String(d.date||'').match(/(\d{1,2})/)||['','01'])[1]; if(_dd&&_dd.length<2)_dd='0'+_dd; if(!_dd)_dd='01';
+    function _hhmm4(v){ var x=String(v==null?'':v).replace(/\D/g,''); if(x.length===3)x='0'+x; return x.length>=4?x.slice(0,4):''; }
+    var _sh=_hhmm4(d.std), _ah=_hhmm4(d.sta);
+    if(_sh) data.std=_dd+'/'+_sh;
+    if(_ah){ var _ad=_dd; if(_sh && _ah<_sh){ var _n=parseInt(_dd,10)+1; if(_n>31)_n=1; _ad=(_n<10?'0':'')+_n; } data.sta=_ad+'/'+_ah; }
     if(d.blockTimeMin!=null){var b=min2hhmm(d.blockTimeMin); if(b)data.blk=b;}
     if(d.tripTimeMin!=null){var tp=min2hhmm(d.tripTimeMin); if(tp)data.tripT=tp;}
     s('fTaxi',f.taxi); s('fTrip',f.trip); s('fCont',f.cont); s('fAltn',f.altn); s('fExtra',f.extra); s('fRamp',f.ramp);
     s('ezfw',w.zfw); s('mzfw',w.mzfw); s('etow',w.tow); s('mtow',w.mtow); s('elwt',w.lw); s('mlwt',w.mlw);
     data.elwOver=(data.elwt&&data.mlwt)?(+data.elwt>+data.mlwt):null;
     data.towOver=(data.etow&&data.mtow)?(+data.etow>+data.mtow):null;
-    s('initFL',d.initFL); if(d.initFL&&!data.highFL)s('highFL',d.initFL);
+    s('initFL',d.initFL); if(d.maxFL)s('highFL',d.maxFL); else if(d.initFL&&!data.highFL)s('highFL',d.initFL);
     if(Array.isArray(d.altn)&&d.altn[0])s('altnIcao',d.altn[0]);
     s('remarks',d.remarks); s('speedCI',d.ci); s('tocTemp',d.tocTemp);
-    if(d.tropopause && (d.tropopause.fl||d.tropopause.wpt)) data.tropo={fl:String(d.tropopause.fl||''),wpt:String(d.tropopause.wpt||''),elapsed:(data.tropo&&data.tropo.elapsed)||''};
+    if(d.tropopause && (d.tropopause.fl||d.tropopause.wpt)) data.tropo={fl:String(d.tropopause.fl||''),wpt:String(d.tropopause.wpt||''),elapsed:String((d.tropopause.eet)||(data.tropo&&data.tropo.elapsed)||'')};
     // route structure, runways, SID/STAR, FIR crossings, ETOPS — the AI reads these from the page images
     s('depRwy',d.depRwy); s('arrRwy',d.arrRwy); s('sid',d.sid); s('star',d.star);
     if(d.route)data.routeRaw=String(d.route);
@@ -1850,26 +1874,29 @@ document.getElementById('go').onclick=generate;
     return new Promise(function(resolve){
       if(!window.__ofpPdfBuf || !window.pdfjsLib){ resolve([]); return; }
       pdfjsLib.getDocument({data:window.__ofpPdfBuf.slice(0)}).promise.then(function(pdf){
-        var total=pdf.numPages, scanN=Math.min(total,60), scores=[], i=1;
-        function pageText(pn){ return pdf.getPage(pn).then(function(pg){return pg.getTextContent();}).then(function(tc){return tc.items.map(function(it){return it.str;}).join(' ');}); }
-        function scan(){
-          if(i>scanN){ pick(); return; }
-          pageText(i).then(function(t){
-            scores.push({ p:i,
+        var total=pdf.numPages, scanN=total, scores=[];  // scan EVERY page for the required sections (parallel batches = fast even on 200+ pages)
+        function pageScore(pn){
+          return pdf.getPage(pn).then(function(pg){return pg.getTextContent();}).then(function(tc){
+            var t=tc.items.map(function(it){return it.str;}).join(' ');
+            return { p:pn,
               sum:(t.match(/ZFW|MZFW|MTOW|ETOW|TAXI|TRIP|RAMP|PAYLOAD|BLOCK\s*FUEL|MASS/gi)||[]).length,
-              notam:(/NOTAM/i.test(t))?1:0, wx:(/METAR|\bTAF\b|SIGMET/i.test(t))?1:0,
-              etops:(/ETOPS|\bEEP\b|\bETP\b|\bEXP\b|\bFIR\b|\bUIR\b/i.test(t))?1:0 });
-            i++; scan();
-          }).catch(function(){ i++; scan(); });
+              notam:(/NOTAM/i.test(t))?((t.match(/NOTAM/gi)||[]).length):0, wx:(/METAR|TAF|SIGMET/i.test(t))?((t.match(/METAR|TAF/gi)||[]).length):0,
+              etops:(/ETOPS|\bEEP\b|\bETP\b|\bEXP\b|\bFIR\b|\bUIR\b/i.test(t))?1:0 };
+          }).catch(function(){ return {p:pn,sum:0,notam:0,wx:0,etops:0}; });
+        }
+        function scanBatch(start){
+          if(start>scanN){ pick(); return; }
+          var batch=[]; for(var q=start; q<start+12 && q<=scanN; q++) batch.push(pageScore(q));
+          Promise.all(batch).then(function(res){ scores=scores.concat(res); scanBatch(start+12); }).catch(function(){ scanBatch(start+12); });
         }
         function best(key){ var b=null; scores.forEach(function(s){ if(s[key] && (!b || s[key]>b[key])) b=s; }); return b?b.p:null; }
         function pick(){
           var want={}; want[1]=1; if(total>=2)want[2]=1;
           var bs=best('sum'); if(bs)want[bs]=1;
           var bn=best('notam'); if(bn){ want[bn]=1; if(bn+1<=total)want[bn+1]=1; }
-          var bw=best('wx'); if(bw)want[bw]=1;
+          var bw=best('wx'); if(bw){ want[bw]=1; if(bw+1<=total)want[bw+1]=1; }
           var be=best('etops'); if(be)want[be]=1;
-          var pages=Object.keys(want).map(Number).sort(function(a,b){return a-b;}).slice(0,8);
+          var pages=Object.keys(want).map(Number).sort(function(a,b){return a-b;}).slice(0,9);
           if(!pages.length)pages=[1];
           renderPages(pages);
         }
@@ -1888,7 +1915,7 @@ document.getElementById('go').onclick=generate;
           }
           next();
         }
-        scan();
+        scanBatch(1);
       }).catch(function(){ resolve([]); });
     });
   }
@@ -1906,7 +1933,7 @@ document.getElementById('go').onclick=generate;
         var data; try{ data=parseOFP(text,{known:'',qseats:0}); }catch(e){ data={raw:text,etopsPts:[]}; }
         if(!data.etopsPts)data.etopsPts=[];
         // the offline parse mis-reads route/FIR/runway/SID/STAR on non-Qatar OFPs — clear them so the AI owns them (blank beats wrong)
-        data.firs=[]; data.etopsPts=[]; data.depRwy=''; data.arrRwy=''; data.sid=''; data.star='';
+        data.firs=[]; data.etopsPts=[]; data.depRwy=''; data.arrRwy=''; data.sid=''; data.star=''; data.highFL='';
         applyAI(data,d);
         try{ build(data); }catch(e){}
         window.__OFP=data;
