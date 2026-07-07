@@ -164,14 +164,18 @@
   nav.topnav button[data-v="cldg"].active{color:#ffe6b0;border-bottom-color:#E0A33A;background:rgba(224,163,58,.16)}
   nav.topnav button[data-v="rest"]{color:#5fd0a8}
   nav.topnav button[data-v="rest"].active{color:#c6f2da;border-bottom-color:#2e9e5b;background:rgba(46,158,91,.16)}
-  @media (max-width:640px){
-    .applayout{gap:8px;padding:8px 8px 0}
-    .siderail{width:84px;top:50px}
-    .siderail button.rail{min-height:84px;font-size:11px;padding:12px 6px;gap:6px}
-    .siderail button.rail .nico{width:24px;height:24px}
-    .subrail{width:84px;top:50px}
-    #subrail nav.subnav button{padding:12px 6px;font-size:11px}
-    nav.topnav button{padding:13px 12px;font-size:13px}
+  /* PHONE / PORTRAIT (<=760px): stack the layout — mode buttons row, sub-tabs row, then full-width content */
+  @media (max-width:760px){
+    .applayout,.applayout.mirror{flex-direction:column;gap:8px;padding:8px 8px 0;max-width:none}
+    .siderail{order:1;position:static;top:auto;flex-direction:row;width:auto;gap:8px}
+    .siderail button.rail{flex:1;min-height:0;flex-direction:row;gap:8px;padding:13px 10px;font-size:13px}
+    .siderail button.rail .nico{width:20px;height:20px}
+    .subrail{order:2;position:static;top:auto;width:auto;gap:8px}
+    .subrail .railswap{display:none}          /* swap side is meaningless when stacked */
+    #subrail nav.subnav{flex-direction:row;flex-wrap:wrap;gap:8px}
+    #subrail nav.subnav button{width:auto;flex:1 1 auto;min-width:calc(50% - 4px);padding:11px 8px;font-size:12.5px}
+    .maincol{order:3;width:100%}
+    nav.topnav button{padding:12px 12px;font-size:13px}
   }
   .fcard{background:#13203A;border:1px solid #20304f;border-radius:10px;padding:16px;margin-bottom:16px}
   .fcard h2{margin:0 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:#9FB3D1}

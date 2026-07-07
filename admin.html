@@ -63,6 +63,14 @@
 <section id="tab-users">
   <div id="svcBanner"></div>
   <div class="card">
+    <label for="luQ">Look up a user (Device ID or email)</label>
+    <div class="row">
+      <div><input id="luQ" type="text" placeholder="SKM-XXXXXX  or  user@email.com"></div>
+      <button id="luBtn" style="flex:0 0 auto">Look up</button>
+    </div>
+    <div id="luRes" class="msg"></div>
+  </div>
+  <div class="card">
     <div class="row">
       <button id="loadUsers" style="flex:0 0 auto">Load users</button>
       <div><input id="uSearch" type="text" placeholder="Filter by device, email or plan…"></div>
@@ -73,9 +81,10 @@
       <span class="stat">Blocked <b id="stBlocked">–</b></span>
     </div>
     <div id="msgUsers" class="msg"></div>
-    <div class="tblwrap"><table id="uTable"><thead><tr>
+    <div class="tblwrap" style="max-height:none"><table id="uTable"><thead><tr>
       <th>Device ID</th><th>Email</th><th>Plan</th><th>Start</th><th>End</th><th>Days left</th><th>Status</th><th>Source</th><th>Action</th>
     </tr></thead><tbody></tbody></table></div>
+    <div id="uPager" style="margin-top:12px;display:flex;gap:12px;align-items:center;justify-content:center"></div>
   </div>
   <div class="card">
     <label for="blkDev">Block / unblock / delete a device manually</label>
@@ -85,7 +94,7 @@
       <button id="unblkBtn" class="ghost" style="flex:0 0 auto">Unblock</button>
       <button id="delBtn" class="warn" style="flex:0 0 auto;background:#4a0f1e;border-color:#7a1a30">Delete</button>
     </div>
-    <div class="hint">Delete erases the email + licence record and unblocks (fresh start). The existing code still works offline only until its own expiry date; to stop it now, use Block instead.</div>
+    <div class="hint">Delete now erases the email + licence record AND blocks the device (revokes access at next online launch). It shows as a blocked row afterwards — Unblock to remove entirely. Note: the offline code still runs until the device next connects to the internet.</div>
     <div id="msgBlk" class="msg"></div>
   </div>
 </section>
@@ -190,12 +199,15 @@ Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(
 });
 
 /* ---- USERS ---- */
-var USERS=[];
+var USERS=[], UPAGE=1; var UPP=10;   // 10 users per page
 function renderUsers(){
   var q=(($('uSearch').value||'').toLowerCase());
   var rows=USERS.filter(function(u){ return !q || (u.device+' '+u.email+' '+u.plan).toLowerCase().indexOf(q)>=0; });
+  var pages=Math.max(1,Math.ceil(rows.length/UPP));
+  if(UPAGE>pages)UPAGE=pages; if(UPAGE<1)UPAGE=1;
+  var pageRows=rows.slice((UPAGE-1)*UPP, UPAGE*UPP);
   var tb=$('uTable').querySelector('tbody');
-  tb.innerHTML=rows.map(function(u){
+  tb.innerHTML=pageRows.map(function(u){
     var status = u.blocked?'<span class="pill blk">blocked</span>':(u.active?'<span class="pill act">active</span>':'<span class="pill exp">expired</span>');
     var act = (u.blocked ? '<button class="ghost sm" data-unblk="'+esc(u.device)+'">Unblock</button>'
                         : '<button class="warn sm" data-blk="'+esc(u.device)+'">Block</button>')
@@ -203,12 +215,18 @@ function renderUsers(){
     var dl = (u.daysLeft==null)?'–':(u.daysLeft<0?('exp '+(-u.daysLeft)+'d ago'):(u.daysLeft+'d'));
     return '<tr><td>'+esc(u.device)+'</td><td class="wrap">'+esc(u.email||'—')+'</td><td>'+esc(u.plan||'—')+'</td><td>'+esc(u.start||'—')+'</td><td>'+esc(u.end||'—')+'</td><td>'+dl+'</td><td>'+status+'</td><td>'+esc(u.source||'—')+'</td><td>'+act+'</td></tr>';
   }).join('') || '<tr><td colspan="9" style="text-align:center;color:#9fb3d1">No users.</td></tr>';
+  var pg=$('uPager'); if(pg){
+    if(rows.length<=UPP){ pg.innerHTML=''; }
+    else pg.innerHTML='<button class="ghost sm" id="uPrev"'+(UPAGE<=1?' disabled':'')+'>‹ Prev</button>'
+      +'<span style="color:var(--soft);font-size:13px">Page '+UPAGE+' of '+pages+' &middot; '+rows.length+' users</span>'
+      +'<button class="ghost sm" id="uNext"'+(UPAGE>=pages?' disabled':'')+'>Next ›</button>';
+  }
 }
 function loadUsers(){
   var k=tok(); if(!k){ set($('msgUsers'),'Enter your admin token first.','err'); return; }
   set($('msgUsers'),'Loading…','');
   H(k,'/admin/users').then(function(j){
-    if(j&&j.ok){ USERS=j.users||[]; $('stTotal').textContent=j.count; $('stActive').textContent=j.active; $('stBlocked').textContent=j.blocked; renderUsers(); set($('msgUsers'),'Loaded ✓','ok'); }
+    if(j&&j.ok){ USERS=j.users||[]; UPAGE=1; $('stTotal').textContent=j.count; $('stActive').textContent=j.active; $('stBlocked').textContent=j.blocked; renderUsers(); set($('msgUsers'),'Loaded ✓','ok'); }
     else set($('msgUsers'),(j&&j.error)||'Failed (check the token).','err');
   }).catch(function(){ set($('msgUsers'),'Network error.','err'); });
   renderSvcBanner(k);
@@ -227,12 +245,29 @@ function renderSvcBanner(k){
     el.innerHTML='<div style="border:1px solid '+col+';background:'+bg+';border-radius:10px;padding:11px 14px;margin:0 0 14px;font-size:13px;color:var(--ink)"><b style="color:'+col+'">⏰ Renewals due soon:</b> '+items+' &nbsp; <span style="color:var(--soft)">— see Services &amp; billing.</span></div>';
   }).catch(function(){ el.innerHTML=''; });
 }
+function lookupUser(){
+  var k=tok(); if(!k){ set($('luRes'),'Enter your admin token first.','err'); return; }
+  var q=($('luQ').value||'').trim(); if(!q){ set($('luRes'),'Enter a Device ID or email.','err'); return; }
+  var param = /@/.test(q) ? ('email='+encodeURIComponent(q)) : ('device='+encodeURIComponent(q.toUpperCase()));
+  set($('luRes'),'Looking up…','');
+  H(k,'/admin/lookup?'+param).then(function(j){
+    if(!(j&&j.ok)){ set($('luRes'),(j&&j.error)||'Failed.','err'); return; }
+    if(!j.found){ set($('luRes'), (j.note||j.reason||'No record found.')+(j.blocked?' — device is BLOCKED.':''), 'err'); return; }
+    var el=$('luRes'); el.className='msg ok';
+    el.innerHTML='<b>'+esc(j.device)+'</b> &middot; '+esc(j.email||'—')+' &middot; plan <b>'+esc(j.plan||'—')+'</b> &middot; '+esc(j.start||'—')+' &rarr; '+esc(j.end||'—')+' &middot; '+
+      (j.daysLeft==null?'—':(j.daysLeft<0?('expired '+(-j.daysLeft)+'d ago'):(j.daysLeft+'d left')))+' &middot; '+
+      (j.blocked?'<span style="color:#ff9aa2">BLOCKED</span>':(j.active?'<span style="color:#7be0a4">active</span>':'<span style="color:#f0c890">expired</span>'))+' &middot; '+esc(j.source||'');
+  }).catch(function(){ set($('luRes'),'Network error.','err'); });
+}
+$('luBtn').addEventListener('click',lookupUser);
+$('luQ').addEventListener('keydown',function(e){ if(e.key==='Enter')lookupUser(); });
 $('loadUsers').addEventListener('click',loadUsers);
-$('uSearch').addEventListener('input',renderUsers);
+$('uSearch').addEventListener('input',function(){ UPAGE=1; renderUsers(); });
+$('uPager').addEventListener('click',function(e){ if(e.target.id==='uPrev'){UPAGE--;renderUsers();} else if(e.target.id==='uNext'){UPAGE++;renderUsers();} });
 $('uTable').addEventListener('click',function(e){
   var d=e.target.getAttribute('data-blk'), u=e.target.getAttribute('data-unblk'), x=e.target.getAttribute('data-del');
   if(d) blockDevice(d,'/admin/block'); if(u) blockDevice(u,'/admin/unblock');
-  if(x){ if(confirm('Permanently delete '+x+'?\n\nThis erases their email, licence record and unblocks the device (fresh start — they can trial again).')) deleteDevice(x); }
+  if(x){ if(confirm('Delete & revoke '+x+'?\n\nThis erases their email + licence record AND blocks the device, so access stops at its next online launch. It will show as a blocked row — Unblock to remove it entirely.')) deleteDevice(x); }
 });
 function deleteDevice(dev){
   var k=tok(); if(!k){ set($('msgBlk'),'Enter your admin token first.','err'); return; }
@@ -252,7 +287,7 @@ function blockDevice(dev,path){
 }
 $('blkBtn').addEventListener('click',function(){ var d=($('blkDev').value||'').trim().toUpperCase(); if(!/^SKM-[A-Z0-9]{6}$/.test(d)){set($('msgBlk'),'Enter a valid Device ID.','err');return;} blockDevice(d,'/admin/block'); });
 $('unblkBtn').addEventListener('click',function(){ var d=($('blkDev').value||'').trim().toUpperCase(); if(!/^SKM-[A-Z0-9]{6}$/.test(d)){set($('msgBlk'),'Enter a valid Device ID.','err');return;} blockDevice(d,'/admin/unblock'); });
-$('delBtn').addEventListener('click',function(){ var d=($('blkDev').value||'').trim().toUpperCase(); if(!/^SKM-[A-Z0-9]{6}$/.test(d)){set($('msgBlk'),'Enter a valid Device ID.','err');return;} if(confirm('Permanently delete '+d+'? Erases email + licence record and unblocks (fresh start).')) deleteDevice(d); });
+$('delBtn').addEventListener('click',function(){ var d=($('blkDev').value||'').trim().toUpperCase(); if(!/^SKM-[A-Z0-9]{6}$/.test(d)){set($('msgBlk'),'Enter a valid Device ID.','err');return;} if(confirm('Delete & revoke '+d+'? Erases email + licence record AND blocks the device (access stops on next online launch).')) deleteDevice(d); });
 
 /* ---- GRANT ---- */
 $('gPlan').addEventListener('change',function(){ $('gCustomWrap').classList.toggle('hide', $('gPlan').value!=='custom'); });
