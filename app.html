@@ -348,9 +348,9 @@
     <button id="print2">Print / Save as PDF</button>
   </div>
   <div class="fcard">
-    <h2>Crew roster (OCR)</h2>
-    <p class="fsub">Upload a roster screenshot to read crew names into the Welcome PA (Captain / FO / CSD).</p>
-    <input id="p_shot" type="file" accept="image/*">
+    <h2>Crew roster</h2>
+    <p class="fsub">Upload a crew roster — photo, PDF, Word or text. Sky Matrix AI reads the flight-deck and cabin names by rank (Captain / CP / Capt · FO / SFO / SO · CSD / CS / LCC / LC).</p>
+    <input id="p_shot" type="file" accept="image/*,.pdf,.txt,.doc,.docx">
     <span class="hint" id="p_ocr"></span>
   </div>
   <div class="fcard">
@@ -694,7 +694,7 @@
       <div class="feat-field"><label class="lab">First Officer name</label><input id="p_fo" type="text" placeholder="[FO]"></div>
     </div>
     <div class="fgrid">
-      <div class="feat-field"><label class="lab">CSD / CS name</label><input id="p_csd" type="text" placeholder="[CSDNAME]"></div>
+      <div class="feat-field"><label class="lab">Cabin supervisor</label><input id="p_csd" type="text" placeholder="[CSDNAME]"></div>
       <div class="feat-field"><label class="lab">Aircraft type (from OFP)</label><input id="p_ac" type="text" placeholder="from OFP"></div>
     </div>
     <div class="fgrid">
@@ -1434,7 +1434,8 @@ function parseOFP(text, opts){
       const seg=wxSec.slice(b.ix,(j+1<blocks.length)?blocks[j+1].ix:undefined);
       const metar=m(/(?:\bSA\b|\bMETAR\b|\bSPECI\b)\s+([\s\S]*?)(?:=|\n\s*\n)/,seg);
       const taf  =m(/(?:\bF[TC]\b|\bTAF\b)\s+([\s\S]*?)(?:=|\n\s*\n)/,seg);
-      data.wx[b.icao]={name:b.name,metar:metar?('METAR '+metar.replace(/\s+/g,' ').trim()):'',
+      var _nm=b.name; if(/NOTAM|METAR|TAF|SIGMET|={2,}|-{3,}|_{3,}|\d{3,}/i.test(_nm)||_nm.length>42)_nm='';
+      data.wx[b.icao]={name:_nm,metar:metar?('METAR '+metar.replace(/\s+/g,' ').trim()):'',
         taf:taf?('TAF '+taf.replace(/\s+/g,' ').trim()):''};
     });
   }
@@ -2275,10 +2276,28 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
     if(OFP&&OFP.route&&OFP.route.length){const p=OFP.route[OFP.route.length-1];return{n:(OFP.dest||'destination'),lat:p.lat,lon:p.lon,utc:0};}
     return null; }
   function depAirport(){ return airport(OFP?OFP.dep:'') ; }
+  function cleanPlaceName(s){ s=String(s||'').replace(/\s{2,}/g,' ').trim();
+    if(!s) return '';
+    if(/NOTAM|METAR|TAF|SIGMET|={2,}|-{3,}|_{3,}|\d{3,}/i.test(s)) return '';  // reject scraped OFP header junk
+    if(s.length>42) return '';
+    return s; }
+  function destWxParse(w){
+    var out={tc:'',cond:''};
+    var metar=(w&&w.metar)||'', src=(metar+' '+((w&&w.taf)||'')).toUpperCase();
+    var tm=/\b(M?\d{2})\/(M?\d{2})\b/.exec(metar);            // temperature/dewpoint group e.g. 18/15 or M03/M07
+    if(tm){ out.tc=String(parseInt(tm[1].replace('M','-'),10)); }
+    if(/\bTS|CB\b/.test(src)) out.cond='thundery';
+    else if(/\bSN\b|SNOW|\bSG\b/.test(src)) out.cond='snowy';
+    else if(/[+\-]?(SH)?RA\b|RAIN|\bDZ\b/.test(src)) out.cond='rainy';
+    else if(/\bFG\b|\bBR\b|MIFG|\bHZ\b|\bFU\b/.test(src)) out.cond='misty';
+    else if(/\bOVC|\bBKN/.test(src)) out.cond='cloudy';
+    else if(/\bSCT|\bFEW|CAVOK|\bNSC\b|\bSKC\b|\bCLR\b|\bNOSIG\b/.test(src)) out.cond='clear and sunny';
+    return out;
+  }
   function destFullName(){
-    if(OFP&&OFP.dest&&OFP.wx&&OFP.wx[OFP.dest]&&OFP.wx[OFP.dest].name) return OFP.wx[OFP.dest].name.replace(/\s{2,}/g,' ').trim();
-    const a=airport(destCode()); if(a)return a.n;
-    return '';
+    const a=airport(destCode()); if(a&&a.n) return a.n.split(',')[0].trim();   // reliable airport-DB name first
+    if(OFP&&OFP.dest&&OFP.wx&&OFP.wx[OFP.dest]){ const c=cleanPlaceName(OFP.wx[OFP.dest].name); if(c) return c; }
+    return destCode()||'';  // last resort: the ICAO, never garbage
   }
   function setOfpChips(on){
     ['dispOfp','restOfp','paOfp'].forEach(id=>{const el=$(id);if(!el)return;
@@ -2320,6 +2339,9 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
     if(!$('p_no').dataset.touched && OFP.fltCs) $('p_no').value=OFP.fltCs;
     if(!$('p_fl').dataset.touched && OFP.highFL) $('p_fl').value='FL'+OFP.highFL;
     if(!$('p_dur').dataset.touched && tm!=null) $('p_dur').value=Math.floor(tm/60)+' hours '+(tm%60)+' minutes';
+    if(OFP.wx && OFP.wx[OFP.dest]){ var dw=destWxParse(OFP.wx[OFP.dest]);
+      if(dw.tc && !$('p_tc').dataset.touched) $('p_tc').value=dw.tc;
+      if(dw.cond && !$('p_wx').dataset.touched) $('p_wx').value=dw.cond; }
     autoRest();
     buildChecks();
     populateFlightCards();
@@ -2947,8 +2969,12 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
     var go=$('ap_go'); if(!go)return;
     var lang=$('ap_lang'), tmpl=$('ap_tmpl'), out=$('ap_out'), msg=$('ap_msg');
     function setM(t){ if(msg)msg.textContent=t||''; }
-    function fillLangs(){ var tl=$('tr_lang'); if(lang&&tl&&tl.options.length&&!lang.options.length)lang.innerHTML=tl.innerHTML; }
-    fillLangs(); setTimeout(fillLangs,600);
+    function fillLangs(){ if(!lang||lang.options.length)return;
+      var LANGS=['English','Arabic','French','Spanish','German','Italian','Portuguese','Dutch','Russian','Turkish','Persian (Farsi)','Urdu','Hindi','Bengali','Tamil','Indonesian','Malay','Thai','Chinese (Simplified)','Japanese','Korean','Greek','Hebrew','Polish','Swahili','Filipino'];
+      lang.innerHTML=LANGS.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('');
+      lang.value='English';   // English is the default
+    }
+    fillLangs();
     try{ var nm=localStorage.getItem('sm_ap_name'); if(nm&&$('ap_name'))$('ap_name').value=nm; }catch(e){}
     if($('ap_name'))$('ap_name').addEventListener('input',function(){try{localStorage.setItem('sm_ap_name',$('ap_name').value);}catch(e){}});
     if($('ap_file'))$('ap_file').addEventListener('change',function(){
@@ -2973,15 +2999,28 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
     });
     function flightData(){
       var O=window.__OFP||{}, g=function(id){return (($(id)||{}).value||'').trim();};
+      function apName(code){ if(!code)return ''; try{var a=airport(code); return a&&a.n?a.n.split(',')[0].trim():code;}catch(e){return code;} }
+      var depN=g('dep_from').replace(/^[A-Z]{4}\s*—\s*/,'')||apName(O.dep)||O.dep||'';
+      var destN=g('p_destn')||apName(O.dest)||O.dest||'';
       var L=[];
       L.push('Flight number: '+(g('dep_fnum')||O.fltCs||''));
-      L.push('From: '+(g('dep_from')||O.dep||'')+'   To: '+(g('dep_to')||O.dest||''));
+      L.push('Departure airport (city name to say): '+depN);
+      L.push('Destination airport (city name to say): '+destN);
       L.push('Date: '+(g('dep_date')||O.date||''));
-      L.push('Aircraft: '+(O.acType||'')+(O.tail?(' '+O.tail):''));
-      L.push('Flight time: '+g('dep_ft'));
-      L.push('Cruise level: '+(g('dep_fl')||O.initFL||''));
+      L.push('Aircraft: '+(g('p_ac')||O.acType||'')+(O.tail?(' '+O.tail):''));
+      L.push('Flight time: '+(g('p_dur')||g('dep_ft')));
+      L.push('Cruise level: '+(g('p_fl')||g('dep_fl')||O.initFL||''));
+      L.push('ETA local at destination: '+g('p_eta'));
+      L.push('Time to landing in minutes: '+g('p_ttg'));
+      L.push('Local time now: '+g('p_tn'));
+      L.push('Destination weather: '+g('p_wx'));
+      L.push('Destination temperature in Celsius: '+g('p_tc'));
+      L.push('Captain name: '+g('p_capt'));
+      L.push('First Officer name: '+g('p_fo'));
+      L.push('Cabin supervisor name: '+g('p_csd'));
+      L.push('Airline / operator: '+g('p_airline'));
       L.push('Speaker name / rank: '+(($('ap_name')||{}).value||''));
-      return L.join('\n');
+      return L.filter(function(x){return !/:\s*$/.test(x);}).join('\n');   // omit blank fields so the AI leaves nothing dangling
     }
     go.addEventListener('click',function(){
       var t=(tmpl.value||'').trim();
@@ -3024,35 +3063,76 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
     $('p_customFile').addEventListener('change',()=>{const f=$('p_customFile').files&&$('p_customFile').files[0];if(!f)return;const r=new FileReader();r.onload=()=>{ta.value=(ta.value?ta.value+'\n\n':'')+String(r.result||'');try{localStorage.setItem('sm_pa_custom',ta.value);}catch(e){}flash('Imported ✓');};r.readAsText(f);$('p_customFile').value='';});
   })();
 
-  $('p_shot').addEventListener('change',()=>{
-    const f=$('p_shot').files&&$('p_shot').files[0]; if(!f)return;
-    if(!window.Tesseract){$('p_ocr').textContent='OCR library not loaded (needs internet). Type names manually.';return;}
-    $('p_ocr').textContent='Reading screenshot…';
-    Tesseract.recognize(f,'eng').then(({data})=>{
-      const text=data.text||''; const found=parseRoster(text);
-      let msg=[];
-      if(found.capt){$('p_capt').value=found.capt;$('p_capt').dataset.touched='1';msg.push('Captain: '+found.capt);}
-      if(found.fo){$('p_fo').value=found.fo;$('p_fo').dataset.touched='1';msg.push('FO: '+found.fo);}
-      if(found.csd){$('p_csd').value=found.csd;$('p_csd').dataset.touched='1';msg.push('CSD/CS: '+found.csd);}
-      buildPA();
-      $('p_ocr').textContent=msg.length?('Read — '+msg.join(' · ')+'. Check & edit if needed.'):'Could not detect crew names — type them manually.';
-    }).catch(e=>{$('p_ocr').textContent='OCR failed: '+e.message+'. Type names manually.';});
-  });
-  function tidyName(s){return s.replace(/\s*\(\d+\).*/,'').replace(/\s{2,}/g,' ').trim();}
-  function parseRoster(text){
-    const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
-    const res={capt:'',fo:'',csd:''};
-    for(let i=0;i<lines.length;i++){
-      const nm=/^([A-Z][A-Za-z'’\- ]+?)\s*\((\d{3,6})\)/.exec(lines[i]);
-      if(!nm)continue;
-      const name=tidyName(nm[1]);
-      const ctx=(lines[i]+' '+(lines[i+1]||'')).toUpperCase();
-      if(!res.capt && /\bCP\b|\bPIC\b|CAPTAIN/.test(ctx)) res.capt=name;
-      else if(!res.fo && /\bFO\b|FIRST OFFICER/.test(ctx)) res.fo=name;
-      else if(!res.csd && /\bCSD\b|\bCS\b|\bCD\b|CABIN/.test(ctx)) res.csd=name;
+  var CREW_URL="https://skymatrix-trial.skymatrix.workers.dev/crew";
+  function crewTitle(s){return String(s||'').replace(/\s{2,}/g,' ').trim().replace(/\b([a-z])([a-z'’.-]*)/gi,function(_,a,b){return a.toUpperCase()+b.toLowerCase();});}
+  // pull text out of image (OCR) / PDF / Word / plain text
+  function extractRosterText(f){
+    var name=(f.name||'').toLowerCase(), type=(f.type||'').toLowerCase();
+    if(type.indexOf('image')===0 || /\.(png|jpe?g|webp|gif|bmp|heic)$/.test(name)){
+      if(!window.Tesseract) return Promise.reject(new Error('photo reading needs internet'));
+      return Tesseract.recognize(f,'eng').then(function(res){return (res&&res.data&&res.data.text)||'';});
     }
-    return res;
+    if(type==='application/pdf' || /\.pdf$/.test(name)){
+      if(!window.pdfjsLib) return Promise.reject(new Error('PDF reader not loaded'));
+      return f.arrayBuffer().then(function(buf){ return pdfjsLib.getDocument({data:buf}).promise; }).then(function(pdf){
+        var out=[], p=1, n=Math.min(pdf.numPages,8);
+        function next(){ if(p>n) return Promise.resolve(out.join('\n'));
+          return pdf.getPage(p).then(function(pg){return pg.getTextContent();}).then(function(tc){ out.push(tc.items.map(function(i){return i.str;}).join(' ')); p++; return next(); }); }
+        return next();
+      });
+    }
+    if(/\.docx?$/.test(name) || type.indexOf('word')>=0 || type.indexOf('officedocument')>=0){
+      var load=window.mammoth?Promise.resolve():new Promise(function(res,rej){ var s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js'; s.onload=res; s.onerror=function(){rej(new Error('Word reading needs internet'));}; document.head.appendChild(s); });
+      return load.then(function(){ return f.arrayBuffer(); }).then(function(ab){ return window.mammoth.extractRawText({arrayBuffer:ab}); }).then(function(r){ return (r&&r.value)||''; });
+    }
+    return (f.text?f.text():new Promise(function(res){var r=new FileReader();r.onload=function(){res(String(r.result||''));};r.readAsText(f);}));
   }
+  // local fallback parser (no internet): rank by prefix/suffix code
+  function localCrew(text){
+    var lines=String(text||'').split(/\r?\n/).map(function(l){return l.trim();}).filter(Boolean);
+    var fd=[], cb=[];
+    function nm(s){ return s.replace(/\(\d+\).*/,'').replace(/\b\d{3,7}\b/g,'').replace(/[·|].*$/,'').replace(/[,;].*$/,'').replace(/\s{2,}/g,' ').trim(); }
+    lines.forEach(function(ln){
+      var U=ln.toUpperCase();
+      var m=/([A-Z][A-Za-z'’.\- ]{2,})/.exec(ln); var name=m?nm(m[1]):'';
+      name=name.replace(/^(CAPTAIN|COMMANDER|FIRST OFFICER|SECOND OFFICER|RELIEF PILOT|CRUISE PILOT|CABIN SUPERVISOR|LEAD CABIN CREW|CABIN SERVICES? DIRECTOR|PURSER|CAPT|CAP|CP|PIC|CMD|SFO|FO|F\/O|SO|RP|RC|CRP|CSD|CS|LCC|LC|CC|FA|STW|MR|MRS|MS)\b[\s.\-:]*/i,'').trim();
+      if(name.length<3)return;
+      if(/\bCAPT?\b|\bCAP\b|\bCP\b|\bPIC\b|\bCMD\b|CAPTAIN|COMMANDER/.test(U)) fd.push({rank:'Captain',name:name});
+      else if(/\bSFO\b|SENIOR FIRST OFFICER/.test(U)) fd.push({rank:'First Officer',name:name});
+      else if(/\bF\/?O\b|\bFO\b|FIRST OFFICER/.test(U)) fd.push({rank:'First Officer',name:name});
+      else if(/\bSO\b|SECOND OFFICER/.test(U)) fd.push({rank:'Second Officer',name:name});
+      else if(/\bRP\b|\bRC\b|\bCRP\b|RELIEF|CRUISE PILOT/.test(U)) fd.push({rank:'Relief Pilot',name:name});
+      else if(/\bCSD\b|CABIN SERVICE/.test(U)) cb.push({rank:'CSD',name:name});
+      else if(/\bLCC\b|\bLC\b|LEAD CABIN/.test(U)) cb.push({rank:'Lead Cabin Crew',name:name});
+      else if(/\bCS\b|CABIN SUP|PURSER/.test(U)) cb.push({rank:'Cabin Supervisor',name:name});
+    });
+    return {flightDeck:fd, cabin:cb};
+  }
+  function applyCrew(crew){
+    crew=crew||{}; var fd=crew.flightDeck||[], cb=crew.cabin||[], msg=[];
+    var capt=fd.filter(function(x){return /capt/i.test(x.rank||'');})[0]||fd[0];
+    var fo=fd.filter(function(x){return /first|second|relief/i.test(x.rank||'');})[0]||(fd[1]||null);
+    var csd=cb[0];
+    function put(id,v){ if(v&&v.name){ $(id).value=crewTitle(v.name); $(id).dataset.touched='1'; } }
+    put('p_capt',capt); put('p_fo',fo); put('p_csd',csd);
+    try{buildPA();}catch(e){}
+    fd.forEach(function(x){ if(x.name)msg.push((x.rank||'')+' '+crewTitle(x.name)); });
+    cb.forEach(function(x){ if(x.name)msg.push((x.rank||'')+' '+crewTitle(x.name)); });
+    $('p_ocr').textContent=msg.length?('Read — '+msg.join(' · ')+'. Check & edit if needed.'):'No crew names detected — type them manually.';
+  }
+  $('p_shot').addEventListener('change',function(){
+    var f=$('p_shot').files&&$('p_shot').files[0]; if(!f)return;
+    $('p_ocr').textContent='Reading roster…';
+    extractRosterText(f).then(function(text){
+      if(!text || text.trim().length<2){ $('p_ocr').textContent='Could not read any text — try a clearer photo, or paste the names manually.'; return; }
+      $('p_ocr').textContent='Reading crew names with Sky Matrix AI…';
+      return fetch(CREW_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:text.slice(0,9000)})})
+        .then(function(r){return r.json();})
+        .then(function(j){ if(j&&j.ok&&j.crew) applyCrew(j.crew); else applyCrew(localCrew(text)); })
+        .catch(function(){ applyCrew(localCrew(text)); });   // offline / worker down -> local parse
+    }).catch(function(e){ $('p_ocr').textContent='Could not read the file: '+e.message+'. Paste the names manually.'; });
+    $('p_shot').value='';
+  });
 
   $('r_to').addEventListener('input',()=>{$('d_to').value=$('r_to').value;autoRest();calcRest();buildChecks();calcDisplay();});
   ['r_type','r_start','r_end','r_gap'].forEach(id=>$(id).addEventListener('input',()=>{calcRest();calcDisplay();}));
