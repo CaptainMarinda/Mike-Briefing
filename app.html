@@ -892,12 +892,17 @@ var LIC_PUBKEY = "BMxAfrty9p7_t79ebh4KowBcDiZVaiyBIRPPgMGaPK2Bt4yB9EU1W-4z9WQ4E4
   var LIC_WORKER="https://skymatrix-trial.skymatrix.workers.dev";
   var reqMsg=document.getElementById('lockReqMsg');
   function setReq(t,c){if(reqMsg){reqMsg.textContent=t;reqMsg.style.color=c||'#9fb3d1';}}
-  function requestCode(btn,label){var em=((document.getElementById('lockEmail')||{}).value||'').trim();
+  // the email is saved permanently and LOCKED to this device once set (only an admin reset can change it)
+  var __savedEmail=''; try{__savedEmail=localStorage.getItem('sm_email')||'';}catch(e){}
+  (function(){ var e=document.getElementById('lockEmail'); if(e && __savedEmail){ e.value=__savedEmail; e.readOnly=true; e.title='Email is locked to this device'; } })();
+  function requestCode(btn,label){
+    var e=document.getElementById('lockEmail');
+    var em=(__savedEmail || ((e||{}).value||'')).trim();
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){setReq('Enter a valid email address first.','#ff9aa2');return;}
     btn.disabled=true;setReq(label+'…');
     fetch(LIC_WORKER+'/trial',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:em,device:DEV})})
       .then(function(r){return r.json();})
-      .then(function(j){if(j.ok){setReq('✓ Your access code has been emailed to '+em+'. Check your inbox, then paste it below.','#7be0a4');}else{setReq(j.error||'Could not send a code right now. Please try again.','#ff9aa2');}})
+      .then(function(j){if(j.ok){ __savedEmail=em; try{localStorage.setItem('sm_email',em);}catch(_){} if(e){e.value=em;e.readOnly=true;} setReq('✓ Your access code has been emailed to '+em+'. Check your inbox, then paste it below.','#7be0a4');}else{setReq(j.error||'Could not send a code right now. Please try again.','#ff9aa2');}})
       .catch(function(){setReq('Network error. Check your connection and try again.','#ff9aa2');})
       .then(function(){btn.disabled=false;});}
   var trialBtn=document.getElementById('lockTrial');if(trialBtn)trialBtn.addEventListener('click',function(){requestCode(trialBtn,'Starting your free 10-day trial');});
@@ -917,10 +922,8 @@ var LIC_PUBKEY = "BMxAfrty9p7_t79ebh4KowBcDiZVaiyBIRPPgMGaPK2Bt4yB9EU1W-4z9WQ4E4
   var __blocked=false;
   try{if(localStorage.getItem('sm_blocked_dev')===DEV)__blocked=true;}catch(e){}
   function setBlocked(b){__blocked=b;try{if(b){localStorage.setItem('sm_blocked_dev',DEV);}else if(localStorage.getItem('sm_blocked_dev')===DEV){localStorage.removeItem('sm_blocked_dev');}}catch(e){}if(b)route();}
-  (function(){try{var base=(location.protocol!=='file:'?(location.pathname.replace(/[^/]*$/,'')||'/'):'https://captainmarinda.github.io/Mike-Briefing/');
-    fetch(base+'blocked.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(list){if(Array.isArray(list))setBlocked(list.indexOf(DEV)>=0);}).catch(function(){});}catch(e){}})();
-  /* server-side revocation: refunds auto-add the device to the Worker blocklist (fail-open if offline) */
-  (function(){try{fetch('https://skymatrix-trial.skymatrix.workers.dev/blocked?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(list){if(Array.isArray(list)&&list.indexOf(DEV)>=0)setBlocked(true);}).catch(function(){});}catch(e){}})();
+  /* the Worker /blocked list is the LIVE source of truth: it both blocks AND clears a prior block after Unblock, so a re-issued code works again (fail-open if offline) */
+  (function(){try{fetch('https://skymatrix-trial.skymatrix.workers.dev/blocked?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(list){if(Array.isArray(list)){var was=__blocked;setBlocked(list.indexOf(DEV)>=0);if(was&&!__blocked){try{location.reload();}catch(e){}}}}).catch(function(){});}catch(e){}})();
 
   async function verifyCode(code){
     if(!code)return {ok:false,reason:'empty'};
