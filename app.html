@@ -300,6 +300,7 @@
     <div class="by" style="margin-top:10px">Access is by a security code, locked to this device. Your access code is delivered to your email.</div>
     <div class="warn"><b>FOR REFERENCE ONLY.</b> This tool must NOT be used for operational purposes. The official hard copy of the OFP must be used for flight operations. For individual use only.</div>
     <div class="by">Prepared by Sky Matrix &middot; <a href="https://www.skymatrix.biz">www.skymatrix.biz</a></div>
+    <div class="by" style="font-size:11px;color:#5a6b86;margin-top:6px">App version <span class="appver">—</span></div>
   </div>
 </div>
 
@@ -842,7 +843,7 @@
 <div class="credit">
   <span class="creditlogo" id="footLogo"></span><br>
   <span style="letter-spacing:3px;text-transform:uppercase;font-size:11px;color:#7fd8ff">Fly Informed</span><br>
-  Prepared by <b>Sky Matrix</b> &middot; <a href="https://www.skymatrix.biz">www.skymatrix.biz</a> &middot; queries &amp; feedback: <a href="mailto:support@skymatrix.biz">support@skymatrix.biz</a><br>
+  Prepared by <b>Sky Matrix</b> &middot; <a href="https://www.skymatrix.biz">www.skymatrix.biz</a> &middot; queries &amp; feedback: <a href="mailto:support@skymatrix.biz">support@skymatrix.biz</a> &middot; App version <span class="appver">—</span><br>
   For reference only — not for operational use. Use the official hard-copy OFP for flight operations. Individual use only.
 </div>
 
@@ -1104,6 +1105,9 @@ function smMarkSVG(u){return '<svg viewBox="0 0 200 200" xmlns="http://www.w3.or
 +'<g transform="rotate(-16 100 100)" filter="url(#gl'+u+')"><path d="M100 36 L150 158 L100 132 L50 158 Z" fill="url(#pl'+u+')"/><path d="M100 60 L122 140 L100 128 Z" fill="#e3f4ff" opacity=".55"/></g>'
 +'</svg>';}
 (function(){var i=0;['hdrLogo','lockLogo','footLogo','loginLogo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=smLogoSVG('L'+(i++));});var m=document.getElementById('aiGoMark');if(m)m.innerHTML=smMarkSVG('BTN');})();
+/* visible build stamp — bump APP_VERSION on every release so you can confirm at a glance that the latest is live (matches the Worker /version) */
+var APP_VERSION='2026-07-07-fixes6';
+(function(){try{Array.prototype.forEach.call(document.querySelectorAll('.appver'),function(e){e.textContent=APP_VERSION;});}catch(e){}})();
 
 if (window.pdfjsLib) { try { pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch(e){} }
