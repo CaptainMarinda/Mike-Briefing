@@ -335,10 +335,10 @@
       <div class="hint">PDF text is extracted in-browser via PDF.js (needs internet the first time). Your last OFP is remembered until you load another.</div>
       <div class="hint" style="margin-top:6px">Tip: on Android you can open your OFP email, tap <b>Share</b> and choose <b>Sky Matrix</b> to load it straight in. On iPhone/iPad, open the PDF and use the file picker above.</div>
       <textarea id="paste" style="display:none"></textarea>
-      <div class="hint" style="margin-top:10px">Once your OFP is loaded, choose <b>one</b>: <b>Offline Briefing</b> (fast, works without internet, best on Qatar OFPs) or <b>Read with AI</b> (reads the OFP pages for the most accurate result across all airlines, needs internet).</div>
+      <div class="hint" style="margin-top:10px">Once your OFP is loaded, choose <b>one</b>: <b>Sky Matrix Briefing</b> (fast, works without internet, best on Qatar OFPs) or <b>Sky Matrix AI</b> (reads the OFP pages for the most accurate result across all airlines, needs internet).</div>
       <div class="row" style="display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;margin-top:6px">
-        <button id="go" type="button" style="flex:1;min-width:150px;background:#1f6dff;border:1px solid #1f6dff;color:#fff">Offline Briefing</button>
-        <button id="aiGo" type="button" style="flex:1;min-width:150px;background:#0e2a44;border:1px solid #2f8bff;color:#cfe6ff">Read with AI (beta)</button>
+        <button id="go" type="button" style="flex:1;min-width:150px;background:#1f6dff;border:1px solid #1f6dff;color:#fff">Sky Matrix Briefing</button>
+        <button id="aiGo" type="button" style="flex:1;min-width:150px;background:#0e2a44;border:1px solid #2f8bff;color:#cfe6ff;display:inline-flex;align-items:center;justify-content:center;gap:8px"><span id="aiGoMark" style="width:22px;height:22px;flex:0 0 auto;display:inline-flex"></span>Sky Matrix AI (beta)</button>
         <button id="reset" type="button" style="flex:1;min-width:150px;background:#3a2140;border:1px solid #b23a5d;color:#f4c9d8">Load another OFP</button>
       </div>
       <div id="msg" class="msg" style="margin-top:10px"></div>
@@ -375,15 +375,15 @@
       <textarea id="tr_out" readonly placeholder="Translation…" style="min-height:90px;width:100%;margin-top:8px;font-family:var(--sans);font-size:13px;color:#E6ECF5"></textarea>
     </div>
     <div style="margin-top:14px;border-top:1px solid #20304f;padding-top:12px">
-      <label class="lab">Announcement Prep — fill a template with AI</label>
-      <p class="fsub" style="margin-top:2px">Upload an announcement template (photo/screenshot, PDF or text). The AI reads it, fills the blanks with this flight's data and your details, in your chosen language.</p>
+      <label class="lab">Announcement Prep — fill a template with Sky Matrix AI</label>
+      <p class="fsub" style="margin-top:2px">Upload an announcement template (photo/screenshot, PDF or text). Sky Matrix AI reads it, fills the blanks with this flight's data and your details, in your chosen language.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
         <input id="ap_name" type="text" placeholder="Your name / rank (e.g. Capt. Mike)" style="flex:1;min-width:180px">
         <select id="ap_lang"></select>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
         <label class="ghost" style="cursor:pointer;padding:8px 14px;border-radius:8px;border:1px solid #2a3c5e">Upload template<input id="ap_file" type="file" accept="image/*,.pdf,.txt,text/plain" style="display:none"></label>
-        <button id="ap_go" type="button" style="background:#12324a;border:1px solid #2f8bff;color:#cfe6ff">Fill with AI</button>
+        <button id="ap_go" type="button" style="background:#12324a;border:1px solid #2f8bff;color:#cfe6ff">Fill with Sky Matrix AI</button>
         <span class="hint" id="ap_msg" style="margin-top:0"></span>
       </div>
       <textarea id="ap_tmpl" placeholder="…or paste the template text here (blanks as ____ or [BRACKETS])" style="min-height:80px;width:100%;margin-top:8px;font-family:var(--sans);font-size:13px;color:#E6ECF5"></textarea>
@@ -1017,7 +1017,18 @@ function smLogoSVG(u){return '<svg viewBox="0 0 620 200" xmlns="http://www.w3.or
 +'<text x="206" y="172" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="72" letter-spacing="3" fill="url(#tx'+u+')">MATRIX</text>'
 +'<g clip-path="url(#cp'+u+')"><rect x="0" y="0" width="620" height="200" fill="url(#sh'+u+')"/></g>'
 +'</svg>';}
-(function(){var i=0;['hdrLogo','lockLogo','footLogo','loginLogo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=smLogoSVG('L'+(i++));});})();
+/* compact emblem-only mark (no wordmark) for buttons */
+function smMarkSVG(u){return '<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" aria-hidden="true" style="width:100%;height:100%;display:block;overflow:visible">'
++'<defs><linearGradient id="pl'+u+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#cdebff"/><stop offset=".5" stop-color="#39b4ff"/><stop offset="1" stop-color="#1f6dff"/></linearGradient>'
++'<filter id="gl'+u+'" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>'
++'<g stroke="#2f8bff">'
++'<circle cx="100" cy="100" r="80" fill="none" stroke="#1f6dff" stroke-opacity=".30" stroke-width="2"/>'
++'<g stroke-opacity=".45" stroke-width="1.5"><line x1="100" y1="20" x2="169" y2="60"/><line x1="169" y1="60" x2="169" y2="140"/><line x1="169" y1="140" x2="100" y2="180"/><line x1="100" y1="180" x2="31" y2="140"/><line x1="31" y1="140" x2="31" y2="60"/><line x1="31" y1="60" x2="100" y2="20"/><line x1="100" y1="20" x2="100" y2="100"/><line x1="169" y1="60" x2="100" y2="100"/><line x1="169" y1="140" x2="100" y2="100"/><line x1="100" y1="180" x2="100" y2="100"/><line x1="31" y1="140" x2="100" y2="100"/><line x1="31" y1="60" x2="100" y2="100"/></g>'
++'<g fill="#7fd8ff" stroke="none"><circle cx="100" cy="20" r="4"/><circle cx="169" cy="60" r="4"/><circle cx="169" cy="140" r="4"/><circle cx="100" cy="180" r="4"/><circle cx="31" cy="140" r="4"/><circle cx="31" cy="60" r="4"/></g>'
++'</g>'
++'<g transform="rotate(-16 100 100)" filter="url(#gl'+u+')"><path d="M100 36 L150 158 L100 132 L50 158 Z" fill="url(#pl'+u+')"/><path d="M100 60 L122 140 L100 128 Z" fill="#e3f4ff" opacity=".55"/></g>'
++'</svg>';}
+(function(){var i=0;['hdrLogo','lockLogo','footLogo','loginLogo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=smLogoSVG('L'+(i++));});var m=document.getElementById('aiGoMark');if(m)m.innerHTML=smMarkSVG('BTN');})();
 
 if (window.pdfjsLib) { try { pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch(e){} }
@@ -1212,7 +1223,7 @@ function qaCheck(data){
   var fl=+data.initFL; if(data.initFL && (fl<50||fl>450)) f.push({s:'a',t:'Initial cruise level FL'+data.initFL+' looks unusual.'});
   if(data.fRamp && data.fTrip && (+data.fRamp<+data.fTrip)) f.push({s:'a',t:'Ramp fuel is less than trip fuel, verify fuel figures.'});
   if(data.confidence && typeof data.confidence==='object'){ for(var k in data.confidence){ var cv=data.confidence[k];
-    if((typeof cv==='number'&&cv<0.5)||cv==='low') f.push({s:'a',t:'AI was unsure about "'+k+'", verify.'}); } }
+    if((typeof cv==='number'&&cv<0.5)||cv==='low') f.push({s:'a',t:'Sky Matrix AI was unsure about "'+k+'", verify.'}); } }
   var kb=(data.dep||'')+'|'+(data.dest||'')+'|'+(data.date||'')+'|'+(data.fltCs||'');
   f.forEach(function(x){ x.key=kb+'|'+x.t; });
   return f;
@@ -1789,7 +1800,7 @@ async function loadFile(f){
     lastText=await readFile(f);
     if(!lastText||!lastText.trim()) throw new Error('File looks empty after reading.');
     paste.value=lastText.slice(0,200000);
-    setMsg('Loaded '+f.name+'. Now choose one: “Offline Briefing” or “Read with AI”.','ok');
+    setMsg('Loaded '+f.name+'. Now choose one: “Sky Matrix Briefing” or “Sky Matrix AI”.','ok');
   }catch(e){ setMsg('Could not read file: '+e.message+'  (Try pasting the OFP text below instead.)','err'); }
 }
 function setMsg(t,k){msg.textContent=t;msg.className='msg '+(k||'');}
@@ -1856,7 +1867,7 @@ document.getElementById('go').onclick=generate;
     data.towOver=(data.etow&&data.mtow)?(+data.etow>+data.mtow):null;
     s('initFL',d.initFL); if(d.maxFL)s('highFL',d.maxFL); else if(d.initFL&&!data.highFL)s('highFL',d.initFL);
     if(Array.isArray(d.altn)&&d.altn[0])s('altnIcao',d.altn[0]);
-    s('remarks',d.remarks); s('speedCI',d.ci); s('tocTemp',d.tocTemp);
+    s('remarks',d.remarks); s('speedCI',d.ci); s('tocTemp',d.tocTemp); s('gndDist',d.gndDist);
     if(d.tropopause && (d.tropopause.fl||d.tropopause.wpt)) data.tropo={fl:String(d.tropopause.fl||''),wpt:String(d.tropopause.wpt||''),elapsed:String((d.tropopause.eet)||(data.tropo&&data.tropo.elapsed)||'')};
     // route structure, runways, SID/STAR, FIR crossings, ETOPS — the AI reads these from the page images
     s('depRwy',d.depRwy); s('arrRwy',d.arrRwy); s('sid',d.sid); s('star',d.star);
@@ -1882,7 +1893,7 @@ document.getElementById('go').onclick=generate;
             return { p:pn,
               sum:(t.match(/ZFW|MZFW|MTOW|ETOW|TAXI|TRIP|RAMP|PAYLOAD|BLOCK\s*FUEL|MASS/gi)||[]).length,
               notam:(/NOTAM/i.test(t))?((t.match(/NOTAM/gi)||[]).length):0, wx:(/METAR|TAF|SIGMET/i.test(t))?((t.match(/METAR|TAF/gi)||[]).length):0,
-              etops:(/ETOPS|\bEEP\b|\bETP\b|\bEXP\b|\bFIR\b|\bUIR\b/i.test(t))?1:0 };
+              etops:(t.match(/ETOPS|EDTO|\bEEP\b|\bETP\d?\b|\bEXP\b|CRITICAL FUEL|EQUAL TIME/gi)||[]).length };
           }).catch(function(){ return {p:pn,sum:0,notam:0,wx:0,etops:0}; });
         }
         function scanBatch(start){
@@ -1895,9 +1906,13 @@ document.getElementById('go').onclick=generate;
           var want={}; want[1]=1; if(total>=2)want[2]=1;
           var bs=best('sum'); if(bs)want[bs]=1;
           var bn=best('notam'); if(bn){ want[bn]=1; if(bn+1<=total)want[bn+1]=1; }
+          // weather: the FIRST wx page carries dep/dest/altn METAR-TAF; also grab the densest wx page. +1 each.
+          var firstWx=null; scores.forEach(function(s){ if(s.wx && firstWx==null) firstWx=s.p; });
+          if(firstWx){ want[firstWx]=1; if(firstWx+1<=total)want[firstWx+1]=1; }
           var bw=best('wx'); if(bw){ want[bw]=1; if(bw+1<=total)want[bw+1]=1; }
-          var be=best('etops'); if(be)want[be]=1;
-          var pages=Object.keys(want).map(Number).sort(function(a,b){return a-b;}).slice(0,9);
+          // ETOPS: take the top few ETOPS-scoring pages so the dedicated summary AND the nav-log ETP marker pages are both sent
+          scores.filter(function(s){return s.etops>0;}).sort(function(a,b){return b.etops-a.etops;}).slice(0,3).forEach(function(s){ want[s.p]=1; });
+          var pages=Object.keys(want).map(Number).sort(function(a,b){return a-b;}).slice(0,14);
           if(!pages.length)pages=[1];
           renderPages(pages);
         }
@@ -1922,13 +1937,13 @@ document.getElementById('go').onclick=generate;
   }
   aiBtn.addEventListener('click',function(){
     var text=((document.getElementById('paste')||{}).value||'').trim();
-    if(!text && !window.__ofpPdfBuf){ setMsg('Load an OFP first, then Read with AI.','err'); return; }
-    aiBtn.disabled=true; setMsg(window.__ofpPdfBuf?'Reading the OFP pages with AI…':'Reading the OFP with AI…','');
+    if(!text && !window.__ofpPdfBuf){ setMsg('Load an OFP first, then use Sky Matrix AI.','err'); return; }
+    aiBtn.disabled=true; setMsg(window.__ofpPdfBuf?'Reading the OFP pages with Sky Matrix AI…':'Reading the OFP with Sky Matrix AI…','');
     ofpPageImages()
-      .then(function(images){ return fetch(AI_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:text.slice(0,60000), images:images})}); })
+      .then(function(images){ return fetch(AI_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:text.slice(0,90000), images:images})}); })
       .then(function(r){return r.json();})
       .then(function(j){
-        if(!j||!j.ok){ setMsg((j&&j.error)||'AI reader unavailable right now.','err'); return; }
+        if(!j||!j.ok){ setMsg((j&&j.error)||'Sky Matrix AI unavailable right now.','err'); return; }
         var d=j.data||{}, w=d.weights||{};
         // build the FULL briefing from AI: offline parse gives route/NOTAM/ETOPS structure; AI overrides the header fields
         var data; try{ data=parseOFP(text,{known:'',qseats:0}); }catch(e){ data={raw:text,etopsPts:[]}; }
@@ -1953,10 +1968,10 @@ document.getElementById('go').onclick=generate;
         try{ if(typeof calcDisplay==='function')calcDisplay(); }catch(e){}
         try{ if(window.__snapAI)window.__snapAI(); }catch(e){}
         var low=[],cf=d.confidence||{}; for(var k in cf){ if(cf[k]==='low')low.push(k); }
-        setMsg('AI briefing ready'+(d.acType?(' ('+d.acType+(d.reg?(' '+d.reg):'')+')'):'')+'.'+(low.length?(' Check: '+low.join(', ')):' All high-confidence.'),low.length?'':'ok');
+        setMsg('Sky Matrix AI briefing ready'+(d.acType?(' ('+d.acType+(d.reg?(' '+d.reg):'')+')'):'')+'.'+(low.length?(' Check: '+low.join(', ')):' All high-confidence.'),low.length?'':'ok');
         if(typeof saveState==='function')saveState();
       })
-      .catch(function(){ setMsg('AI reader needs internet (and the Worker key set up).','err'); })
+      .catch(function(){ setMsg('Sky Matrix AI needs internet (and the Worker key set up).','err'); })
       .then(function(){ aiBtn.disabled=false; });
   });
 })();
@@ -2942,17 +2957,17 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
       if((f.type||'').indexOf('image')===0){
         if(!window.Tesseract){setM('OCR needs internet.');return;}
         setM('Reading image…');
-        Tesseract.recognize(f,'eng').then(function(res){ tmpl.value=((res&&res.data&&res.data.text)||'').trim(); setM('Template read — review, then Fill with AI.'); }).catch(function(e){setM('OCR failed: '+e.message);});
+        Tesseract.recognize(f,'eng').then(function(res){ tmpl.value=((res&&res.data&&res.data.text)||'').trim(); setM('Template read — review, then Fill with Sky Matrix AI.'); }).catch(function(e){setM('OCR failed: '+e.message);});
       } else if(nm.slice(-4)==='.pdf'||(f.type||'').indexOf('pdf')>=0){
         if(!window.pdfjsLib){setM('PDF reader needs internet.');return;}
         setM('Reading PDF…');
         var rd=new FileReader(); rd.onload=function(){ pdfjsLib.getDocument({data:new Uint8Array(rd.result)}).promise.then(function(pdf){
           var chain=Promise.resolve(''); for(var p=1;p<=Math.min(pdf.numPages,3);p++){ (function(pn){ chain=chain.then(function(acc){ return pdf.getPage(pn).then(function(pg){return pg.getTextContent();}).then(function(tc){ return acc+tc.items.map(function(i){return i.str;}).join(' ')+'\n'; }); }); })(p); }
-          chain.then(function(txt){ tmpl.value=txt.trim(); setM('Template read — review, then Fill with AI.'); });
+          chain.then(function(txt){ tmpl.value=txt.trim(); setM('Template read — review, then Fill with Sky Matrix AI.'); });
         }).catch(function(e){setM('PDF read failed: '+e.message);}); };
         rd.readAsArrayBuffer(f);
       } else {
-        var r=new FileReader(); r.onload=function(){ tmpl.value=String(r.result||'').trim(); setM('Template loaded — review, then Fill with AI.'); }; r.readAsText(f);
+        var r=new FileReader(); r.onload=function(){ tmpl.value=String(r.result||'').trim(); setM('Template loaded — review, then Fill with Sky Matrix AI.'); }; r.readAsText(f);
       }
       $('ap_file').value='';
     });
@@ -2971,10 +2986,10 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
     go.addEventListener('click',function(){
       var t=(tmpl.value||'').trim();
       if(t.length<10){ setM('Upload or paste an announcement template first.'); return; }
-      go.disabled=true; setM('Filling with AI…');
+      go.disabled=true; setM('Filling with Sky Matrix AI…');
       fetch(AN_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({template:t.slice(0,8000), data:flightData(), lang:(lang&&lang.value)||'English'})})
         .then(function(r){return r.json();})
-        .then(function(j){ if(j&&j.ok){ out.value=j.text||''; setM('Done — review before use.'); } else setM((j&&j.error)||'AI unavailable right now.'); })
+        .then(function(j){ if(j&&j.ok){ out.value=j.text||''; setM('Done — review before use.'); } else setM((j&&j.error)||'Sky Matrix AI unavailable right now.'); })
         .catch(function(){ setM('Needs internet and the Worker key set up.'); })
         .then(function(){ go.disabled=false; });
     });
@@ -3113,10 +3128,10 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
   window.__snapAI=function(){ setTimeout(function(){ try{ var O=window.__OFP||{}; window.__aiSnap={ air:(String(O.fltCs||'').match(/^[A-Z]+/)||[''])[0]||'', dep:O.dep||'', dest:O.dest||'', vals:{} }; IDS.forEach(function(id){ var e=document.getElementById(id); if(e)window.__aiSnap.vals[id]=(e.value||''); }); }catch(_){} },500); };
   function teachSubmit(note,bar){
     var tok=''; try{tok=localStorage.getItem('sm_admin_tok')||'';}catch(e){}
-    if(!tok){ tok=((window.prompt&&window.prompt('Enter your admin token to save AI corrections (asked once, then remembered):'))||'').trim(); if(tok){try{localStorage.setItem('sm_admin_tok',tok);}catch(e){}} }
+    if(!tok){ tok=((window.prompt&&window.prompt('Enter your admin token to save Sky Matrix AI corrections (asked once, then remembered):'))||'').trim(); if(tok){try{localStorage.setItem('sm_admin_tok',tok);}catch(e){}} }
     if(!tok){ if(bar&&bar.parentNode)bar.parentNode.removeChild(bar); return; }
     fetch('https://skymatrix-trial.skymatrix.workers.dev/ofp/correct',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':tok},body:JSON.stringify({note:note})})
-      .then(function(r){return r.json();}).then(function(j){ if(bar){ bar.innerHTML=(j&&j.ok)?'<span style="color:#7be0a4">Taught the AI &#10003; — it will apply this next time.</span>':'<span style="color:#ff9aa2">'+esc((j&&j.error)||'Failed (check admin token).')+'</span>'; setTimeout(function(){if(bar.parentNode)bar.parentNode.removeChild(bar);},2600); } })
+      .then(function(r){return r.json();}).then(function(j){ if(bar){ bar.innerHTML=(j&&j.ok)?'<span style="color:#7be0a4">Taught Sky Matrix AI &#10003; — it will apply this next time.</span>':'<span style="color:#ff9aa2">'+esc((j&&j.error)||'Failed (check admin token).')+'</span>'; setTimeout(function(){if(bar.parentNode)bar.parentNode.removeChild(bar);},2600); } })
       .catch(function(){ if(bar)bar.innerHTML='<span style="color:#ff9aa2">Network error.</span>'; });
   }
   function showTeach(id,ov,nv,snap){
@@ -3125,8 +3140,8 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
     var old=document.getElementById('teachBar'); if(old&&old.parentNode)old.parentNode.removeChild(old);
     var bar=document.createElement('div'); bar.id='teachBar';
     bar.style.cssText='position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#13203a;border:1px solid #2f8bff;border-radius:12px;padding:11px 14px;box-shadow:0 10px 30px rgba(0,0,0,.5);color:#e6ecf5;font-size:13px;display:flex;gap:10px;align-items:center;flex-wrap:wrap';
-    var span=document.createElement('span'); span.style.cssText='flex:1;min-width:160px'; span.innerHTML='Teach the AI this fix? <b>'+esc(lbl)+'</b> &rarr; <b>'+esc(nv)+'</b>';
-    var save=document.createElement('button'); save.textContent='Teach AI ✓'; save.style.cssText='background:#123a24;border:1px solid #2e9e5b;color:#bff0d0;font-size:13px;padding:8px 14px;border-radius:8px;cursor:pointer';
+    var span=document.createElement('span'); span.style.cssText='flex:1;min-width:160px'; span.innerHTML='Teach Sky Matrix AI this fix? <b>'+esc(lbl)+'</b> &rarr; <b>'+esc(nv)+'</b>';
+    var save=document.createElement('button'); save.textContent='Teach Sky Matrix AI ✓'; save.style.cssText='background:#123a24;border:1px solid #2e9e5b;color:#bff0d0;font-size:13px;padding:8px 14px;border-radius:8px;cursor:pointer';
     var no=document.createElement('button'); no.textContent='Dismiss'; no.style.cssText='background:#2a1420;border:1px solid #b23a5d;color:#f4c9d8;font-size:13px;padding:8px 14px;border-radius:8px;cursor:pointer';
     save.onclick=function(){ teachSubmit(note,bar); };
     no.onclick=function(){ if(bar.parentNode)bar.parentNode.removeChild(bar); };
