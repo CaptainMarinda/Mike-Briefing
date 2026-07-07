@@ -1918,6 +1918,10 @@ document.getElementById('go').onclick=generate;
         if(d.tripTimeMin!=null)setF('dep_ft',m2hhmm(d.tripTimeMin));
         if(d.blockTimeMin!=null)setF('dep_block',m2hhmm(d.blockTimeMin));
         setF('dep_zfw',w.zfw); setF('dep_tow',w.tow); setF('dep_lwt',w.lw); setF('ar_mlwt',w.mlw); setF('ar_lwt',w.lw);
+        // fire the same post-load hooks the offline path uses, so the Inflight Display, Dep/Arr cards, sun times & ETA all populate
+        try{ if(window.__renderIdent)window.__renderIdent(); }catch(e){}
+        try{ window.dispatchEvent(new CustomEvent('ofp-parsed')); }catch(e){}
+        try{ if(typeof calcDisplay==='function')calcDisplay(); }catch(e){}
         var low=[],cf=d.confidence||{}; for(var k in cf){ if(cf[k]==='low')low.push(k); }
         setMsg('AI briefing ready'+(d.acType?(' ('+d.acType+(d.reg?(' '+d.reg):'')+')'):'')+'.'+(low.length?(' Check: '+low.join(', ')):' All high-confidence.'),low.length?'':'ok');
         if(typeof saveState==='function')saveState();
