@@ -56,10 +56,12 @@
   <button data-tab="grant">Grant licence</button>
   <button data-tab="mail">Contact users</button>
   <button data-tab="fb">Feedback</button>
+  <button data-tab="svc">Services &amp; billing</button>
 </div>
 
 <!-- USERS -->
 <section id="tab-users">
+  <div id="svcBanner"></div>
   <div class="card">
     <div class="row">
       <button id="loadUsers" style="flex:0 0 auto">Load users</button>
@@ -148,6 +150,24 @@
   </div>
 </section>
 
+<!-- SERVICES & BILLING -->
+<section id="tab-svc" class="hide">
+  <div class="card">
+    <div class="row">
+      <button id="loadSvc" style="flex:0 0 auto">Load</button>
+      <button id="addSvc" class="ghost" style="flex:0 0 auto">+ Add service</button>
+      <button id="seedSvc" class="ghost" style="flex:0 0 auto">Add common ones</button>
+      <button id="saveSvc" style="flex:0 0 auto">Save changes</button>
+    </div>
+    <div class="hint">Track your paid services (AI API, Flightradar24, email, hosting, domain, payments). Set the <b>Next due</b> date and you'll see days-to-renew; due within 7 days is red, within 30 amber. <b>Live usage</b> below is counted automatically from calls through your Worker.</div>
+    <div id="svcUsage" style="display:flex;gap:14px;flex-wrap:wrap;margin:10px 0"></div>
+    <div id="msgSvc" class="msg"></div>
+    <div class="tblwrap"><table id="svcTable"><thead><tr>
+      <th>Service</th><th>Category</th><th>Cost</th><th>Cycle</th><th>Next due</th><th>Days</th><th>Notes</th><th></th>
+    </tr></thead><tbody></tbody></table></div>
+  </div>
+</section>
+
 <script>
 var W="https://skymatrix-trial.skymatrix.workers.dev";
 var $=function(id){return document.getElementById(id);};
@@ -163,7 +183,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(
   b.addEventListener('click',function(){
     Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(x){x.classList.remove('on');});
     b.classList.add('on');
-    ['users','grant','mail','fb'].forEach(function(id){ $('tab-'+id).classList.toggle('hide', id!==b.dataset.tab); });
+    ['users','grant','mail','fb','svc'].forEach(function(id){ $('tab-'+id).classList.toggle('hide', id!==b.dataset.tab); });
   });
 });
 
@@ -188,6 +208,21 @@ function loadUsers(){
     if(j&&j.ok){ USERS=j.users||[]; $('stTotal').textContent=j.count; $('stActive').textContent=j.active; $('stBlocked').textContent=j.blocked; renderUsers(); set($('msgUsers'),'Loaded ✓','ok'); }
     else set($('msgUsers'),(j&&j.error)||'Failed (check the token).','err');
   }).catch(function(){ set($('msgUsers'),'Network error.','err'); });
+  renderSvcBanner(k);
+}
+function renderSvcBanner(k){
+  var el=$('svcBanner'); if(!el)return;
+  H(k,'/admin/services').then(function(j){
+    if(!(j&&j.ok)){ el.innerHTML=''; return; }
+    var today=Math.floor(Date.now()/86400000);
+    var due=(j.services||[]).map(function(s){ var t=s.due?Date.parse(s.due+'T00:00:00Z'):NaN; s._d=isNaN(t)?null:(Math.round(t/86400000)-today); return s; })
+      .filter(function(s){ return s._d!=null && s._d<=30; }).sort(function(a,b){return a._d-b._d;});
+    if(!due.length){ el.innerHTML=''; return; }
+    var soon=due.filter(function(s){return s._d<=7;}).length;
+    var col=soon?'#b23a5d':'#E0A33A', bg=soon?'rgba(178,58,93,.15)':'rgba(224,163,58,.13)';
+    var items=due.map(function(s){ var w=s._d<0?('overdue '+(-s._d)+'d'):(s._d===0?'due today':s._d+'d'); return '<b>'+esc(s.name||'')+'</b> ('+w+(s.cost?(' · '+esc(s.cost)):'')+')'; }).join(' &nbsp;·&nbsp; ');
+    el.innerHTML='<div style="border:1px solid '+col+';background:'+bg+';border-radius:10px;padding:11px 14px;margin:0 0 14px;font-size:13px;color:var(--ink)"><b style="color:'+col+'">⏰ Renewals due soon:</b> '+items+' &nbsp; <span style="color:var(--soft)">— see Services &amp; billing.</span></div>';
+  }).catch(function(){ el.innerHTML=''; });
 }
 $('loadUsers').addEventListener('click',loadUsers);
 $('uSearch').addEventListener('input',renderUsers);
@@ -217,7 +252,11 @@ $('grantBtn').addEventListener('click',function(){
   else { var parts=sel.split('|'); plan=parts[0]; days=parseInt(parts[1],10); }
   set($('msgGrant'),'Granting…',''); $('grantCode').textContent='';
   H(k,'/admin/grant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:dev, email:($('gEmail').value||'').trim(), plan:plan, days:days})}).then(function(j){
-    if(j&&j.ok){ set($('msgGrant'),plan+' licence granted to '+dev+' — valid to '+j.expiry+(($('gEmail').value||'').trim()?' (code emailed).':'.'),'ok'); $('grantCode').textContent='Code: '+j.code; }
+    if(j&&j.ok){ var em=($('gEmail').value||'').trim();
+      set($('msgGrant'),plan+' licence granted to '+dev+' — valid to '+j.expiry+(em?(' — code emailed to '+em+'.'):'.'),'ok');
+      $('grantCode').textContent = em ? '' : ('Code (no email given — copy to the user): '+j.code);
+      try{ loadUsers(); }catch(e){}
+    }
     else set($('msgGrant'),(j&&j.error)||'Failed.','err');
   }).catch(function(){ set($('msgGrant'),'Network error.','err'); });
 });
@@ -276,6 +315,74 @@ $('fbDelSel').addEventListener('click',function(){
 $('fbList').addEventListener('click',function(e){
   var id=e.target.getAttribute('data-del'); if(!id)return;
   if(confirm('Delete this message?')) delFb([id]);
+});
+
+/* ---- SERVICES & BILLING ---- */
+var SVC=[];
+var SVC_CATS=['AI API','Flight data','Email','Hosting','Payments','Domain','Other'];
+var SVC_CYCLES=['monthly','yearly','prepaid','pay-as-you-go'];
+function daysUntil(d){ if(!d)return null; var t=Date.parse(d+'T00:00:00Z'); if(isNaN(t))return null; return Math.ceil((t-Date.now())/86400000); }
+function opts(arr,v){ return arr.map(function(o){return '<option'+(o===v?' selected':'')+'>'+esc(o)+'</option>';}).join(''); }
+function svcRow(s,i){
+  var dl=daysUntil(s.due), dcell='—';
+  if(dl!=null){ var cls=(dl<0||dl<=7)?'blk':(dl<=30?'exp':'act'); dcell='<span class="pill '+cls+'">'+(dl<0?('overdue '+(-dl)+'d'):dl+'d')+'</span>'; }
+  return '<tr data-i="'+i+'">'+
+    '<td><input class="s-name" value="'+esc(s.name||'')+'" style="min-width:130px"></td>'+
+    '<td><select class="s-cat">'+opts(SVC_CATS,s.category)+'</select></td>'+
+    '<td><input class="s-cost" value="'+esc(s.cost||'')+'" style="width:90px" placeholder="$/mo"></td>'+
+    '<td><select class="s-cycle">'+opts(SVC_CYCLES,s.cycle)+'</select></td>'+
+    '<td><input class="s-due" type="date" value="'+esc(s.due||'')+'" style="width:150px"></td>'+
+    '<td>'+dcell+'</td>'+
+    '<td><input class="s-notes" value="'+esc(s.notes||'')+'" style="min-width:120px"></td>'+
+    '<td><button class="warn sm s-del" title="Remove">&#10005;</button></td></tr>';
+}
+function renderSvc(){
+  var tb=$('svcTable').querySelector('tbody');
+  tb.innerHTML=SVC.map(svcRow).join('') || '<tr><td colspan="8" style="text-align:center;color:#9fb3d1">No services yet — use “Add service” or “Add common ones”.</td></tr>';
+}
+function renderUsage(u){
+  if(!u){$('svcUsage').innerHTML='';return;}
+  function card(t,a,b){return '<div style="background:#0e1930;border:1px solid var(--line);border-radius:10px;padding:12px 16px;min-width:160px"><div style="font-size:12px;color:var(--soft)">'+t+'</div><div style="font-size:22px;font-weight:800;color:#fff">'+a+'</div><div style="font-size:11px;color:var(--soft)">'+b+'</div></div>';}
+  $('svcUsage').innerHTML=card('AI API calls · '+u.month,u.ai.month,u.ai.total+' all-time')+card('Flightradar24 lookups · '+u.month,u.fr24.month,u.fr24.total+' all-time');
+}
+function collectSvc(){
+  var out=[];
+  Array.prototype.forEach.call($('svcTable').querySelectorAll('tbody tr[data-i]'),function(tr){
+    var g=function(cls){var e=tr.querySelector('.'+cls);return e?e.value:'';};
+    out.push({name:g('s-name').trim(),category:g('s-cat'),cost:g('s-cost').trim(),cycle:g('s-cycle'),due:g('s-due'),notes:g('s-notes').trim()});
+  });
+  return out;
+}
+function loadSvc(){
+  var k=tok(); if(!k){set($('msgSvc'),'Enter your admin token first.','err');return;}
+  set($('msgSvc'),'Loading…','');
+  H(k,'/admin/services').then(function(j){
+    if(j&&j.ok){ SVC=j.services||[]; renderSvc(); renderUsage(j.usage); set($('msgSvc'),'Loaded ✓','ok'); }
+    else set($('msgSvc'),(j&&j.error)||'Failed (check the token).','err');
+  }).catch(function(){set($('msgSvc'),'Network error.','err');});
+}
+function saveSvc(){
+  var k=tok(); if(!k){set($('msgSvc'),'Enter your admin token first.','err');return;}
+  SVC=collectSvc().filter(function(s){return s.name;});
+  set($('msgSvc'),'Saving…','');
+  H(k,'/admin/services',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({services:SVC})}).then(function(j){
+    if(j&&j.ok){ SVC=j.services||[]; renderSvc(); set($('msgSvc'),'Saved ✓','ok'); }
+    else set($('msgSvc'),(j&&j.error)||'Failed.','err');
+  }).catch(function(){set($('msgSvc'),'Network error.','err');});
+}
+$('loadSvc').addEventListener('click',loadSvc);
+$('saveSvc').addEventListener('click',saveSvc);
+$('addSvc').addEventListener('click',function(){ SVC=collectSvc(); SVC.push({name:'',category:'Other',cost:'',cycle:'monthly',due:'',notes:''}); renderSvc(); });
+$('seedSvc').addEventListener('click',function(){
+  SVC=collectSvc();
+  [['Anthropic (Claude AI)','AI API','pay-as-you-go'],['Flightradar24 API','Flight data','monthly'],['Resend (email)','Email','monthly'],['Cloudflare (Workers/Pages)','Hosting','monthly'],['Lemon Squeezy','Payments','pay-as-you-go'],['skymatrix.biz domain','Domain','yearly']]
+    .forEach(function(d){ if(!SVC.some(function(s){return (s.name||'').toLowerCase()===d[0].toLowerCase();})) SVC.push({name:d[0],category:d[1],cost:'',cycle:d[2],due:'',notes:''}); });
+  renderSvc();
+});
+$('svcTable').addEventListener('click',function(e){
+  if(!e.target.classList.contains('s-del'))return;
+  var tr=e.target.closest('tr[data-i]'); if(!tr)return;
+  SVC=collectSvc(); SVC.splice(+tr.getAttribute('data-i'),1); renderSvc();
 });
 </script>
 </body></html>
