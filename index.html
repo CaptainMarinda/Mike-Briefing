@@ -215,15 +215,15 @@
         <a class="appbtn android" href="https://github.com/CaptainMarinda/Mike-Briefing/releases/download/v1/skymatrix.apk" download><span class="appmark"></span><span class="lbl"><b>Android App</b><small>APK for tablets &amp; phones</small></span></a>
         <a class="appbtn ios" href="app.html" title="Runs in Safari on iPhone &amp; iPad — add to Home Screen to install"><span class="appmark"></span><span class="lbl"><b>iOS Web App</b><small>Open in Safari, add to Home Screen</small></span></a>
       </div>
-      <div style="margin-top:30px">
-        <div style="font-size:clamp(20px,3vw,26px);font-weight:800;letter-spacing:.6px;color:#fff">Introducing <span style="color:#39b4ff">SKY MATRIX AI</span></div>
-        <div id="intrologo" style="display:flex;margin-top:12px"></div>
-      </div>
     </div>
-    <div class="heroart">
+    <div class="heroart" style="flex-direction:column;align-items:center">
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="font-size:clamp(21px,3.2vw,28px);font-weight:800;letter-spacing:.6px;color:#fff">Introducing <span style="color:#39b4ff">SKY MATRIX AI</span></div>
+        <div id="intrologo" style="display:flex;justify-content:center;margin-top:10px"></div>
+      </div>
       <video autoplay muted loop playsinline controls preload="auto" poster="video-poster.jpg" style="width:100%;max-width:540px;border-radius:16px;border:1px solid var(--line);background:#000;display:block">
-        <source src="https://github.com/CaptainMarinda/Mike-Briefing/releases/download/v1/skymatrix-intro.mp4" type="video/mp4">
-        Your browser doesn't support embedded video. <a href="https://github.com/CaptainMarinda/Mike-Briefing/releases/download/v1/skymatrix-intro.mp4">Watch the clip</a>.
+        <source src="skymatrix-intro.mp4" type="video/mp4">
+        Your browser doesn't support embedded video. <a href="skymatrix-intro.mp4">Watch the clip</a>.
       </video>
     </div>
   </div>
@@ -281,92 +281,22 @@ REMARKS: CREW TO CHECK .. MEL .. PERF .. FUEL ..</pre>
   <div class="wrap">
     <div class="kicker">See it on your device</div>
     <h2>The app, in the cockpit</h2>
-    <p class="sub">A quick look at Sky Matrix on a phone — the OFP quick‑extract card, the live inflight display, and airport weather. (Sample flight shown.)</p>
+    <p class="sub">Actual app screenshots — the OFP quick‑extract card, the live inflight display, and decoded airport weather. (De‑identified sample flight shown.)</p>
     <div class="gallery">
 
       <div class="shot">
-        <div class="phone"><div class="scr">
-          <div class="sbar"><span>QR8 · A388 · A7‑APG</span><span>08:41Z</span></div>
-          <div class="sec">Flight identification</div>
-          <div class="pad">
-            <div class="g3">
-              <div class="cell"><div class="k">Dep</div><div class="v">OTHH</div></div>
-              <div class="cell"><div class="k">Dest</div><div class="v">KJFK</div></div>
-              <div class="cell"><div class="k">Altn</div><div class="v">KEWR</div></div>
-            </div>
-          </div>
-          <div class="sec">Weights (kg) — est vs limit</div>
-          <div class="pad">
-            <div class="g3">
-              <div class="cell"><div class="k">EZFW / MZFW</div><div class="v">361.2</div><span class="chip ok">within</span></div>
-              <div class="cell"><div class="k">ETOW / MTOW</div><div class="v">512.8</div><span class="chip ok">within</span></div>
-              <div class="cell"><div class="k">ELW / MLW</div><div class="v">389.4</div><span class="chip amber">&lt;2t</span></div>
-            </div>
-          </div>
-          <div class="sec">Fuel (t)</div>
-          <div class="pad">
-            <div class="g3">
-              <div class="cell"><div class="k">Trip</div><div class="v">138.5</div></div>
-              <div class="cell"><div class="k">Block</div><div class="v">152.4</div></div>
-              <div class="cell"><div class="k">Altn</div><div class="v">5.4</div></div>
-            </div>
-          </div>
-          <div class="sec">Times (UTC)</div>
-          <div class="pad">
-            <div class="g2">
-              <div class="cell"><div class="k">STD / dep</div><div class="v">02/0810</div></div>
-              <div class="cell"><div class="k">STA / arr</div><div class="v">02/1535</div></div>
-            </div>
-          </div>
-        </div></div>
-        <div class="cap">OFP briefing card</div>
+        <div class="phone"><img src="shots/shot-briefing.jpg" alt="Sky Matrix — OFP briefing quick-extract card" loading="lazy" style="width:100%;display:block"></div>
+        <div class="cap">OFP briefing — AI quick-extract</div>
       </div>
 
       <div class="shot">
-        <div class="phone"><div class="scr">
-          <div class="sbar"><span>Inflight display</span><span>11:22:07Z</span></div>
-          <div class="pad">
-            <div class="g2">
-              <div class="disp"><div class="n">03:12</div><div class="l">Elapsed</div></div>
-              <div class="disp"><div class="n">04:07</div><div class="l">Time to go</div></div>
-              <div class="disp"><div class="n">15:35</div><div class="l">ETA (UTC)</div></div>
-              <div class="disp"><div class="n">10:35</div><div class="l">ETA local dest</div></div>
-              <div class="disp"><div class="n">512</div><div class="l">Ground speed kt</div></div>
-              <div class="disp"><div class="n">FL380</div><div class="l">Cruise level</div></div>
-            </div>
-          </div>
-          <div class="sec">Next waypoint — GPS vs plan</div>
-          <div class="pad">
-            <div class="g3">
-              <div class="cell"><div class="k">Flown NM</div><div class="v">1642</div></div>
-              <div class="cell"><div class="k">To go NM</div><div class="v">1876</div></div>
-              <div class="cell"><div class="k">Next</div><div class="v">TOPPS</div></div>
-            </div>
-            <div style="margin-top:7px" class="g2">
-              <div class="cell"><div class="k">Plan fuel next</div><div class="v">58.2 t</div></div>
-              <div class="cell"><div class="k">vs schedule</div><div class="v" style="color:#7be0a4">+2 min</div></div>
-            </div>
-          </div>
-        </div></div>
+        <div class="phone"><img src="shots/shot-display.jpg" alt="Sky Matrix — live inflight display" loading="lazy" style="width:100%;display:block"></div>
         <div class="cap">Live inflight display</div>
       </div>
 
       <div class="shot">
-        <div class="phone"><div class="scr">
-          <div class="sbar"><span>Weather &amp; NOTAMs</span><span>KJFK</span></div>
-          <div class="sec">Destination — KJFK</div>
-          <div class="pad">
-            <div class="metar"><b style="color:#7be0a4">METAR</b> KJFK 021751Z 28012KT 10SM FEW250 24/09 A3002 RMK AO2 SLP164</div>
-            <div class="metar" style="margin-top:7px"><b style="color:#7ec8ff">TAF</b> KJFK 021720Z 0218/0324 28010KT P6SM FEW250 FM022300 26008KT P6SM SCT200</div>
-          </div>
-          <div class="sec">NOTAMs — active window</div>
-          <div class="pad">
-            <div class="cell"><div class="k">KJFK RWY 13L/31R</div><div style="font-size:9.5px;margin-top:3px" class="mono">CLSD 0600-1000Z</div><span class="chip red">active now</span></div>
-            <div class="cell" style="margin-top:7px"><div class="k">KJFK TWY KK</div><div style="font-size:9.5px;margin-top:3px" class="mono">WIP btn A and B</div><span class="chip amber">window</span></div>
-            <div class="cell" style="margin-top:7px"><div class="k">KJFK ILS 04R</div><div style="font-size:9.5px;margin-top:3px" class="mono">U/S until further notice</div><span class="chip ok">advisory</span></div>
-          </div>
-        </div></div>
-        <div class="cap">Airport weather &amp; NOTAMs</div>
+        <div class="phone"><img src="shots/shot-weather.jpg" alt="Sky Matrix — decoded weather and NOTAMs" loading="lazy" style="width:100%;display:block"></div>
+        <div class="cap">Decoded weather &amp; NOTAMs</div>
       </div>
 
     </div>
@@ -586,7 +516,7 @@ REMARKS: CREW TO CHECK .. MEL .. PERF .. FUEL ..</pre>
   // clone logo into placeholders
   var tpl=document.getElementById('logotpl').content;
   ['navlogo','footlogo','intrologo'].forEach(function(id){var e=document.getElementById(id);if(e)e.appendChild(tpl.cloneNode(true));});
-  var _il=document.getElementById('intrologo'); if(_il){var _s=_il.querySelector('svg');if(_s)_s.style.height='60px';}
+  var _il=document.getElementById('intrologo'); if(_il){var _s=_il.querySelector('svg');if(_s){_s.style.height='56px';_s.style.width='auto';_s.style.maxWidth='none';_s.style.filter='none';}}
   // Sky Matrix emblem on each Android / iOS app button
   var emb=document.getElementById('emblemtpl');
   if(emb){ Array.prototype.forEach.call(document.querySelectorAll('.appmark'),function(el){ el.appendChild(emb.content.cloneNode(true)); }); }
