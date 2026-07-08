@@ -112,6 +112,41 @@
    .grid,.contact{grid-template-columns:1fr}
    .about,.dlrow{grid-template-columns:1fr}
  }
+ /* app screen mockups */
+ #screens .gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;margin-top:28px;align-items:start}
+ #screens .shot{max-width:300px;margin:0 auto}
+ #screens .phone{background:#05070c;border:9px solid #1a2338;border-radius:32px;overflow:hidden;box-shadow:0 22px 55px rgba(0,0,0,.55)}
+ #screens .scr{background:#0e1726;min-height:540px;font-size:11px;color:#e6ecf5;text-align:left}
+ #screens .sbar{background:#5A1846;color:#fff;font-size:10px;padding:6px 12px;display:flex;justify-content:space-between;font-family:var(--mono,monospace)}
+ #screens .sec{background:#11203a;color:#cfe6ff;font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;padding:6px 12px;font-weight:700}
+ #screens .pad{padding:11px 12px}
+ #screens .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+ #screens .g2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+ #screens .cell{background:#0f1b31;border:1px solid #24365a;border-radius:7px;padding:6px 7px}
+ #screens .cell .k{font-size:8px;color:#8fa6c8;text-transform:uppercase;letter-spacing:.4px}
+ #screens .cell .v{font-size:12px;font-weight:800;color:#fff;font-family:var(--mono,monospace)}
+ #screens .chip{display:inline-block;font-size:8px;font-weight:700;padding:1px 6px;border-radius:10px;margin-top:3px}
+ #screens .ok{background:#123a24;color:#7be0a4}.amber{background:#3a2e12;color:#f0c890}.red{background:#3a1420;color:#ff9aa2}
+ #screens .disp{background:#0f1b31;border:1px solid #24365a;border-radius:8px;padding:9px;text-align:center}
+ #screens .disp .n{font-size:20px;font-weight:800;color:#fff;font-family:var(--mono,monospace);letter-spacing:1px}
+ #screens .disp .l{font-size:8px;color:#8fa6c8;text-transform:uppercase;margin-top:2px}
+ #screens .mono{font-family:var(--mono,monospace)}
+ #screens .cap{text-align:center;color:#9fb3d1;font-size:13px;margin-top:12px;font-weight:600}
+ #screens .metar{background:#0f1b31;border:1px solid #24365a;border-radius:7px;padding:7px 8px;font-family:var(--mono,monospace);font-size:9.5px;line-height:1.5;color:#dfe8f5}
+ @media(max-width:820px){#screens .gallery{grid-template-columns:1fr;max-width:330px;margin:28px auto 0}}
+ /* download: guide (amber) above, then equal-size Android (green) + iOS (blue) app buttons with the Sky Matrix mark */
+ .btn.guide{background:linear-gradient(180deg,#3a2a12,#2a1d0a);color:#ffdf9e;border:1px solid #E0A33A;font-weight:800}
+ .btn.guide:hover{background:linear-gradient(180deg,#4a360f,#33240c)}
+ .applinks{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:760px;margin:0 auto}
+ .appbtn{display:flex;align-items:center;gap:12px;padding:15px 18px;border-radius:14px;text-decoration:none;border:1px solid transparent;transition:transform .12s,box-shadow .12s;min-height:64px;box-sizing:border-box}
+ .appbtn:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.35)}
+ .appbtn .appmark{flex:0 0 auto;width:30px;height:30px;display:inline-flex;align-items:center}
+ .appbtn .lbl{display:flex;flex-direction:column;line-height:1.2;text-align:left}
+ .appbtn .lbl b{font-size:16px;font-weight:800}
+ .appbtn .lbl small{font-size:11.5px;opacity:.9;font-weight:600}
+ .appbtn.android{background:linear-gradient(180deg,#1f8a4c,#12633a);color:#fff;border-color:#34b56a}
+ .appbtn.ios{background:linear-gradient(180deg,#1f6dff,#1450c8);color:#fff;border-color:#5b93ff}
+ @media(max-width:560px){.applinks{grid-template-columns:1fr}}
  #reviews .rlab{display:block;font-size:12px;color:#9fb3d1;margin:0 0 4px;font-weight:600}
  #reviews input,#reviews select,#reviews textarea{width:100%;background:#0e1930;border:1px solid #2a3c5e;color:#e6ecf5;border-radius:9px;padding:10px 12px;font-size:14px;font-family:inherit;box-sizing:border-box}
  #reviews input:focus,#reviews select:focus,#reviews textarea:focus{outline:none;border-color:#2f8bff}
@@ -122,6 +157,16 @@
  @media (max-width:520px){ #reviews form div[style*="grid-template-columns:1fr 1fr"],#reviews div[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr !important} }
 </style></head>
 <body>
+
+<!-- compact Sky Matrix emblem (white) for the app buttons -->
+<template id="emblemtpl">
+  <svg viewBox="0 0 200 200" width="30" height="30" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <g fill="none" stroke="#ffffff" stroke-opacity=".55" stroke-width="6" stroke-linejoin="round">
+      <path d="M100 22 L168 61 V139 L100 178 L32 139 V61 Z"/>
+    </g>
+    <path d="M100 46 L140 150 L100 130 L60 150 Z" fill="#ffffff"/>
+  </svg>
+</template>
 
 <!-- reusable logo -->
 <template id="logotpl">
@@ -149,10 +194,15 @@
       <a href="#reviews">Reviews</a>
       <a href="faq.html">FAQ</a>
       <a href="#contact">Contact</a>
+      <a href="#privacy">Privacy Policy</a>
       <a class="cta" href="subscribe.html">Subscribe</a>
     </nav>
   </div>
 </header>
+
+<div style="background:#3a1414;border-bottom:1px solid #6b2020;color:#ffd2d2;font-size:12.5px;padding:9px 14px;text-align:center;line-height:1.5">
+  <b>For reference only, not for operational use.</b> The official hard copy OFP must be used for flight operations. Sky Matrix is for individual use only.
+</div>
 
 <!-- HERO -->
 <div class="hero" id="top">
@@ -161,9 +211,13 @@
       <div class="tagline">Fly Informed</div>
       <h1>Your flight plan, <span>turned into a briefing that flies with you.</span></h1>
       <p class="lead">Sky Matrix reads your OFP and gives you a clean, inflight companion, weather alerts, NOTAMs, an inflight display, crew rest planning, checklists and cabin announcements, all in one place, on your iPad or phone.</p>
-      <div class="btns">
-        <a class="btn primary" href="https://github.com/CaptainMarinda/Mike-Briefing/releases/download/v1/skymatrix.apk" download>Download Android app</a>
-        <a class="btn ghost" href="app.html" title="Runs on iPhone and iPad in Safari, add to Home Screen to install">Download iOS app</a>
+      <div class="applinks" style="max-width:520px;margin:0">
+        <a class="appbtn android" href="https://github.com/CaptainMarinda/Mike-Briefing/releases/download/v1/skymatrix.apk" download><span class="appmark"></span><span class="lbl"><b>Android App</b><small>APK for tablets &amp; phones</small></span></a>
+        <a class="appbtn ios" href="app.html" title="Runs in Safari on iPhone &amp; iPad — add to Home Screen to install"><span class="appmark"></span><span class="lbl"><b>iOS Web App</b><small>Open in Safari, add to Home Screen</small></span></a>
+      </div>
+      <div style="margin-top:30px">
+        <div style="font-size:clamp(20px,3vw,26px);font-weight:800;letter-spacing:.6px;color:#fff">Introducing <span style="color:#39b4ff">SKY MATRIX AI</span></div>
+        <div id="intrologo" style="display:flex;margin-top:12px"></div>
       </div>
     </div>
     <div class="heroart">
@@ -218,6 +272,103 @@ REMARKS: CREW TO CHECK .. MEL .. PERF .. FUEL ..</pre>
           <div class="fld"><div class="k">ETOW vs MTOW</div><div class="v" style="color:var(--good)">within limits</div></div>
         </div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- APP SCREENS -->
+<section id="screens">
+  <div class="wrap">
+    <div class="kicker">See it on your device</div>
+    <h2>The app, in the cockpit</h2>
+    <p class="sub">A quick look at Sky Matrix on a phone — the OFP quick‑extract card, the live inflight display, and airport weather. (Sample flight shown.)</p>
+    <div class="gallery">
+
+      <div class="shot">
+        <div class="phone"><div class="scr">
+          <div class="sbar"><span>QR8 · A388 · A7‑APG</span><span>08:41Z</span></div>
+          <div class="sec">Flight identification</div>
+          <div class="pad">
+            <div class="g3">
+              <div class="cell"><div class="k">Dep</div><div class="v">OTHH</div></div>
+              <div class="cell"><div class="k">Dest</div><div class="v">KJFK</div></div>
+              <div class="cell"><div class="k">Altn</div><div class="v">KEWR</div></div>
+            </div>
+          </div>
+          <div class="sec">Weights (kg) — est vs limit</div>
+          <div class="pad">
+            <div class="g3">
+              <div class="cell"><div class="k">EZFW / MZFW</div><div class="v">361.2</div><span class="chip ok">within</span></div>
+              <div class="cell"><div class="k">ETOW / MTOW</div><div class="v">512.8</div><span class="chip ok">within</span></div>
+              <div class="cell"><div class="k">ELW / MLW</div><div class="v">389.4</div><span class="chip amber">&lt;2t</span></div>
+            </div>
+          </div>
+          <div class="sec">Fuel (t)</div>
+          <div class="pad">
+            <div class="g3">
+              <div class="cell"><div class="k">Trip</div><div class="v">138.5</div></div>
+              <div class="cell"><div class="k">Block</div><div class="v">152.4</div></div>
+              <div class="cell"><div class="k">Altn</div><div class="v">5.4</div></div>
+            </div>
+          </div>
+          <div class="sec">Times (UTC)</div>
+          <div class="pad">
+            <div class="g2">
+              <div class="cell"><div class="k">STD / dep</div><div class="v">02/0810</div></div>
+              <div class="cell"><div class="k">STA / arr</div><div class="v">02/1535</div></div>
+            </div>
+          </div>
+        </div></div>
+        <div class="cap">OFP briefing card</div>
+      </div>
+
+      <div class="shot">
+        <div class="phone"><div class="scr">
+          <div class="sbar"><span>Inflight display</span><span>11:22:07Z</span></div>
+          <div class="pad">
+            <div class="g2">
+              <div class="disp"><div class="n">03:12</div><div class="l">Elapsed</div></div>
+              <div class="disp"><div class="n">04:07</div><div class="l">Time to go</div></div>
+              <div class="disp"><div class="n">15:35</div><div class="l">ETA (UTC)</div></div>
+              <div class="disp"><div class="n">10:35</div><div class="l">ETA local dest</div></div>
+              <div class="disp"><div class="n">512</div><div class="l">Ground speed kt</div></div>
+              <div class="disp"><div class="n">FL380</div><div class="l">Cruise level</div></div>
+            </div>
+          </div>
+          <div class="sec">Next waypoint — GPS vs plan</div>
+          <div class="pad">
+            <div class="g3">
+              <div class="cell"><div class="k">Flown NM</div><div class="v">1642</div></div>
+              <div class="cell"><div class="k">To go NM</div><div class="v">1876</div></div>
+              <div class="cell"><div class="k">Next</div><div class="v">TOPPS</div></div>
+            </div>
+            <div style="margin-top:7px" class="g2">
+              <div class="cell"><div class="k">Plan fuel next</div><div class="v">58.2 t</div></div>
+              <div class="cell"><div class="k">vs schedule</div><div class="v" style="color:#7be0a4">+2 min</div></div>
+            </div>
+          </div>
+        </div></div>
+        <div class="cap">Live inflight display</div>
+      </div>
+
+      <div class="shot">
+        <div class="phone"><div class="scr">
+          <div class="sbar"><span>Weather &amp; NOTAMs</span><span>KJFK</span></div>
+          <div class="sec">Destination — KJFK</div>
+          <div class="pad">
+            <div class="metar"><b style="color:#7be0a4">METAR</b> KJFK 021751Z 28012KT 10SM FEW250 24/09 A3002 RMK AO2 SLP164</div>
+            <div class="metar" style="margin-top:7px"><b style="color:#7ec8ff">TAF</b> KJFK 021720Z 0218/0324 28010KT P6SM FEW250 FM022300 26008KT P6SM SCT200</div>
+          </div>
+          <div class="sec">NOTAMs — active window</div>
+          <div class="pad">
+            <div class="cell"><div class="k">KJFK RWY 13L/31R</div><div style="font-size:9.5px;margin-top:3px" class="mono">CLSD 0600-1000Z</div><span class="chip red">active now</span></div>
+            <div class="cell" style="margin-top:7px"><div class="k">KJFK TWY KK</div><div style="font-size:9.5px;margin-top:3px" class="mono">WIP btn A and B</div><span class="chip amber">window</span></div>
+            <div class="cell" style="margin-top:7px"><div class="k">KJFK ILS 04R</div><div style="font-size:9.5px;margin-top:3px" class="mono">U/S until further notice</div><span class="chip ok">advisory</span></div>
+          </div>
+        </div></div>
+        <div class="cap">Airport weather &amp; NOTAMs</div>
+      </div>
+
     </div>
   </div>
 </section>
@@ -278,19 +429,16 @@ REMARKS: CREW TO CHECK .. MEL .. PERF .. FUEL ..</pre>
   <div class="wrap">
     <div class="kicker">Get it</div>
     <h2>Download Sky Matrix</h2>
-    <p class="sub">Read the user guide, then install the app.</p>
-    <div class="dlrow">
-      <div class="dl">
-        <div class="ic"><svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M14 3v5h5"/></svg></div>
-        <div><h3>User guide (PDF)</h3><p>Everything you need to set up and use the app.</p><a class="btn primary" href="user-guide.pdf" download>Download guide</a></div>
-      </div>
-      <div class="dl">
-        <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></div>
-        <div><h3>Android app (APK)</h3><p>Install on Android tablets and phones.</p><a class="btn primary" href="https://github.com/CaptainMarinda/Mike-Briefing/releases/download/v1/skymatrix.apk" download>Download APK</a></div>
-      </div>
+    <p class="sub">Read the user guide, then get the app on Android or iOS.</p>
+    <div style="max-width:760px;margin:22px auto 16px">
+      <a class="btn guide" href="user-guide.pdf" download style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;box-sizing:border-box;padding:14px 18px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M14 3v5h5"/></svg>
+        User guide (PDF)
+      </a>
     </div>
-    <div class="btns" style="margin-top:22px">
-      <a class="btn ghost" href="app.html">Open the web app</a>
+    <div class="applinks">
+      <a class="appbtn android" href="https://github.com/CaptainMarinda/Mike-Briefing/releases/download/v1/skymatrix.apk" download><span class="appmark"></span><span class="lbl"><b>Android App</b><small>APK for tablets &amp; phones</small></span></a>
+      <a class="appbtn ios" href="app.html" title="Runs in Safari on iPhone &amp; iPad — add to Home Screen to install"><span class="appmark"></span><span class="lbl"><b>iOS Web App</b><small>Open in Safari, add to Home Screen</small></span></a>
     </div>
   </div>
 </section>
@@ -369,7 +517,10 @@ REMARKS: CREW TO CHECK .. MEL .. PERF .. FUEL ..</pre>
       <div style="margin-top:12px"><label class="rlab">Your review</label><textarea id="rv_comment" rows="4" placeholder="How does Sky Matrix help your flying?" style="width:100%;resize:vertical"></textarea></div>
       <button id="rv_send" style="margin-top:14px;background:#1f6dff;color:#fff;border:0;border-radius:10px;padding:12px 20px;font-size:15px;font-weight:700;cursor:pointer">Submit review</button>
       <div id="rv_msg" style="font-size:13px;margin-top:10px;min-height:18px"></div>
-      <p style="color:#5a6b86;font-size:12px;margin:12px 0 0">Reviews are checked before they appear publicly. Your position, airline, optional name, rating and comment may be shown, never your email or Device ID.</p>
+      <div style="margin:16px 0 0;padding:12px 14px;background:rgba(31,109,255,.12);border:1px solid #2f8bff;border-radius:10px;display:flex;gap:10px;align-items:flex-start">
+        <svg width="18" height="18" viewBox="0 0 24 24" style="flex:0 0 auto;margin-top:1px" fill="none" stroke="#7fb0ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+        <p style="color:#dfe8f5;font-size:13.5px;line-height:1.5;margin:0">Reviews are checked before they appear publicly. Your <b>position, airline, optional name, rating and comment</b> may be shown — <b style="color:#7be0a4">never your email or Device ID</b>.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -387,6 +538,41 @@ REMARKS: CREW TO CHECK .. MEL .. PERF .. FUEL ..</pre>
   </div>
 </section>
 
+<section id="privacy">
+  <div class="wrap" style="max-width:900px">
+    <div class="kicker">Trust</div>
+    <h2>Privacy Policy</h2>
+    <p class="sub">Sky Matrix keeps your data on your device and uses outside services only where a feature genuinely needs them. Here's exactly what stays local, what leaves, and why.</p>
+
+    <div style="text-align:left;margin-top:22px;color:#c7d3e6;line-height:1.7">
+      <h3 style="color:#fff;font-size:18px;margin:22px 0 8px">What stays on your device</h3>
+      <p>Your flight data lives only in your browser/app storage on your device: the OFP text you load and every field you type (times, weights, crew, notes); your PIN, stored only as a one‑way hash; your biometric enrolment, which stays in your device's secure hardware and is never sent to us; documents you add to the in‑app DOCS store; and your saved announcements. None of this is uploaded to any Sky Matrix server. Clearing the app's data removes it.</p>
+
+      <h3 style="color:#fff;font-size:18px;margin:22px 0 8px">What leaves the device, and why</h3>
+      <p>A few features need the internet and send the minimum data required: <b>Licensing &amp; trials</b> — your Device ID and email are sent to our licensing service to issue or validate an access code; <b>AI OFP reading &amp; announcements</b> — when you tap these, the relevant OFP or template text is sent to be processed and returned; <b>Aircraft, weather &amp; NOTAM lookups</b> — a flight number/registration or airport code is sent to the relevant provider; <b>Payments</b> — handled entirely on the checkout provider's site; we never see or store your card details.</p>
+
+      <h3 style="color:#fff;font-size:18px;margin:22px 0 8px">Third‑party services</h3>
+      <table style="width:100%;border-collapse:collapse;margin:8px 0 6px;font-size:14px">
+        <tr><th style="text-align:left;border:1px solid #2a3c5e;background:#13203a;color:#fff;padding:8px 10px">Service</th><th style="text-align:left;border:1px solid #2a3c5e;background:#13203a;color:#fff;padding:8px 10px">Purpose</th><th style="text-align:left;border:1px solid #2a3c5e;background:#13203a;color:#fff;padding:8px 10px">Data shared</th></tr>
+        <tr><td style="border:1px solid #2a3c5e;padding:8px 10px">Cloudflare (Workers)</td><td style="border:1px solid #2a3c5e;padding:8px 10px">Licensing, trials, AI/data endpoints</td><td style="border:1px solid #2a3c5e;padding:8px 10px">Device ID, email, OFP/announcement text</td></tr>
+        <tr><td style="border:1px solid #2a3c5e;padding:8px 10px">Anthropic (Claude)</td><td style="border:1px solid #2a3c5e;padding:8px 10px">AI OFP reading &amp; announcements</td><td style="border:1px solid #2a3c5e;padding:8px 10px">OFP / template text you submit</td></tr>
+        <tr><td style="border:1px solid #2a3c5e;padding:8px 10px">Flightradar24</td><td style="border:1px solid #2a3c5e;padding:8px 10px">Aircraft type &amp; route lookup</td><td style="border:1px solid #2a3c5e;padding:8px 10px">Flight number or registration</td></tr>
+        <tr><td style="border:1px solid #2a3c5e;padding:8px 10px">Lemon Squeezy</td><td style="border:1px solid #2a3c5e;padding:8px 10px">Checkout &amp; billing (merchant of record)</td><td style="border:1px solid #2a3c5e;padding:8px 10px">Payment &amp; contact details (with them, not us)</td></tr>
+        <tr><td style="border:1px solid #2a3c5e;padding:8px 10px">Resend</td><td style="border:1px solid #2a3c5e;padding:8px 10px">Sending your access‑code emails</td><td style="border:1px solid #2a3c5e;padding:8px 10px">Your email address</td></tr>
+        <tr><td style="border:1px solid #2a3c5e;padding:8px 10px">GitHub Pages</td><td style="border:1px solid #2a3c5e;padding:8px 10px">Hosting the app and website</td><td style="border:1px solid #2a3c5e;padding:8px 10px">Standard web request logs</td></tr>
+      </table>
+      <p style="font-size:13px;color:#9fb3d1">Each provider processes data under its own privacy policy. We share only what the feature you invoked requires.</p>
+
+      <h3 style="color:#fff;font-size:18px;margin:22px 0 8px">Security model</h3>
+      <p>Licences are protected with an <b>ECDSA P‑256</b> digital signature — only our server holds the private key, so codes can't be forged, and each is bound to one device. Your PIN is stored as a salted one‑way hash; biometric unlock uses the platform authenticator (WebAuthn) and never exposes your fingerprint/face to the app. The app is served only over HTTPS, and sensitive data is never placed in URLs. Honest caveat: any client‑side gate deters casual access but is not a guarantee against a determined attacker — use a strong PIN and keep your device secured.</p>
+
+      <h3 style="color:#fff;font-size:18px;margin:22px 0 8px">Your choices</h3>
+      <p>You can stop all outbound data by simply not using the online features — the core briefing works offline. To delete your data, clear the app's storage on your device. For a licence transfer or a data request, email <a href="mailto:admin@skymatrix.biz">admin@skymatrix.biz</a>. Questions about privacy or security: <a href="mailto:support@skymatrix.biz">support@skymatrix.biz</a>.</p>
+      <p style="font-size:13px;color:#9fb3d1;margin-top:14px">Full details, including the Android APK checksum for safe sideloading, are on the <a href="privacy.html">Privacy &amp; Security page</a>.</p>
+    </div>
+  </div>
+</section>
+
 <footer>
   <div class="wrap">
     <div class="disc"><b>For reference only, not for operational use.</b> The official hard copy OFP must be used for flight operations. Sky Matrix is for individual use only.</div>
@@ -399,7 +585,11 @@ REMARKS: CREW TO CHECK .. MEL .. PERF .. FUEL ..</pre>
 <script>
   // clone logo into placeholders
   var tpl=document.getElementById('logotpl').content;
-  ['navlogo','footlogo'].forEach(function(id){var s=tpl.cloneNode(true);document.getElementById(id).appendChild(s);});
+  ['navlogo','footlogo','intrologo'].forEach(function(id){var e=document.getElementById(id);if(e)e.appendChild(tpl.cloneNode(true));});
+  var _il=document.getElementById('intrologo'); if(_il){var _s=_il.querySelector('svg');if(_s)_s.style.height='60px';}
+  // Sky Matrix emblem on each Android / iOS app button
+  var emb=document.getElementById('emblemtpl');
+  if(emb){ Array.prototype.forEach.call(document.querySelectorAll('.appmark'),function(el){ el.appendChild(emb.content.cloneNode(true)); }); }
   document.getElementById('navlogo').querySelector('svg').style.height='30px';
   document.getElementById('footlogo').querySelector('svg').style.height='44px';
   // mobile menu
