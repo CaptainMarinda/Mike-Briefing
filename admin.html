@@ -57,6 +57,7 @@
   <button data-tab="mail">Contact users</button>
   <button data-tab="fb">Feedback</button>
   <button data-tab="svc">Services &amp; billing</button>
+  <button data-tab="reviews">Reviews</button>
 </div>
 
 <!-- USERS -->
@@ -179,6 +180,16 @@
   </div>
 </section>
 
+<!-- REVIEWS -->
+<section id="tab-reviews" class="hide">
+  <div class="card">
+    <button id="loadRev" style="flex:0 0 auto">Load reviews</button>
+    <div class="hint">Pilot reviews from the website. Only verified app users can submit; new ones are <b>pending</b> until you <b>Approve</b> them (then they show publicly on the site). Emails/Device IDs are never shown on the site.</div>
+    <div id="msgRev" class="msg"></div>
+    <div id="revAdmin"></div>
+  </div>
+</section>
+
 <script>
 var W="https://skymatrix-trial.skymatrix.workers.dev";
 var $=function(id){return document.getElementById(id);};
@@ -194,7 +205,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(
   b.addEventListener('click',function(){
     Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(x){x.classList.remove('on');});
     b.classList.add('on');
-    ['users','grant','mail','fb','svc'].forEach(function(id){ $('tab-'+id).classList.toggle('hide', id!==b.dataset.tab); });
+    ['users','grant','mail','fb','svc','reviews'].forEach(function(id){ $('tab-'+id).classList.toggle('hide', id!==b.dataset.tab); });
   });
 });
 
@@ -431,6 +442,42 @@ $('svcTable').addEventListener('click',function(e){
   if(!e.target.classList.contains('s-del'))return;
   var tr=e.target.closest('tr[data-i]'); if(!tr)return;
   SVC=collectSvc(); SVC.splice(+tr.getAttribute('data-i'),1); renderSvc();
+});
+
+/* ---- REVIEWS moderation ---- */
+function starsStr(n){n=Math.max(0,Math.min(5,parseInt(n,10)||0));return '★★★★★'.slice(0,n)+'☆☆☆☆☆'.slice(0,5-n);}
+function loadRev(){
+  var k=tok(); if(!k){ set($('msgRev'),'Enter your admin token first.','err'); return; }
+  set($('msgRev'),'Loading…','');
+  H(k,'/admin/reviews').then(function(j){
+    if(!(j&&j.ok)){ set($('msgRev'),(j&&j.error)||'Failed.','err'); return; }
+    var it=j.reviews||[];
+    $('revAdmin').innerHTML=it.map(function(r){
+      var when=r.at?new Date(r.at).toLocaleString():'';
+      var who=[r.position,r.airline,r.name].filter(Boolean).join(' · ')||'(no details)';
+      var badge=r.approved?'<span class="pill act">approved</span>':'<span class="pill exp">pending</span>';
+      return '<div class="fb"><div class="meta"><span>'+badge+' <b style="color:#ffc94d">'+starsStr(r.rating)+'</b> &nbsp;'+esc(who)+'</span>'+
+        '<span>'+esc(when)+' &middot; '+esc(r.device||'')+'</span></div>'+
+        '<div class="bd">'+esc(r.comment||'')+'</div>'+
+        '<div style="margin-top:8px;display:flex;gap:8px">'+
+          (r.approved?'':'<button class="ghost sm" data-rev-approve="'+esc(r.id)+'">Approve</button>')+
+          (r.approved?'<button class="ghost sm" data-rev-hide="'+esc(r.id)+'">Hide</button>':'')+
+          '<button class="warn sm" data-rev-del="'+esc(r.id)+'">Delete</button></div></div>';
+    }).join('') || '<p class="hint">No reviews yet.</p>';
+    set($('msgRev'),it.length+' review(s) · '+it.filter(function(r){return !r.approved;}).length+' pending.','ok');
+  }).catch(function(){ set($('msgRev'),'Network error.','err'); });
+}
+function moderateRev(id,action){
+  var k=tok(); if(!k)return;
+  H(k,'/admin/reviews',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,action:action})})
+    .then(function(){ loadRev(); }).catch(function(){ set($('msgRev'),'Network error.','err'); });
+}
+$('loadRev').addEventListener('click',loadRev);
+$('revAdmin').addEventListener('click',function(e){
+  var a=e.target.getAttribute('data-rev-approve'), h=e.target.getAttribute('data-rev-hide'), d=e.target.getAttribute('data-rev-del');
+  if(a) moderateRev(a,'approve');
+  else if(h) moderateRev(h,'hide');
+  else if(d){ if(confirm('Delete this review permanently?')) moderateRev(d,'delete'); }
 });
 </script>
 </body></html>

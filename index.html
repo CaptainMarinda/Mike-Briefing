@@ -112,6 +112,14 @@
    .grid,.contact{grid-template-columns:1fr}
    .about,.dlrow{grid-template-columns:1fr}
  }
+ #reviews .rlab{display:block;font-size:12px;color:#9fb3d1;margin:0 0 4px;font-weight:600}
+ #reviews input,#reviews select,#reviews textarea{width:100%;background:#0e1930;border:1px solid #2a3c5e;color:#e6ecf5;border-radius:9px;padding:10px 12px;font-size:14px;font-family:inherit;box-sizing:border-box}
+ #reviews input:focus,#reviews select:focus,#reviews textarea:focus{outline:none;border-color:#2f8bff}
+ #reviews .rvcard{background:#0f1b31;border:1px solid #2a3c5e;border-radius:12px;padding:16px 18px}
+ #reviews .rvcard .stars{color:#ffc94d;font-size:14px;letter-spacing:1px}
+ #reviews .rvcard .who{color:#7fd8ff;font-weight:700;font-size:13px;margin-top:8px}
+ #reviews .rvcard .txt{color:#dfe8f5;font-size:14px;line-height:1.55;margin:8px 0 0}
+ @media (max-width:520px){ #reviews form div[style*="grid-template-columns:1fr 1fr"],#reviews div[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr !important} }
 </style></head>
 <body>
 
@@ -138,6 +146,7 @@
       <a href="#download">Download</a>
       <a href="#pricing">Pricing</a>
       <a href="#products">Our Products</a>
+      <a href="#reviews">Reviews</a>
       <a href="faq.html">FAQ</a>
       <a href="#contact">Contact</a>
       <a class="cta" href="subscribe.html">Subscribe</a>
@@ -333,6 +342,38 @@ REMARKS: CREW TO CHECK .. MEL .. PERF .. FUEL ..</pre>
 </section>
 
 <!-- CONTACT -->
+<section id="reviews">
+  <div class="wrap">
+    <div class="kicker">From the flight deck</div>
+    <h2>Pilot reviews</h2>
+    <p class="sub">What crews say about Sky Matrix. Only verified users, pilots who have used the app on trial or subscription, can leave a review.</p>
+
+    <div id="revStats" style="display:none;text-align:center;margin:6px 0 2px"></div>
+
+    <div id="revList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin:22px 0 8px"></div>
+    <p id="revEmpty" style="color:#9fb3d1;text-align:center;display:none">No reviews yet, be the first to share your experience.</p>
+
+    <div style="max-width:640px;margin:34px auto 0;background:#13203a;border:1px solid #2a3c5e;border-radius:14px;padding:22px">
+      <h3 style="margin:0 0 4px;color:#fff;font-size:19px">Write a review</h3>
+      <p style="color:#9fb3d1;font-size:13px;margin:0 0 16px">To confirm you are a Sky Matrix user, enter your <b>Device ID</b> and <b>access code</b> (from the app / your email). These are used only to verify you, they are never shown publicly, and your email is never collected here.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><label class="rlab">Device ID</label><input id="rv_dev" type="text" placeholder="SKM-XXXXXX" style="text-transform:uppercase"></div>
+        <div><label class="rlab">Access code</label><input id="rv_code" type="text" placeholder="Your access code"></div>
+        <div><label class="rlab">Position</label>
+          <select id="rv_pos"><option value="">Select…</option><option>Captain</option><option>First Officer</option><option>Second Officer</option><option>Relief Pilot</option><option>Cabin Crew</option><option>Dispatcher</option><option>Other</option></select></div>
+        <div><label class="rlab">Airline / operator</label><input id="rv_air" type="text" placeholder="e.g. your airline"></div>
+        <div><label class="rlab">Name (optional)</label><input id="rv_name" type="text" placeholder="Shown with your review"></div>
+        <div><label class="rlab">Rating</label>
+          <select id="rv_rate"><option value="5">★★★★★ (5)</option><option value="4">★★★★ (4)</option><option value="3">★★★ (3)</option><option value="2">★★ (2)</option><option value="1">★ (1)</option></select></div>
+      </div>
+      <div style="margin-top:12px"><label class="rlab">Your review</label><textarea id="rv_comment" rows="4" placeholder="How does Sky Matrix help your flying?" style="width:100%;resize:vertical"></textarea></div>
+      <button id="rv_send" style="margin-top:14px;background:#1f6dff;color:#fff;border:0;border-radius:10px;padding:12px 20px;font-size:15px;font-weight:700;cursor:pointer">Submit review</button>
+      <div id="rv_msg" style="font-size:13px;margin-top:10px;min-height:18px"></div>
+      <p style="color:#5a6b86;font-size:12px;margin:12px 0 0">Reviews are checked before they appear publicly. Your position, airline, optional name, rating and comment may be shown, never your email or Device ID.</p>
+    </div>
+  </div>
+</section>
+
 <section id="contact">
   <div class="wrap">
     <div class="kicker">Get in touch</div>
@@ -367,5 +408,53 @@ REMARKS: CREW TO CHECK .. MEL .. PERF .. FUEL ..</pre>
   links.addEventListener('click',function(e){if(e.target.tagName==='A')links.classList.remove('open');});
   // year
   document.getElementById('yr').textContent=new Date().getFullYear();
+
+  /* ---- Pilot reviews (gated: only verified app users can submit) ---- */
+  (function(){
+    var RW="https://skymatrix-trial.skymatrix.workers.dev";
+    var $=function(id){return document.getElementById(id);};
+    function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+    function stars(n){n=Math.max(0,Math.min(5,parseInt(n,10)||0));return '★★★★★'.slice(0,n)+'☆☆☆☆☆'.slice(0,5-n);}
+    function loadReviews(){
+      fetch(RW+'/reviews',{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){
+        var list=(j&&j.reviews)||[]; var el=$('revList'); if(!el)return;
+        var st=$('revStats');
+        if(!list.length){ $('revEmpty').style.display='block'; el.innerHTML=''; if(st)st.style.display='none'; return; }
+        $('revEmpty').style.display='none';
+        if(st){ var rated=list.filter(function(r){return r.rating>0;});
+          if(rated.length){ var avg=rated.reduce(function(a,r){return a+r.rating;},0)/rated.length;
+            st.innerHTML='<span style="color:#ffc94d;font-size:26px;font-weight:800">'+avg.toFixed(1)+'</span> <span style="color:#ffc94d;font-size:20px">'+stars(Math.round(avg))+'</span> <span style="color:#9fb3d1;font-size:14px">from '+list.length+' pilot'+(list.length>1?'s':'')+'</span>';
+            st.style.display='block';
+          } else { st.style.display='none'; }
+        }
+        el.innerHTML=list.map(function(r){
+          var who=[r.position,r.airline].filter(Boolean).join(' · ');
+          var nm=r.name?(' — '+esc(r.name)):'';
+          return '<div class="rvcard"><div class="stars">'+stars(r.rating)+'</div>'+
+            '<div class="txt">'+esc(r.comment)+'</div>'+
+            '<div class="who">'+esc(who||'Verified Sky Matrix user')+nm+'</div></div>';
+        }).join('');
+      }).catch(function(){});
+    }
+    loadReviews();
+    var btn=$('rv_send');
+    if(btn) btn.addEventListener('click',function(){
+      var m=$('rv_msg');
+      var dev=($('rv_dev').value||'').trim().toUpperCase();
+      if(!/^SKM-[A-Z0-9]{6}$/.test(dev)){ m.style.color='#ff9aa2'; m.textContent='Enter your Device ID (SKM-XXXXXX).'; return; }
+      var comment=($('rv_comment').value||'').trim();
+      if(comment.length<3){ m.style.color='#ff9aa2'; m.textContent='Please write a short comment.'; return; }
+      btn.disabled=true; m.style.color='#9fb3d1'; m.textContent='Submitting…';
+      fetch(RW+'/review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        device:dev, code:($('rv_code').value||'').trim(), position:$('rv_pos').value,
+        airline:($('rv_air').value||'').trim(), name:($('rv_name').value||'').trim(),
+        rating:$('rv_rate').value, comment:comment
+      })}).then(function(r){return r.json();}).then(function(j){
+        if(j&&j.ok){ m.style.color='#7be0a4'; m.textContent='Thank you! Your review was submitted and will appear here once approved.'; ['rv_code','rv_air','rv_name','rv_comment'].forEach(function(id){$(id).value='';}); }
+        else { m.style.color='#ff9aa2'; m.textContent=(j&&j.error)||'Could not submit. Please try again.'; }
+      }).catch(function(){ m.style.color='#ff9aa2'; m.textContent='Network error. Please try again.'; })
+       .then(function(){ btn.disabled=false; });
+    });
+  })();
 </script>
 </body></html>
