@@ -505,6 +505,17 @@
   </div>
   <div class="subview2" id="cd-pa">
     <div class="fcard">
+      <h2>Named announcements</h2>
+      <p class="fsub" style="margin-top:2px"><b>Guideline:</b> name a script exactly <b>Welcome</b> and it auto-appears on the <b>Departure</b> page's Welcome PA; name it <b>Descend</b> (or Descent) and it appears on the <b>Arrival</b> page's Descent PA. Any other name (e.g. “Late”, “Diversion”, “Delay”) is just saved here for quick access.</p>
+      <div class="fgrid"><div class="feat-field"><label class="lab">Name</label><input id="na_name" type="text" placeholder="Welcome / Descend / Late / …"></div></div>
+      <textarea id="na_text" placeholder="Type the announcement…" style="min-height:110px;width:100%;font-family:var(--sans);font-size:13px;color:#E6ECF5"></textarea>
+      <div style="margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <button id="na_save" type="button">Save announcement</button>
+        <span class="hint" id="na_msg" style="margin-top:0"></span>
+      </div>
+      <div id="na_list" style="margin-top:12px"></div>
+    </div>
+    <div class="fcard">
       <h2>Announcements</h2>
       <p class="fsub" style="margin-top:2px">All your PA needs in one place. <b>Welcome</b> and <b>Descent</b> PAs are built on the Departure and Arrival pages (Inflight Display). Keep your own scripts, translate any announcement, and let Sky Matrix AI fill a template below.</p>
       <label class="lab">My announcements (saved on this device)</label>
@@ -1115,6 +1126,12 @@ var LIC_PUBKEY = "BMxAfrty9p7_t79ebh4KowBcDiZVaiyBIRPPgMGaPK2Bt4yB9EU1W-4z9WQ4E4
     if(__blocked){if(msg)msg.textContent='Access suspended. Contact support@skymatrix.biz.';return;}
     var el=document.getElementById('lockCode');var code=(el&&el.value||'').trim();
     if(!code){if(msg)msg.textContent='Paste the access code from your email.';return;}
+    // require a valid email so EVERY activated device is recorded against its owner (incl. offline/external codes)
+    var eEl=document.getElementById('lockEmail'); var em=((eEl&&eEl.value)||'').trim();
+    if(!em){ try{ em=(localStorage.getItem('sm_email')||'').trim(); }catch(_){}}
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ if(msg)msg.textContent='Enter your email above first — it links this access code to your licence.'; if(eEl)eEl.focus(); return; }
+    try{ localStorage.setItem('sm_email',em); }catch(_){}
+    try{ __savedEmail=em; }catch(_){}
     if(msg)msg.textContent='Checking…';
     var r=await verifyCode(code);
     if(r.ok){try{localStorage.setItem('sm_lic',code);}catch(e){}window.__licExp=r.exp;markSeen(todayDay());registerDevice(code);
@@ -2021,7 +2038,7 @@ function generate(ev){
     window.__OFP=data;
     if(window.__updateSubrail)window.__updateSubrail();
     if(window.__renderIdent)window.__renderIdent();
-    if(window.__goView && ev!==false)window.__goView('briefing');
+    if(window.__goView && ev!==false){window.__goView('briefing'); if(window.__goSub)window.__goSub('ofp');}
     window.dispatchEvent(new CustomEvent('ofp-parsed'));
     const oOfp=document.getElementById('out-ofp');
     if(oOfp&&oOfp.scrollIntoView) oOfp.scrollIntoView({behavior:'smooth',block:'start'});
@@ -2165,7 +2182,7 @@ document.getElementById('go').onclick=generate;
         try{ localStorage.setItem('sm_ofptext',text); }catch(e){}
         var tb=document.getElementById('tb'); if(tb)tb.style.display='flex';
         if(window.__updateSubrail)window.__updateSubrail();
-        try{ if(window.__goView)window.__goView('briefing'); }catch(e){}
+        try{ if(window.__goView)window.__goView('briefing'); if(window.__goSub)window.__goSub('ofp'); }catch(e){}
         // also fill the editable Departure / Arrival cards
         setF('dep_from',data.dep); setF('dep_to',data.dest); setF('dep_fnum',data.fltCs); setF('dep_date',data.date);
         setF('dep_std',hhmmColon(d.std)); setF('dep_fl',data.initFL);
@@ -2259,12 +2276,13 @@ try{ if(navigator.storage && navigator.storage.persist){ navigator.storage.persi
   render();
 })();
 
-document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click',()=>{
+window.__goSub=function(s){
   document.querySelectorAll('#subnav button').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('#view-briefing .subview').forEach(x=>x.classList.remove('active'));
-  b.classList.add('active');
-  document.getElementById('out-'+b.dataset.s).classList.add('active');
-}));
+  var b=document.querySelector('#subnav button[data-s="'+s+'"]'); if(b)b.classList.add('active');
+  var v=document.getElementById('out-'+s); if(v)v.classList.add('active');
+};
+document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click',()=>window.__goSub(b.dataset.s)));
 document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('#cldgnav button').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('#view-cldg .subview2').forEach(x=>x.classList.remove('active'));
@@ -2960,10 +2978,14 @@ window.__updateSubrail=function(){
   if($('wxGet'))$('wxGet').addEventListener('click',()=>{
     const ic=wxIc(); if(!/^[A-Z]{4}$/.test(ic)){wxShow('Enter a 4-letter ICAO code.');return;}
     wxShow('Fetching METAR / TAF for '+ic+'…');
-    Promise.all([
-      tryFetch('https://aviationweather.gov/api/data/metar?ids='+ic+'&format=raw').then(r=>r.text()).catch(()=>''),
-      tryFetch('https://aviationweather.gov/api/data/taf?ids='+ic+'&format=raw').then(r=>r.text()).catch(()=>'')
-    ]).then(([metar,taf])=>{
+    // primary: Worker fetches server-side (no browser CORS); fallback: direct/proxy; final: OFP
+    fetch(LIC_WORKER+'/wx?icao='+ic,{cache:'no-store'}).then(r=>r.json()).catch(()=>({}))
+    .then(w=>{ if(w&&w.ok&&(((w.metar||'').trim())||((w.taf||'').trim()))) return {metar:w.metar||'',taf:w.taf||''};
+      return Promise.all([
+        tryFetch('https://aviationweather.gov/api/data/metar?ids='+ic+'&format=raw').then(r=>r.text()).catch(()=>''),
+        tryFetch('https://aviationweather.gov/api/data/taf?ids='+ic+'&format=raw').then(r=>r.text()).catch(()=>'')
+      ]).then(([metar,taf])=>({metar:metar||'',taf:taf||''})); })
+    .then(({metar,taf})=>{
       let m=(metar||'').trim(), t=(taf||'').trim(), mSrc='live', tSrc='live';
       const O=window.__OFP, ow=(O&&O.wx&&O.wx[ic])||null;
       if(!m&&ow&&ow.metar){ m=(''+ow.metar).replace(/^METAR\s+/i,'').trim(); mSrc='OFP'; }
@@ -2990,6 +3012,9 @@ window.__updateSubrail=function(){
   if($('wxAtis'))$('wxAtis').addEventListener('click',()=>{
     const ic=wxIc(); if(!/^[A-Z]{4}$/.test(ic)){wxShow('Enter a 4-letter ICAO code.');return;}
     wxShow('Fetching D-ATIS for '+ic+'…');
+    fetch(LIC_WORKER+'/wx?icao='+ic,{cache:'no-store'}).then(r=>r.json()).catch(()=>({}))
+    .then(w=>{ if(w&&w.ok&&(w.datis||'').trim()){ wxShow('D-ATIS '+ic+':\n\n'+w.datis.trim()); return true; } return false; })
+    .then(done=>{ if(done)return;
     tryFetch('https://datis.clowd.io/api/'+ic).then(r=>r.json()).then(j=>{
       if(Array.isArray(j)&&j.length&&j[0].datis){ wxShow('D-ATIS '+ic+':\n\n'+j.map(a=>(a.type?('['+a.type.toUpperCase()+'] '):'')+a.datis).join('\n\n')); return; }
       throw 0;
@@ -3001,6 +3026,7 @@ window.__updateSubrail=function(){
         if(b) wxShow(b);
         else wxShow('No live D-ATIS currently published for '+ic+'. D-ATIS is ACARS-based and only appears once an aircraft has requested it; use the METAR/TAF and the arrival ATIS frequency.');
       }).catch(e=>wxShow('Could not fetch D-ATIS: '+e.message));
+    });
     });
   });
   if($('wxNotam'))$('wxNotam').addEventListener('click',()=>{
@@ -3036,12 +3062,20 @@ window.__updateSubrail=function(){
     }
   });
   window.addEventListener('ofp-parsed',()=>{const el=$('wxIcao'); if(el && !el.value && window.__OFP && window.__OFP.dest) el.value=window.__OFP.dest;});
+  // aircraft lookup defaults to THIS flight's callsign (not a stale value); autocomplete off so the browser doesn't refill it
+  (function(){var a=$('ac_cs'); if(a){a.setAttribute('autocomplete','off');}})();
+  window.addEventListener('ofp-parsed',()=>{const a=$('ac_cs'); if(a && window.__OFP){const cs=(window.__OFP.atcCs||window.__OFP.fltCs||'').toString().trim(); if(cs && (!a.value || a.value==='DEST' || a.value===(window.__OFP.dest||''))) a.value=cs;}});
 
   /* ---- Auto D-ATIS / METAR: fill Arrival card (ATIS + temp) and refresh every 30 min for the selected airport ---- */
   function fillArrivalTemp(metar){ if(!metar)return; var tm=/\b(M?\d{2})\/(M?\d{2})\b/.exec((''+metar).toUpperCase()); if(!tm)return; var t=parseInt(tm[1].replace('M','-'),10); if(isNaN(t))return; var te=$('ar_tempc'); if(te && !te.dataset.touched){ te.value=t; try{te.dispatchEvent(new Event('input',{bubbles:true}));}catch(e){} } var tf=$('ar_tempf'); if(tf && !tf.value)tf.value=Math.round(t*9/5+32)+' °F'; }
   function fillArrivalWx(){ var O=window.__OFP; var ic=(O&&O.dest)?String(O.dest).toUpperCase():''; if(!/^[A-Z]{4}$/.test(ic))return;
-    tryFetch('https://datis.clowd.io/api/'+ic).then(r=>r.json()).then(j=>{ if(Array.isArray(j)&&j.length){ var arr=j.find(a=>/arr/i.test(a.type||''))||j[0]; var el=$('ar_atis'); if(el && !el.dataset.touched && arr && arr.datis){ var L=(arr.datis.match(/\bATIS\s+([A-Z])\b/)||arr.datis.match(/INFO(?:RMATION)?\s+([A-Z])\b/)||[])[1]; el.value=L?('INFO '+L):arr.datis.slice(0,48); } } }).catch(()=>{});
-    tryFetch('https://aviationweather.gov/api/data/metar?ids='+ic+'&format=raw').then(r=>r.text()).then(m=>{ m=(m||'').trim(); if(!m){var ow=(O&&O.wx&&O.wx[ic]); if(ow&&ow.metar)m=(''+ow.metar).replace(/^METAR\s+/i,'');} fillArrivalTemp(m); }).catch(()=>{});
+    // single reliable call through the Worker (server-side, no CORS): METAR + D-ATIS
+    fetch(LIC_WORKER+'/wx?icao='+ic,{cache:'no-store'}).then(r=>r.json()).catch(()=>({})).then(function(w){
+      w=w||{};
+      var el=$('ar_atis');
+      if(el && !el.dataset.touched && (w.datis||'').trim()){ var L=(w.datis.match(/\bATIS\s+([A-Z])\b/)||w.datis.match(/INFO(?:RMATION)?\s+([A-Z])\b/)||[])[1]; el.value=L?('INFO '+L):w.datis.trim().slice(0,48); }
+      var m=(w.metar||'').trim(); if(!m){var ow=(O&&O.wx&&O.wx[ic]); if(ow&&ow.metar)m=(''+ow.metar).replace(/^METAR\s+/i,'');} fillArrivalTemp(m);
+    });
   }
   window.addEventListener('ofp-parsed',function(){ setTimeout(fillArrivalWx,1500); });
   setInterval(function(){ try{ fillArrivalWx();
@@ -3053,13 +3087,29 @@ window.__updateSubrail=function(){
     ic=(ic||'').toUpperCase(); var O=window.__OFP;
     if(!O||!O.notams||!O.notams[ic]||!O.notams[ic].length){ if(window.__floatChecklist)window.__floatChecklist('ntm'+ic,(label||ic)+' NOTAMs','<div style="color:#e6eefc">No NOTAMs for '+esc(ic)+' in the loaded OFP.</div>'); return; }
     var nw=wxNow(); var list=O.notams[ic]; var CH={r:'#ff6b6b',a:'#E0A33A',g:'#34c759',n:'#9fb3d1'};
+    function hsh(s){var h=0;for(var i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))|0;}return 'n'+(h>>>0);}
+    var star=[]; try{star=JSON.parse(localStorage.getItem('sm_notam_star')||'[]');}catch(e){}
+    var rows=list.map(function(n){ var tg=notamTag(n.vobj,nw.rel,nw.mon); var col=CH[tg.kind]||CH.n; var txt=(n.text||''); var k=hsh(ic+'|'+txt.slice(0,40)); var starred=star.indexOf(k)>=0;
+      var hdr=esc(txt.replace(/\s+/g,' ').slice(0,64))+(txt.length>64?'…':'');
+      return {starred:starred, html:
+        '<div style="border-bottom:1px solid #16233a">'+
+          '<div onclick="window.__ntmTog(this)" style="display:flex;gap:8px;align-items:center;padding:8px 4px;cursor:pointer;font-size:12.5px">'+
+            '<span onclick="event.stopPropagation();window.__ntmStar(this)" data-k="'+k+'" title="mark important" style="cursor:pointer;font-size:15px;flex:0 0 auto;color:'+(starred?'#ffd66b':'#5a6b86')+'">'+(starred?'★':'☆')+'</span>'+
+            '<span style="display:inline-block;background:'+col+'22;border:1px solid '+col+';color:'+col+';border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700;flex:0 0 auto">'+esc(tg.txt)+'</span>'+
+            '<span style="color:#e6eefc;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+hdr+'</span>'+
+            '<span style="color:#7e90ad;flex:0 0 auto">▾</span>'+
+          '</div>'+
+          '<div style="display:none;padding:0 6px 10px 6px;font-size:12px"><span style="color:#7e90ad">'+esc(n.valid||'')+'</span><br><span style="color:#e6eefc">'+esc(txt.slice(0,600))+'</span></div>'+
+        '</div>'};
+    });
+    rows.sort(function(a,b){return (b.starred?1:0)-(a.starred?1:0);});
     var html='<div style="font-weight:700;margin-bottom:8px;color:#fff">'+esc(label||ic)+' — '+list.length+' NOTAMs</div>'+
-      list.map(function(n){ var tg=notamTag(n.vobj,nw.rel,nw.mon); var col=CH[tg.kind]||CH.n;
-        return '<label style="display:flex;gap:8px;align-items:flex-start;padding:7px 4px;border-bottom:1px solid #16233a;font-size:12.5px;cursor:pointer"><input type="checkbox" title="mark important" style="margin-top:3px;flex:0 0 auto"> <span><span style="display:inline-block;background:'+col+'22;border:1px solid '+col+';color:'+col+';border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700">'+esc(tg.txt)+'</span> <span style="color:#7e90ad">'+esc(n.valid||'')+'</span><br><span style="color:#e6eefc">'+esc((n.text||'').slice(0,300))+'</span></span></label>';
-      }).join('')+
-      '<div style="font-size:11px;color:#7e90ad;margin-top:8px">Red = active now · Amber = time-window · Green = clear. Tick the ones important to you (this session).</div>';
+      rows.map(function(r){return r.html;}).join('')+
+      '<div style="font-size:11px;color:#7e90ad;margin-top:8px">Tap a NOTAM header to expand it. ★ marks it important (kept &amp; sorted to top). Red = active now · Amber = time-window · Green = clear.</div>';
     if(window.__floatChecklist)window.__floatChecklist('ntm'+ic,(label||ic)+' NOTAMs',html);
   };
+  window.__ntmTog=function(el){ var d=el.nextElementSibling; if(d)d.style.display=(d.style.display==='block'?'none':'block'); };
+  window.__ntmStar=function(el){ var k=el.getAttribute('data-k')||''; if(!k)return; var star=[]; try{star=JSON.parse(localStorage.getItem('sm_notam_star')||'[]');}catch(e){} var i=star.indexOf(k); if(i>=0){star.splice(i,1);el.textContent='☆';el.style.color='#5a6b86';}else{star.push(k);el.textContent='★';el.style.color='#ffd66b';} try{localStorage.setItem('sm_notam_star',JSON.stringify(star.slice(-300)));}catch(e){} };
   if($('depNotamBtn'))$('depNotamBtn').addEventListener('click',function(){ var O=window.__OFP; window.__showAirportNotams(O&&O.dep,'Departure '+((O&&O.dep)||'')); });
   if($('arrNotamBtn'))$('arrNotamBtn').addEventListener('click',function(){ var O=window.__OFP; window.__showAirportNotams(O&&O.dest,'Arrival '+((O&&O.dest)||'')); });
 
@@ -3236,28 +3286,16 @@ window.__updateSubrail=function(){
     return {g:g,speaker:speaker,myName:myName,other:other,dest:pv('p_destn','[DESTINATION_NAME]'),airline:pv('p_airline','')};
   }
   function buildPAWelcome(){
-    if(!$('paText'))return; const b=paBase();
-    const _sr=(typeof OFP!=='undefined'&&OFP&&OFP.shearMax)?parseFloat(OFP.shearMax.sr):NaN;
-    const turb=isNaN(_sr)?'some light turbulence':(_sr>4?`moderate turbulence (forecast shear SR ${OFP.shearMax.sr})`:`light turbulence (forecast shear SR ${OFP.shearMax.sr})`);
-    $('paText').value=`Good ${b.g}, ladies and gentlemen.\n\n`+
-      `This is your ${b.speaker} speaking. My name is ${b.myName}. On behalf of ${b.airline||'the flight deck'} and all the crew, I would like to welcome you on board this ${pv('p_ac','[AIRCRAFT]')}, flight ${pv('p_no','[NUMBER]')} to ${b.dest}.\n\n`+
-      `Beside me here on the Flight Deck is ${b.other}. And looking after your safety and comfort in the cabin today are CSD / CS ${pv('p_csd','[CSDNAME]')}, and our cabin crew team.\n\n`+
-      `Our flight time today is ${pv('p_dur','[DURATION]')}, and we will be cruising at an altitude of ${pv('p_fl','[FL]')}. We're expecting generally good weather en route. However, we may experience ${turb} during the flight.\n\n`+
-      `For your safety, please keep your seatbelt fastened at all times, even when the seatbelt signs are switched off.\n\n`+
-      `Before we begin our descent into ${b.dest}, I'll update you with the latest weather and arrival information.\n\n`+
-      `Until then, please make yourself comfortable and enjoy our service.\n\n`+
-      `I wish you a very pleasant journey${b.airline?(' on board this '+b.airline+' flight'):''}. Thank you.`;
+    if(!$('paText'))return;
+    // Welcome PA is BLANK by default — the crew fills it, or it is populated from a saved "Welcome" named announcement (Utilities → PA).
+    var cw=''; try{cw=localStorage.getItem('sm_pa_welcome')||'';}catch(e){}
+    if(cw&&cw.trim()) $('paText').value=cw;
   }
   function buildPADescent(){
-    if(!$('paTextD'))return; const b=paBase();
-    $('paTextD').value=`Good ${b.g}, ladies and gentlemen. This is your ${b.speaker} speaking.\n\n`+
-      `We trust you're having a pleasant flight with us today.\n\n`+
-      `We'll be starting our descent into ${b.dest} shortly, and should be landing in ${pv('p_ttg','[TIME_TO_GO]')} minutes, approximately ${pv('p_eta','[ETA_LOCAL]')}.\n\n`+
-      `It's a ${pv('p_wx','[WEATHER]')} day today, with a temperature of ${pv('p_tc','[TEMPC]')} Celsius.\n\n`+
-      `The local time now is ${pv('p_tn','[TIME_NOW]')}.\n\n`+
-      `On behalf of all the crew, we wish you a very pleasant stay in ${b.dest}, or a smooth onward journey.\n\n`+
-      `It's been our pleasure having you on board today.\n\n`+
-      `Thank you for flying with ${b.airline||'us'}.`;
+    if(!$('paTextD'))return;
+    // Descent PA is BLANK by default — the crew fills it, or it is populated from a saved "Descend" named announcement (Utilities → PA).
+    var cd=''; try{cd=localStorage.getItem('sm_pa_descent')||'';}catch(e){}
+    if(cd&&cd.trim()) $('paTextD').value=cd;
   }
   function buildPA(){ buildPAWelcome(); buildPADescent(); }
   ['p_speaker','p_greet','p_capt','p_fo','p_csd','p_ac','p_no','p_destn','p_airline','p_dur','p_fl','p_ttg','p_eta','p_wx','p_tc','p_tn']
@@ -3265,6 +3303,36 @@ window.__updateSubrail=function(){
   function wireCopy(btn,src,msgId){var b=$(btn);if(!b)return;b.addEventListener('click',function(){var t=($(src)||{}).value||'';var done=function(){var c=$(msgId);if(c){c.textContent='Copied ✓';setTimeout(function(){c.textContent='';},1500);}};if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(done,done);else done();});}
   wireCopy('paCopy','paText','paCopied');
   wireCopy('paCopyD','paTextD','paCopiedD');
+  /* Named announcements: save named PA scripts; a "Welcome" or "Descend" name auto-routes to the Departure/Arrival PA */
+  (function(){
+    function esc2(s){return String(s==null?'':s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+    function load(){ try{return JSON.parse(localStorage.getItem('sm_named_pa')||'[]');}catch(e){return [];} }
+    function store(a){ try{localStorage.setItem('sm_named_pa',JSON.stringify(a.slice(-50)));}catch(e){} }
+    function routeOf(name){ var n=(name||'').trim().toLowerCase(); if(/^welcome/.test(n))return 'welcome'; if(/^desc(en[dt]|ent)?/.test(n))return 'descent'; return ''; }
+    function syncRoutes(){ var a=load(),w='',d=''; a.forEach(function(x){ var r=routeOf(x.name); if(r==='welcome')w=x.text; else if(r==='descent')d=x.text; });
+      try{ if(w)localStorage.setItem('sm_pa_welcome',w); else localStorage.removeItem('sm_pa_welcome'); if(d)localStorage.setItem('sm_pa_descent',d); else localStorage.removeItem('sm_pa_descent'); }catch(e){}
+      try{ if(typeof buildPA==='function')buildPA(); }catch(e){} }
+    function render(){ var a=load(), el=$('na_list'); if(!el)return;
+      if(!a.length){ el.innerHTML='<div class="hint">No named announcements yet.</div>'; return; }
+      el.innerHTML=a.map(function(x,i){ var r=routeOf(x.name); var badge=r==='welcome'?'<span style="color:#7be0a4">→ Departure Welcome PA</span>':(r==='descent'?'<span style="color:#7ec8ff">→ Arrival Descent PA</span>':'');
+        return '<div style="border:1px solid #2a3c5e;border-radius:8px;padding:8px 10px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="color:#fff">'+esc2(x.name)+'</b> <span style="font-size:11px">'+badge+'</span></div><div style="color:#9fb3d1;font-size:12px;margin-top:3px;white-space:pre-wrap;max-height:60px;overflow:hidden">'+esc2((x.text||'').slice(0,180))+'</div><div style="margin-top:6px;display:flex;gap:8px"><button type="button" class="ghost" data-copy="'+i+'" style="padding:5px 12px;font-size:12px">Copy</button><button type="button" class="ghost" data-load="'+i+'" style="padding:5px 12px;font-size:12px">Edit</button><button type="button" class="ghost" data-del="'+i+'" style="padding:5px 12px;font-size:12px;color:#ffb0b0;border-color:#633">Delete</button></div></div>';
+      }).join('');
+      el.querySelectorAll('[data-copy]').forEach(function(b){b.onclick=function(){var t=(load()[+b.dataset.copy]||{}).text||'';if(navigator.clipboard)navigator.clipboard.writeText(t);var m=$('na_msg');if(m){m.textContent='Copied ✓';setTimeout(function(){m.textContent='';},1200);}};});
+      el.querySelectorAll('[data-load]').forEach(function(b){b.onclick=function(){var x=load()[+b.dataset.load];if(x){$('na_name').value=x.name;$('na_text').value=x.text;}};});
+      el.querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(){var a=load();a.splice(+b.dataset.del,1);store(a);syncRoutes();render();};});
+    }
+    if($('na_save'))$('na_save').addEventListener('click',function(){
+      var name=($('na_name').value||'').trim(), text=($('na_text').value||'').trim();
+      if(!name){ $('na_msg').textContent='Give it a name.'; return; }
+      if(!text){ $('na_msg').textContent='Type the announcement.'; return; }
+      var a=load(), ix=-1; for(var j=0;j<a.length;j++){ if((a[j].name||'').toLowerCase()===name.toLowerCase()){ix=j;break;} }
+      if(ix>=0)a[ix]={name:name,text:text}; else a.push({name:name,text:text});
+      store(a); syncRoutes(); render();
+      var r=routeOf(name); $('na_msg').textContent='Saved ✓'+(r==='welcome'?' — routed to the Departure Welcome PA.':(r==='descent'?' — routed to the Arrival Descent PA.':'.'));
+      $('na_name').value=''; $('na_text').value='';
+    });
+    render(); syncRoutes();
+  })();
   /* PA window: Welcome (Departure) / Descent (Arrival) buttons open the same modal in the right mode */
   function openPA(mode){
     document.querySelectorAll('#paModal .pa-welcome').forEach(e=>e.style.display=mode==='welcome'?'':'none');

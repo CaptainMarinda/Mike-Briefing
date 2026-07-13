@@ -53,6 +53,17 @@
 </div>
 
 <div class="card">
+  <label for="ofpFile">Teach the AI a new airline — upload an OFP</label>
+  <div class="row">
+    <input id="ofpAirline" type="text" placeholder="Airline / format name (e.g. SereneAir, SIF)" style="max-width:260px">
+    <input id="ofpFile" type="file" accept=".pdf,.txt">
+    <button id="teach">Teach AI from this OFP</button>
+  </div>
+  <div class="hint">Upload a real OFP PDF for any airline. Sky Matrix AI reads its layout and writes a one-line format rule into the library below, so future OFPs from that airline are read correctly. Only the short format rule is stored — not the OFP itself.</div>
+  <div id="msgTeach" class="msg"></div>
+</div>
+
+<div class="card">
   <label for="lib">Full library (edit or delete lines, then Save)</label>
   <textarea id="lib" placeholder="Load the current corrections above…"></textarea>
   <button id="save">Save library</button>
@@ -60,6 +71,7 @@
   <div id="msgSave" class="msg"></div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
 var W="https://skymatrix-trial.skymatrix.workers.dev";
 var $=function(id){return document.getElementById(id);};
@@ -86,6 +98,35 @@ $('add').addEventListener('click',function(){
       if(j&&j.ok){ set($('msgAdd'),'Added ✓','ok'); $('note').value=''; $('load').click(); }
       else set($('msgAdd'),(j&&j.error)||'Failed (check the token).','err');
     }).catch(function(){ set($('msgAdd'),'Network error.','err'); });
+});
+
+/* Teach the AI a new airline from an uploaded OFP: extract the OFP text, let the Worker's AI derive a one-line format rule. */
+function extractPdf(file){
+  return new Promise(function(resolve,reject){
+    if(/\.txt$/i.test(file.name)){ var r=new FileReader(); r.onload=function(){resolve(String(r.result||''));}; r.onerror=reject; r.readAsText(file); return; }
+    var rd=new FileReader(); rd.onload=function(){
+      try{
+        window.pdfjsLib.getDocument({data:new Uint8Array(rd.result)}).promise.then(function(pdf){
+          var n=Math.min(pdf.numPages,12), parts=[];
+          (function page(i){ if(i>n){resolve(parts.join('\n'));return;} pdf.getPage(i).then(function(p){return p.getTextContent();}).then(function(tc){ parts.push(tc.items.map(function(x){return x.str;}).join(' ')); page(i+1); }).catch(function(){page(i+1);}); })(1);
+        }).catch(reject);
+      }catch(e){ reject(e); }
+    }; rd.onerror=reject; rd.readAsArrayBuffer(file);
+  });
+}
+if($('teach'))$('teach').addEventListener('click',function(){
+  var k=tok(); if(!k){ set($('msgTeach'),'Enter your admin token first.','err'); return; }
+  var f=$('ofpFile').files&&$('ofpFile').files[0]; if(!f){ set($('msgTeach'),'Choose an OFP PDF first.','err'); return; }
+  set($('msgTeach'),'Reading the OFP…','');
+  extractPdf(f).then(function(text){
+    if(!text||text.trim().length<40){ set($('msgTeach'),'Could not read text from that PDF.','err'); return; }
+    set($('msgTeach'),'Teaching Sky Matrix AI…','');
+    fetch(W+'/ofp/learn',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':k},body:JSON.stringify({text:text.slice(0,14000),airline:($('ofpAirline').value||'').trim()})})
+      .then(function(r){return r.json();}).then(function(j){
+        if(j&&j.ok){ set($('msgTeach'),'Learned ✓ — '+(j.note||''),'ok'); $('ofpFile').value=''; $('load').click(); }
+        else set($('msgTeach'),(j&&j.error)||'Failed.','err');
+      }).catch(function(){ set($('msgTeach'),'Network error.','err'); });
+  }).catch(function(e){ set($('msgTeach'),'Could not read the PDF: '+((e&&e.message)||e),'err'); });
 });
 
 function devVal(){ return ($('dev').value||'').trim().toUpperCase(); }

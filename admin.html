@@ -131,14 +131,25 @@
     <label>Push a PDF / document to the app's DOCS</label>
     <div class="hint">Send a document to one device or to every licensed device. It lands in the user's on-device DOCS list the next time their app is opened online. Max ~14&nbsp;MB.</div>
     <div class="row" style="margin-top:8px">
-      <div><label for="pushTarget">Send to</label><select id="pushTarget"><option value="ALL">All licensed devices</option><option value="one">A specific device…</option></select></div>
+      <div><label for="pushTarget">Send to</label><select id="pushTarget"><option value="ALL">All licensed devices</option><option value="one">A specific device…</option><option value="group">A group…</option></select></div>
       <div id="pushDevWrap" class="hide"><label for="pushDev">Device ID</label><input id="pushDev" type="text" placeholder="SKM-XXXXXX" style="text-transform:uppercase"></div>
+      <div id="pushGroupWrap" class="hide"><label for="pushGroup">Group ID</label><input id="pushGroup" type="text" placeholder="e.g. FLEET-A" style="text-transform:uppercase"></div>
     </div>
     <div class="row" style="margin-top:8px">
       <div><label for="pushFile">Document (PDF, image, text, Word)</label><input id="pushFile" type="file" accept="image/*,.pdf,.txt,.doc,.docx"></div>
       <button id="pushBtn" style="flex:0 0 auto">Push document</button>
     </div>
     <div id="msgPush" class="msg"></div>
+  </div>
+  <div class="card">
+    <label>Assign users to a group</label>
+    <div class="hint">Give a device a group ID (e.g. <code>FLEET-A</code>). Then choose <b>A group</b> above to push one document to everyone in that group. The Users tab shows each user's group. Leave the Group ID blank and Assign to remove a user from their group.</div>
+    <div class="row" style="margin-top:8px">
+      <div><input id="grpDev" type="text" placeholder="SKM-XXXXXX" style="text-transform:uppercase"></div>
+      <div><input id="grpId" type="text" placeholder="Group ID (e.g. FLEET-A)" style="text-transform:uppercase"></div>
+      <button id="grpBtn" style="flex:0 0 auto">Assign group</button>
+    </div>
+    <div id="msgGrp" class="msg"></div>
   </div>
 </section>
 
@@ -242,7 +253,7 @@ function renderUsers(){
                         : '<button class="warn sm" data-blk="'+esc(u.device)+'">Block</button>')
                         + ' <button class="warn sm" data-del="'+esc(u.device)+'" style="background:#4a0f1e;border-color:#7a1a30">Delete</button>';
     var dl = (u.daysLeft==null)?'–':(u.daysLeft<0?('exp '+(-u.daysLeft)+'d ago'):(u.daysLeft+'d'));
-    return '<tr><td>'+esc(u.device)+'</td><td class="wrap">'+esc(u.email||'—')+'</td><td>'+esc(u.plan||'—')+'</td><td>'+esc(u.start||'—')+'</td><td>'+esc(u.end||'—')+'</td><td>'+dl+'</td><td>'+status+'</td><td>'+esc(u.source||'—')+'</td><td>'+act+'</td></tr>';
+    return '<tr><td>'+esc(u.device)+'</td><td class="wrap">'+esc(u.email||'—')+'</td><td>'+esc(u.plan||'—')+'</td><td>'+esc(u.start||'—')+'</td><td>'+esc(u.end||'—')+'</td><td>'+dl+'</td><td>'+status+'</td><td>'+esc(u.source||'—')+(u.group?(' · <b style="color:#7ec8ff">'+esc(u.group)+'</b>'):'')+'</td><td>'+act+'</td></tr>';
   }).join('') || '<tr><td colspan="9" style="text-align:center;color:#9fb3d1">No users.</td></tr>';
   var pg=$('uPager'); if(pg){
     if(rows.length<=UPP){ pg.innerHTML=''; }
@@ -341,11 +352,22 @@ $('grantBtn').addEventListener('click',function(){
 });
 
 /* ---- Push docs to the app ---- */
-if($('pushTarget'))$('pushTarget').addEventListener('change',function(){ $('pushDevWrap').classList.toggle('hide', $('pushTarget').value!=='one'); });
+if($('pushTarget'))$('pushTarget').addEventListener('change',function(){ var v=$('pushTarget').value; $('pushDevWrap').classList.toggle('hide', v!=='one'); $('pushGroupWrap').classList.toggle('hide', v!=='group'); });
+if($('grpBtn'))$('grpBtn').addEventListener('click',function(){
+  var k=tok(); if(!k){ set($('msgGrp'),'Enter your admin token first.','err'); return; }
+  var dev=($('grpDev').value||'').trim().toUpperCase(); var grp=($('grpId').value||'').trim().toUpperCase();
+  if(!/^SKM-[A-Z0-9]{6}$/.test(dev)){ set($('msgGrp'),'Enter a valid Device ID.','err'); return; }
+  set($('msgGrp'),'Saving…','');
+  H(k,'/admin/group',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:dev,group:grp})}).then(function(j){
+    if(j&&j.ok){ set($('msgGrp'), dev+(grp?(' added to group '+grp+' ✓'):' removed from its group ✓'),'ok'); try{loadUsers();}catch(e){} }
+    else set($('msgGrp'),(j&&j.error)||'Failed.','err');
+  }).catch(function(){ set($('msgGrp'),'Network error.','err'); });
+});
 if($('pushBtn'))$('pushBtn').addEventListener('click',function(){
   var k=tok(); if(!k){ set($('msgPush'),'Enter your admin token first.','err'); return; }
-  var target=$('pushTarget').value==='one'?(($('pushDev').value||'').trim().toUpperCase()):'ALL';
-  if(target!=='ALL' && !/^SKM-[A-Z0-9]{6}$/.test(target)){ set($('msgPush'),'Enter a valid Device ID (SKM-XXXXXX).','err'); return; }
+  var mode=$('pushTarget').value, target='ALL';
+  if(mode==='one'){ target=($('pushDev').value||'').trim().toUpperCase(); if(!/^SKM-[A-Z0-9]{6}$/.test(target)){ set($('msgPush'),'Enter a valid Device ID (SKM-XXXXXX).','err'); return; } }
+  else if(mode==='group'){ var g=($('pushGroup').value||'').trim().toUpperCase().replace(/[^A-Z0-9_-]/g,''); if(!g){ set($('msgPush'),'Enter a Group ID.','err'); return; } target='GROUP:'+g; }
   var f=$('pushFile').files&&$('pushFile').files[0]; if(!f){ set($('msgPush'),'Choose a document to push.','err'); return; }
   if(f.size>14*1024*1024){ set($('msgPush'),'File too large (about 14 MB max).','err'); return; }
   set($('msgPush'),'Uploading '+f.name+'…','');
