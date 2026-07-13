@@ -58,6 +58,7 @@
   <button data-tab="fb">Feedback</button>
   <button data-tab="svc">Services &amp; billing</button>
   <button data-tab="reviews">Reviews</button>
+  <button data-tab="push">Push docs</button>
 </div>
 
 <!-- USERS -->
@@ -105,7 +106,7 @@
   <div class="card">
     <div class="row">
       <div><label for="gDev">Device ID</label><input id="gDev" type="text" placeholder="SKM-XXXXXX" style="text-transform:uppercase"></div>
-      <div><label for="gEmail">Email (optional — emails the code)</label><input id="gEmail" type="email" placeholder="user@example.com"></div>
+      <div><label for="gEmail">Email (required — emails the code)</label><input id="gEmail" type="email" placeholder="user@example.com" required></div>
     </div>
     <div class="row" style="margin-top:8px">
       <div><label for="gPlan">Plan</label><select id="gPlan">
@@ -121,6 +122,23 @@
     <div class="hint">Issues a device-locked code (overrides any prior trial). If an email is given, the code is emailed automatically.</div>
     <div id="msgGrant" class="msg"></div>
     <div id="grantCode" class="hint" style="font-family:ui-monospace,Consolas,monospace;word-break:break-all"></div>
+  </div>
+</section>
+
+<!-- PUSH DOCS -->
+<section id="tab-push" class="hide">
+  <div class="card">
+    <label>Push a PDF / document to the app's DOCS</label>
+    <div class="hint">Send a document to one device or to every licensed device. It lands in the user's on-device DOCS list the next time their app is opened online. Max ~14&nbsp;MB.</div>
+    <div class="row" style="margin-top:8px">
+      <div><label for="pushTarget">Send to</label><select id="pushTarget"><option value="ALL">All licensed devices</option><option value="one">A specific device…</option></select></div>
+      <div id="pushDevWrap" class="hide"><label for="pushDev">Device ID</label><input id="pushDev" type="text" placeholder="SKM-XXXXXX" style="text-transform:uppercase"></div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div><label for="pushFile">Document (PDF, image, text, Word)</label><input id="pushFile" type="file" accept="image/*,.pdf,.txt,.doc,.docx"></div>
+      <button id="pushBtn" style="flex:0 0 auto">Push document</button>
+    </div>
+    <div id="msgPush" class="msg"></div>
   </div>
 </section>
 
@@ -205,7 +223,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(
   b.addEventListener('click',function(){
     Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(x){x.classList.remove('on');});
     b.classList.add('on');
-    ['users','grant','mail','fb','svc','reviews'].forEach(function(id){ $('tab-'+id).classList.toggle('hide', id!==b.dataset.tab); });
+    ['users','grant','mail','fb','svc','reviews','push'].forEach(function(id){ $('tab-'+id).classList.toggle('hide', id!==b.dataset.tab); });
   });
 });
 
@@ -306,6 +324,8 @@ $('grantBtn').addEventListener('click',function(){
   var k=tok(); if(!k){ set($('msgGrant'),'Enter your admin token first.','err'); return; }
   var dev=($('gDev').value||'').trim().toUpperCase();
   if(!/^SKM-[A-Z0-9]{6}$/.test(dev)){ set($('msgGrant'),'Enter a valid Device ID (SKM-XXXXXX).','err'); return; }
+  var gem=($('gEmail').value||'').trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(gem)){ set($('msgGrant'),'An email address is required to grant a licence.','err'); return; }
   var sel=$('gPlan').value, plan, days;
   if(sel==='custom'){ plan='Custom'; days=parseInt($('gDays').value,10); if(!days||days<1){ set($('msgGrant'),'Enter the custom day count.','err'); return; } }
   else { var parts=sel.split('|'); plan=parts[0]; days=parseInt(parts[1],10); }
@@ -318,6 +338,26 @@ $('grantBtn').addEventListener('click',function(){
     }
     else set($('msgGrant'),(j&&j.error)||'Failed.','err');
   }).catch(function(){ set($('msgGrant'),'Network error.','err'); });
+});
+
+/* ---- Push docs to the app ---- */
+if($('pushTarget'))$('pushTarget').addEventListener('change',function(){ $('pushDevWrap').classList.toggle('hide', $('pushTarget').value!=='one'); });
+if($('pushBtn'))$('pushBtn').addEventListener('click',function(){
+  var k=tok(); if(!k){ set($('msgPush'),'Enter your admin token first.','err'); return; }
+  var target=$('pushTarget').value==='one'?(($('pushDev').value||'').trim().toUpperCase()):'ALL';
+  if(target!=='ALL' && !/^SKM-[A-Z0-9]{6}$/.test(target)){ set($('msgPush'),'Enter a valid Device ID (SKM-XXXXXX).','err'); return; }
+  var f=$('pushFile').files&&$('pushFile').files[0]; if(!f){ set($('msgPush'),'Choose a document to push.','err'); return; }
+  if(f.size>14*1024*1024){ set($('msgPush'),'File too large (about 14 MB max).','err'); return; }
+  set($('msgPush'),'Uploading '+f.name+'…','');
+  var rd=new FileReader();
+  rd.onload=function(){ var b64=(''+rd.result).split(',')[1]||'';
+    H(k,'/admin/pushdoc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:target,name:f.name,mime:f.type||'application/pdf',dataB64:b64})}).then(function(j){
+      if(j&&j.ok){ set($('msgPush'),'Pushed "'+f.name+'" to '+(target==='ALL'?'all licensed devices':target)+'. It lands in their DOCS at the next online open.','ok'); $('pushFile').value=''; }
+      else set($('msgPush'),(j&&j.error)||'Failed.','err');
+    }).catch(function(){ set($('msgPush'),'Network error.','err'); });
+  };
+  rd.onerror=function(){ set($('msgPush'),'Could not read the file.','err'); };
+  rd.readAsDataURL(f);
 });
 
 /* ---- MAIL ---- */

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sky Matrix Budget — User Manual</title>
+<meta name="description" content="User manual for Sky Matrix Budget: multi-currency family finance — accounts, cards, loans, budgets, automatic SMS capture and bank-statement reconciliation.">
+<meta name="theme-color" content="#0e1726">
+<style>
+ :root{--bg:#0e1726;--panel:#13203a;--line:#2a3c5e;--ink:#e6ecf5;--soft:#9fb3d1;--sky:#39b4ff;--blue:#1f6dff;--good:#7be0a4}
+ *{box-sizing:border-box}
+ body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.6}
+ .wrap{max-width:820px;margin:0 auto;padding:26px 22px 60px}
+ header.top{display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:8px}
+ header.top img{width:60px;height:60px;border-radius:14px}
+ header.top .t{display:flex;flex-direction:column}
+ .fly{color:var(--sky);font-size:12px;font-weight:800;letter-spacing:2px}
+ .nm{color:#fff;font-size:20px;font-weight:800;margin-top:2px}
+ a{color:var(--sky)}
+ h1{font-size:26px;color:#fff;margin:18px 0 6px}
+ h2{font-size:19px;color:#fff;margin:28px 0 8px;border-bottom:1px solid var(--line);padding-bottom:6px}
+ h3{font-size:15px;color:var(--sky);margin:18px 0 4px}
+ p{margin:8px 0}
+ ul,ol{margin:8px 0 12px;padding-left:22px} li{margin:4px 0}
+ code{background:#0f1b31;border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:13px;color:#cfe6ff}
+ strong{color:#fff}
+ table{border-collapse:collapse;width:100%;margin:12px 0;font-size:14px}
+ th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+ th{background:#0f1b31;color:#fff}
+ hr{border:0;border-top:1px solid var(--line);margin:24px 0}
+ em{color:var(--soft)}
+ .back{display:inline-block;margin-bottom:14px;font-size:13px;color:var(--soft)}
+ .ftr{margin-top:34px;border-top:1px solid var(--line);padding-top:14px;text-align:center;color:var(--soft);font-size:12.5px;line-height:1.8}
+</style></head><body>
+<div class="wrap">
+<header class="top">
+  <img src="app-icon-budget.png" alt="Sky Matrix Budget" onerror="this.style.display='none'">
+  <div class="t"><span class="fly">SKY MATRIX &middot; BUDGET</span><span class="nm">Seamless global budgeting</span></div>
+</header>
+<a class="back" href="index.html#products">&larr; Back to Sky Matrix</a>
+<h1 id="sky-matrix-budget-user-manual">Sky Matrix Budget — User Manual</h1>
+<p>Your complete guide to using Sky Matrix Budget: a private family-finance app that tracks accounts, credit cards, loans, budgets and assets in any currency, captures transactions automatically from bank SMS and app notifications, and reconciles against real bank statements.</p>
+<p>Everything is stored on your device (plus your own cloud, if you enable sync). Questions or setup help? Email support@skymatrix.biz.</p>
+<hr />
+<h2 id="the-basics">1. The basics</h2>
+<h3 id="the-month-cycle">The month cycle</h3>
+<p>Your budget “month” doesn’t have to be a calendar month. In <strong>Settings → Money &amp; cycle → Month cycle</strong> you choose the day your cycle starts — typically your salary day. A cycle starting on the 25th runs from the 25th of one month to the 24th of the next, and is named after the month it <strong>ends</strong> in (25 Jun – 24 Jul = “July”). Day 1 gives plain calendar months. Pick this once at the start and stick with it: existing month sheets keep their data if you change it later, only future dates map differently.</p>
+<p>The app always opens on the <strong>current cycle</strong>. New cycles are created automatically, carrying forward every balance, currency choice, and category budget (with actuals reset to zero).</p>
+<h3 id="base-currency">Base currency</h3>
+<p><strong>Settings → Money &amp; cycle → Base currency.</strong> Every total, balance and headline figure is displayed in this currency. Individual accounts, cards and assets can each use their <strong>own</strong> currency — the app converts automatically. Change the base any time; it’s display-only and fully reversible.</p>
+<h3 id="the-header">The header</h3>
+<p>The top of the app shows the active cycle (tap the dropdown to view past months, <strong>+ Month</strong> to add one manually), the cycle date range, and three live figures: <strong>Income</strong>, <strong>Expenses</strong>, and <strong>Balance</strong> for the cycle. <strong>Save Now</strong> forces an immediate save/sync. Tapping the logo opens Settings.</p>
+<hr />
+<h2 id="tabs-one-by-one">2. Tabs, one by one</h2>
+<h3 id="dashboard">Dashboard</h3>
+<p>Your overview: cash position, quick stats, recent transactions, and the <strong>+</strong> button for adding transactions.</p>
+<h3 id="income">Income</h3>
+<p>Income is a list of <strong>sources you define</strong> — Salary, Rental, Freelance, anything: - <strong>✎</strong> renames a source everywhere (including past transactions); <strong>×</strong> removes one (blocked while transactions still use it); <strong>+ Add income source</strong> creates another. - Each source has a <strong>budget</strong> (what you expect) and <strong>received</strong> (what actually arrived). - The <strong>Realization Rate</strong> rings show each source’s progress and the overall percentage.</p>
+<p>When you add income, the app asks <strong>which account to credit</strong> — it defaults to your primary account but any account works.</p>
+<h3 id="expenses">Expenses</h3>
+<p>Category budgets with actual spending tracked against them. Rename (✎), remove (×), or <strong>+ Add category</strong> freely. Budgets carry into each new month automatically and stay editable.</p>
+<p>Two special categories are built in and protected: <strong>Credit cards</strong> and <strong>Loans</strong>. They track <em>cash you send</em> to cards and loans. Important accounting note: these are <strong>not counted in your Expenses total</strong> — a card purchase counts as spending (in its own category) at the moment you buy; paying the card bill later just moves money you already spent. Counting both would double-count. Card <strong>interest</strong> is real spending and posts to MISC.</p>
+<h3 id="liabilities">Liabilities</h3>
+<p><strong>Credit cards</strong> — outstanding balance, limit, utilisation bar, and available credit shown in the card’s own currency. If you ever pay <strong>more</strong> than you owe (a top-up), the app asks for confirmation and the excess is held as a green <strong>“In credit (prepaid)”</strong> balance — your next purchases consume it first, and your available spending power correctly exceeds the limit meanwhile.</p>
+<p><strong>Loans</strong> — outstanding and original amounts. <strong>+ Add loan</strong> (in Settings → Money &amp; cycle → Loans) records a proper disbursement: the borrowed money lands in the account you choose and the liability rises with it, so your net worth doesn’t jump. Loan payments reduce the loan and your account together.</p>
+<h3 id="savings">Savings</h3>
+<p>All your bank accounts and cash. Each row: rename (✎), remove (×), balance (editable, typed in the account’s own currency), and a currency dropdown. <strong>+ Add account</strong> for new ones. “Cash” is your cash-in-hand account — ATM withdrawals land here automatically.</p>
+<h3 id="assets">Assets</h3>
+<p>Free-form list for anything else you own — property, gold, investments, policies. Each with its own name, value, currency, and remove button. Total assets = cash + banks + these items. Everything carries forward monthly.</p>
+<h3 id="forex">Forex</h3>
+<ul>
+<li><strong>Exchange rates</strong> — every tracked currency with an editable rate (1 unit = X QAR). <strong>+ Add currency</strong> accepts any 3-letter code (INR, TRY, JPY, …); leave the rate blank to fetch it live. <strong>×</strong> removes a currency (blocked while any account/card/asset uses it or it’s your base).</li>
+<li><strong>Fetch Live Rates</strong> updates every tracked currency at once from a free rate service.</li>
+<li><strong>Quick Converter</strong> and reference tables for 100/1,000/10,000 conversions.</li>
+<li><strong>Currency Assignments</strong> shows which of your items are in which currency.</li>
+</ul>
+<p>New currencies work everywhere immediately: account dropdowns, base-currency choices, even SMS amount detection.</p>
+<h3 id="review">Review</h3>
+<p>Every transaction of the cycle grouped by payment method, in date order, with a net movement figure per method — the fastest way to sanity-check a card or account against your banking app.</p>
+<hr />
+<h2 id="transactions">3. Transactions</h2>
+<p>Tap <strong>+</strong> to add: <strong>Expense</strong>, <strong>Income</strong>, <strong>Card Payment</strong>, or <strong>Transfer</strong>. Amounts can be entered in any currency; the conversion rate is locked at entry time.</p>
+<ul>
+<li><strong>Expense</strong> — paid from an account (balance down) or on a card (outstanding up); hits its category.</li>
+<li><strong>Income</strong> — pick the source and the account it lands in.</li>
+<li><strong>Card payment</strong> — from an account to a card. Paying more than owed → credit balance (see Liabilities).</li>
+<li><strong>Transfer</strong> — between accounts, or to a card (same top-up rules as a payment).</li>
+</ul>
+<p><strong>Edit</strong> any transaction from its list entry — you can even change its Type; the app reverses the old effect and applies the new one exactly. <strong>Delete</strong> likewise restores balances precisely, including loan disbursements (deleting one removes both the cash and the liability).</p>
+<hr />
+<h2 id="automatic-capture-android">4. Automatic capture (Android)</h2>
+<p>With <strong>SMS</strong> and <strong>Notification access</strong> granted, bank messages become transactions:</p>
+<ol type="1">
+<li>A message arrives → a confirmation card pops up with the parsed amount, card/account, and a category suggestion. Check it, tap <strong>Add</strong>.</li>
+<li>Cash-withdrawal messages post as account → Cash transfers.</li>
+<li>If the app was asleep, captured messages <strong>replay</strong> the next time you open it — nothing is lost.</li>
+<li>The same purchase arriving twice (SMS <em>and</em> app notification) is detected and prompted only <strong>once</strong>.</li>
+</ol>
+<p><strong>Teaching new banks.</strong> If a message style isn’t recognised, it’s saved under <strong>Settings → SMS automation → Unrecognised messages</strong>. Tap <strong>Teach</strong>, answer three questions (what kind of transaction, which account/card, what keyword identifies the sender) — and that bank auto-detects forever after. You can also paste any message into the <strong>Test detection</strong> box to try it or teach it directly. Learned rules are listed there and can be deleted any time.</p>
+<p><em>Privacy: only bank-style messages are processed, entirely on your device; nothing is uploaded, and OTP/marketing texts are ignored.</em></p>
+<hr />
+<h2 id="bank-statement-reconciliation">5. Bank statement reconciliation</h2>
+<p><strong>Settings → Tools &amp; insights → Tools → Import a bank statement</strong> (CSV, PDF, Excel, or pasted text).</p>
+<p>The app extracts the statement’s <strong>from–to date range</strong>, maps <strong>every entry to the month cycle its date belongs to</strong>, and matches each against that cycle’s records:</p>
+<ul>
+<li>A header per cycle shows <em>matched vs new</em> counts and the exact <strong>difference to consolidate</strong> — or “fully consolidated ✓”.</li>
+<li>Tick the new entries and <strong>Apply</strong>: each is added to its <strong>own</strong> month sheet (sheets are created if the statement reaches months you don’t have — flagged beforehand).</li>
+<li>A statement <strong>closing balance</strong>, if present, is applied to the latest covered cycle so the account/card ends exactly on the bank’s figure.</li>
+<li>Card statements ask which account paid the bill, and tell refunds apart from payments.</li>
+</ul>
+<p>This means one statement spanning two cycles reconciles both in one pass.</p>
+<hr />
+<h2 id="settings-tour">6. Settings tour</h2>
+<p>Six collapsible sections:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Section</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Money &amp; cycle</strong></td>
+<td>Month cycle day, base currency, salary default, card limits, loans, apply defaults</td>
+</tr>
+<tr class="even">
+<td><strong>Tools &amp; insights</strong></td>
+<td>Card-interest logging, statement import, <strong>Spending query</strong> (total paid from any account / charged to any card / spent on any category — this cycle or all months)</td>
+</tr>
+<tr class="odd">
+<td><strong>SMS automation</strong></td>
+<td>Test detection box, learned rules, unrecognised messages</td>
+</tr>
+<tr class="even">
+<td><strong>Reminders</strong></td>
+<td>Payment reminders with due dates and overdue flags</td>
+</tr>
+<tr class="odd">
+<td><strong>Security &amp; backup</strong></td>
+<td>App Lock, Backup &amp; Export, Restore from Backup</td>
+</tr>
+<tr class="even">
+<td><strong>Danger zone</strong></td>
+<td>Clear all data, delete month</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="security">7. Security</h2>
+<p><strong>App Lock</strong> (Settings → Security &amp; backup): set a password/PIN once; on the installed Android app you can also unlock with <strong>fingerprint or face</strong>. When enabled, opening the app and any <strong>reset or restore requires confirmation</strong>. Forgot the password? Reinstall the app, then restore from your backup — that’s the built-in recovery path, so keep backups current.</p>
+<hr />
+<h2 id="backup-cloud-sync">8. Backup &amp; cloud sync</h2>
+<ul>
+<li><strong>Backup:</strong> Settings → Security &amp; backup → Backup Now. Choose a cloud folder once; afterwards every backup lands there directly, and a centered reminder appears if it’s been more than a day.</li>
+<li><strong>Restore:</strong> Settings → Security &amp; backup → Restore from Backup → pick the file → confirm (password/biometric if locked).</li>
+<li><strong>Cloud sync:</strong> paste your Firebase project config into the Cloud sync panel — you can paste the <strong>whole snippet</strong> exactly as the Firebase console gives it, imports and all. Sign in once per device; changes sync automatically. <strong>Force upload</strong> pushes your current state everywhere. A blank device can never overwrite your cloud data, and an emptied app silently restores itself from the cloud.</li>
+</ul>
+<hr />
+<h2 id="make-it-yours">9. Make it yours</h2>
+<p>Every name in the app is editable and every list is extensible: accounts, credit cards, loans, income sources, expense categories, assets, and currencies. The <strong>✎</strong> pencil renames anything — the new name propagates through every month and every historical transaction in one step. The <strong>×</strong> removes items safely: anything still referenced by transactions, set as a default, or required by the system politely refuses until you clear the references. Names must be unique across the app; that’s what makes one rename update everything reliably.</p>
+<hr />
+<h2 id="good-habits">10. Good habits</h2>
+<ol type="1">
+<li><strong>Backup before big changes</strong> — mass renames, restores, cycle-day changes.</li>
+<li><strong>Reconcile monthly</strong> — import each statement when it arrives; the per-cycle differences make gaps obvious.</li>
+<li><strong>Teach unrecognised messages promptly</strong> — one tap now saves manual entry forever.</li>
+<li><strong>Force upload after a big session</strong> if you use multiple devices.</li>
+<li>Glance at <strong>Review</strong> at cycle end — it’s your truth-check against the bank.</li>
+</ol>
+<p><em>Questions or odd behaviour? Email support@skymatrix.biz — we cover permissions, Samsung battery settings and recovery paths.</em></p>
+
+<div class="ftr">
+  Sky Matrix Budget &middot; part of the Sky Matrix family &middot; <a href="https://www.skymatrix.biz">www.skymatrix.biz</a> &middot; <a href="mailto:support@skymatrix.biz">support@skymatrix.biz</a><br>
+  Your data stays on your device (plus your own cloud, if you enable sync).
+</div>
+</div></body></html>
