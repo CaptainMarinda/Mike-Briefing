@@ -340,7 +340,7 @@
     <button id="lockTrial">Start my free 10-day trial</button>
     <button id="lockSub" style="background:#12324a;border:1px solid #2f8bff;color:#cfe6ff;margin-top:8px">Subscribe</button>
     <div id="lockReqMsg" style="font-size:13px;margin-top:6px;min-height:16px"></div>
-    <div class="by" style="margin:14px 0 4px;border-top:1px solid #1b2942;padding-top:12px">Got your code from the email? Paste it below to activate.</div>
+    <div class="by" style="margin:14px 0 4px;border-top:1px solid #1b2942;padding-top:12px">Got your code from the email? Paste it below to activate. <b>On iPhone/iPad, activate here in the same app you requested it from</b> — the code is locked to this exact device.</div>
     <input id="lockCode" type="text" placeholder="Paste your access code" autocomplete="off" autocapitalize="off" spellcheck="false">
     <button id="lockBtn">Activate</button>
     <div id="lockMsg"></div>
@@ -1046,7 +1046,11 @@ var LIC_PUBKEY = "BMxAfrty9p7_t79ebh4KowBcDiZVaiyBIRPPgMGaPK2Bt4yB9EU1W-4z9WQ4E4
     var pk;try{pk=await crypto.subtle.importKey('raw',raw,{name:'ECDSA',namedCurve:'P-256'},false,['verify']);}catch(e){return {ok:false,reason:'nocrypto'};}
     var ok=false;try{ok=await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},pk,sig,te(DEV+'|'+expDay));}catch(e){return {ok:false,reason:'nocrypto'};}
     if(!ok)return {ok:false,reason:'badsig'};
-    if(expDay<todayDay())return {ok:false,reason:'expired',exp:expDay};
+    var realDay=Math.floor(Date.now()/86400000);
+    // Heal a corrupt/inflated "seen-day" floor: if it's more than a day ahead of the device clock it was set by a bad reading and would
+    // wrongly reject a freshly-issued (short) trial code while long admin codes survive. Reset it so valid codes activate.
+    try{ if(seenDay()>realDay+1) localStorage.setItem('sm_lic_seen',String(realDay)); }catch(e){}
+    if(expDay<realDay)return {ok:false,reason:'expired',exp:expDay};
     return {ok:true,exp:expDay};
   }
 
@@ -1138,7 +1142,7 @@ var LIC_PUBKEY = "BMxAfrty9p7_t79ebh4KowBcDiZVaiyBIRPPgMGaPK2Bt4yB9EU1W-4z9WQ4E4
       if(msg)msg.textContent='✓ Activated on this device.';
       if(pinStored())showLogin(r.exp);else showSetPin();return;}
     var m={empty:'Paste the access code.',malformed:'That code looks incomplete — copy the whole thing and try again.',
-      badsig:'This code is not for THIS device ('+DEV+'). Use a code issued for this Device ID.',
+      badsig:'This code was issued for a different device ID, not this one ('+DEV+'). On iPhone/iPad, add Sky Matrix to your Home Screen and start the trial INSIDE that app (not Safari), so the code matches this device.',
       expired:'This code has expired. Subscribe or start a trial to get a new one.',
       nocrypto:'Secure verification is unavailable here. Open the app over https (skymatrix.biz).'}[r.reason]||'Invalid code.';
     if(msg)msg.textContent=m;
@@ -1222,7 +1226,7 @@ function smMarkSVG(u){return '<svg viewBox="0 0 200 200" xmlns="http://www.w3.or
 +'</svg>';}
 (function(){var i=0;['hdrLogo','lockLogo','footLogo','loginLogo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=smLogoSVG('L'+(i++));});var m=document.getElementById('aiGoMark');if(m)m.innerHTML=smMarkSVG('BTN');})();
 /* visible build stamp — bump APP_VERSION on every release so you can confirm at a glance that the latest is live (matches the Worker /version) */
-var APP_VERSION='2026-07-13-batch9c';
+var APP_VERSION='2026-07-13-batch9f';
 (function(){try{Array.prototype.forEach.call(document.querySelectorAll('.appver'),function(e){e.textContent=APP_VERSION;});}catch(e){}})();
 /* theme toggle in the header (follows device by default; user choice persists) */
 (function(){try{ var hdr=document.querySelector('header.app'); if(!hdr)return;
