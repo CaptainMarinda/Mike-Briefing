@@ -541,5 +541,25 @@ $('revAdmin').addEventListener('click',function(e){
   else if(h) moderateRev(h,'hide');
   else if(d){ if(confirm('Delete this review permanently?')) moderateRev(d,'delete'); }
 });
+
+/* ---- INIT: the user list lives ONLY on the Worker (central KV) — there is no local copy.
+   Auto-load it on open (and whenever the token is entered) so EVERY device with the admin
+   token shows the same, complete list without a manual "Load users" click. ---- */
+(function(){
+  var last=0;
+  function autoLoadUsers(){
+    var k=(($('tok').value)||'').trim();
+    if(!k) return;                       // no token on this device yet — user must paste it
+    var now=Date.now(); if(now-last<1500) return; last=now;   // debounce
+    try{ loadUsers(); }catch(e){}
+  }
+  // 1) on page open, if a token is already saved on this device
+  try{ if((($('tok').value)||'').trim()) autoLoadUsers(); }catch(e){}
+  // 2) the moment a token is typed/pasted on a fresh device
+  try{
+    $('tok').addEventListener('change', autoLoadUsers);
+    $('tok').addEventListener('blur', autoLoadUsers);
+  }catch(e){}
+})();
 </script>
 </body></html>
