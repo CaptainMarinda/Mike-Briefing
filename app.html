@@ -1226,7 +1226,7 @@ function smMarkSVG(u){return '<svg viewBox="0 0 200 200" xmlns="http://www.w3.or
 +'</svg>';}
 (function(){var i=0;['hdrLogo','lockLogo','footLogo','loginLogo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=smLogoSVG('L'+(i++));});var m=document.getElementById('aiGoMark');if(m)m.innerHTML=smMarkSVG('BTN');})();
 /* visible build stamp — bump APP_VERSION on every release so you can confirm at a glance that the latest is live (matches the Worker /version) */
-var APP_VERSION='2026-07-13-batch9f';
+var APP_VERSION='2026-07-14-batch9k';
 (function(){try{Array.prototype.forEach.call(document.querySelectorAll('.appver'),function(e){e.textContent=APP_VERSION;});}catch(e){}})();
 /* theme toggle in the header (follows device by default; user choice persists) */
 (function(){try{ var hdr=document.querySelector('header.app'); if(!hdr)return;
@@ -2497,6 +2497,22 @@ window.__updateSubrail=function(){
   }
   function airport(code){ if(!code)return null; code=code.toUpperCase(); let a=AP[code]; if(a&&a.ref)a=AP[a.ref]; if(a&&a.n)return a; if(__apCache[code])return __apCache[code]; lookupAirport(code); return null; }
 
+  /* ---- exact per-airport UTC offset by coordinate (fixes half-hour zones AND every DST region, not just a whitelist) ----
+     Resolves the true CURRENT offset (incl. DST & :30/:45 zones) once per airport, caches it, and refreshes in the
+     background. Offline / on failure, effOffset() falls back to the built-in integer+DST-whitelist estimate. */
+  var __tzCache={}; try{__tzCache=JSON.parse(localStorage.getItem('sm_tz')||'{}')||{};}catch(e){__tzCache={};}
+  var __tzPending={};
+  function fetchTz(code,lat,lon){
+    code=(code||'').toUpperCase(); if(!code||__tzPending[code]||lat==null||lon==null)return;
+    __tzPending[code]=1;
+    fetch('https://timeapi.io/api/TimeZone/coordinate?latitude='+encodeURIComponent(lat)+'&longitude='+encodeURIComponent(lon),{cache:'no-store'})
+      .then(function(r){return r.ok?r.json():null;}).then(function(j){
+        var s=j&&j.currentUtcOffset&&typeof j.currentUtcOffset.seconds==='number'?j.currentUtcOffset.seconds:null;
+        if(s!=null){ __tzCache[code]={off:s/3600, at:Date.now()}; try{localStorage.setItem('sm_tz',JSON.stringify(__tzCache));}catch(e){}
+          try{ if(typeof calcDisplay==='function')calcDisplay(); }catch(e){} }
+      }).catch(function(){}).then(function(){ delete __tzPending[code]; });
+  }
+
   /* ---- daylight-saving correction (airport UTC offsets in AP are summer/standard as noted) ---- */
   const DST_EU=new Set(['ATH','LGAV','MAN','EGCC','LHR','EGLL','CDG','LFPG','FRA','EDDF','MUC','EDDM','ZRH','LSZH','AMS','EHAM','MAD','LEMD','BCN','LEBL']);
   const DST_US=new Set(['MIA','KMIA','JFK','KJFK','ORD','KORD','IAD','KIAD','LAX','KLAX','YYZ','CYYZ']);
@@ -2510,7 +2526,13 @@ window.__updateSubrail=function(){
     return date>=s&&date<e;}
   function dstAU(date){const y=date.getUTCFullYear();const s=nthSun(y,9,1);s.setUTCHours(16);const e=nthSun(y,3,1);e.setUTCHours(16);return date>=s||date<e;}
   /* AP offsets: EU/US entries are SUMMER (subtract 1 in winter); AU entries are STANDARD (add 1 in their summer). */
-  function effOffset(ap,code,date){if(!ap)return 0;if(ap.est)return ap.utc;const r=dstRegion(code);if(!r)return ap.utc;if(r==='AU')return ap.utc+(dstAU(date)?1:0);return ap.utc-(dstNH(r,date)?0:1);}
+  function effOffset(ap,code,date){
+    const c=(code||'').toUpperCase();
+    // Prefer the exact online-resolved offset (DST- and half-hour-correct). Refresh in the background if stale (>12h).
+    const tz=__tzCache[c];
+    if(tz&&typeof tz.off==='number'){ if(ap&&ap.lat!=null&&ap.lon!=null&&(Date.now()-(tz.at||0)>12*3600*1000)) fetchTz(c,ap.lat,ap.lon); return tz.off; }
+    if(ap&&ap.lat!=null&&ap.lon!=null) fetchTz(c,ap.lat,ap.lon);   // kick off resolution; falls back below until it lands
+    if(!ap)return 0;if(ap.est)return ap.utc;const r=dstRegion(c);if(!r)return ap.utc;if(r==='AU')return ap.utc+(dstAU(date)?1:0);return ap.utc-(dstNH(r,date)?0:1);}
 
   function acFriendly(code){
     if(!code)return'';

@@ -2,7 +2,7 @@
    Upload this file to the GitHub repo ROOT, next to index.html.
    Navigation is network-first (so a freshly uploaded index.html loads when online,
    and the cached copy loads when offline). Libraries/assets are cache-first. */
-const CACHE = 'skymatrix-v10';
+const CACHE = 'skymatrix-v11';
 const SHARE_CACHE = 'sm-share';
 const ASSETS = [
   './',
@@ -56,8 +56,8 @@ self.addEventListener('fetch', function (e) {
     // freshest uploaded app.html when online (no need to re-bookmark); the cached copy is served offline.
     e.respondWith(
       fetch(req.url, { cache: 'reload', credentials: 'same-origin' }).then(function (res) {
-        var cp = res.clone();
-        caches.open(CACHE).then(function (c) { c.put('./app.html', cp).catch(function () {}); });
+        // Only overwrite the cached app with a GOOD response — never cache a 404/500 error page over the working app.html
+        if (res && res.ok && res.status === 200) { var cp = res.clone(); caches.open(CACHE).then(function (c) { c.put('./app.html', cp).catch(function () {}); }); }
         return res;
       }).catch(function () {
         return caches.match(req).then(function (c) { return c || caches.match('./app.html'); });
