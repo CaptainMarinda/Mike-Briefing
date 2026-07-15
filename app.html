@@ -559,6 +559,10 @@
     <div class="fcard">
       <h2>Admin documents</h2>
       <p class="fsub">Documents sent to you by the administrator. They stay here on this device until you delete them. Tap a document to open it.</p>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:2px 0 12px">
+        <button id="adocRefresh" type="button" style="background:#0e2a44;border:1px solid #2f8bff;color:#cfe6ff">Check for new documents</button>
+        <span class="hint" id="adocMsg" style="margin-top:0"></span>
+      </div>
       <div id="adocList"><p class="hint">No admin documents yet.</p></div>
     </div>
   </div>
@@ -1106,11 +1110,12 @@ var LIC_PUBKEY = "BMxAfrty9p7_t79ebh4KowBcDiZVaiyBIRPPgMGaPK2Bt4yB9EU1W-4z9WQ4E4
     checkUpdate(document.getElementById('loginUpd'));show('login');}
 
   // let the Worker know this device is live (so it appears in the admin list) — once per day, fire-and-forget, needs a valid code
-  function pullPushedDocs(code){
-    if(!code)return; var have=[]; try{have=JSON.parse(localStorage.getItem('sm_pushed_ids')||'[]');}catch(e){}
+  function pullPushedDocs(code, cb){
+    if(!code){ if(cb)cb(0); return; } var have=[]; try{have=JSON.parse(localStorage.getItem('sm_pushed_ids')||'[]');}catch(e){}
     fetch(LIC_WORKER+'/pusheddocs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:DEV,code:code,have:have})})
-      .then(function(r){return r.json();}).then(function(j){ if(j&&j.ok&&j.docs&&j.docs.length){ j.docs.forEach(function(d){ if(window.__addPushedDoc)window.__addPushedDoc(d.name,d.mime,d.dataB64); have.push(String(d.id)); }); try{localStorage.setItem('sm_pushed_ids',JSON.stringify(have.slice(-500)));}catch(e){} } }).catch(function(){});
+      .then(function(r){return r.json();}).then(function(j){ var n=0; if(j&&j.ok&&j.docs&&j.docs.length){ n=j.docs.length; j.docs.forEach(function(d){ if(window.__addPushedDoc)window.__addPushedDoc(d.name,d.mime,d.dataB64); have.push(String(d.id)); }); try{localStorage.setItem('sm_pushed_ids',JSON.stringify(have.slice(-500)));}catch(e){} } if(cb)cb(n); }).catch(function(){ if(cb)cb(-1); });
   }
+  window.__pullPushedDocs=pullPushedDocs;   // used by the Admin Docs "Check for new documents" button
   function registerDevice(code){
     try{
       try{ pullPushedDocs(code); }catch(e){}   // pull admin-pushed documents into DOCS (each load)
@@ -1235,7 +1240,7 @@ function smMarkSVG(u){return '<svg viewBox="0 0 200 200" xmlns="http://www.w3.or
 +'</svg>';}
 (function(){var i=0;['hdrLogo','lockLogo','footLogo','loginLogo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=smLogoSVG('L'+(i++));});var m=document.getElementById('aiGoMark');if(m)m.innerHTML=smMarkSVG('BTN');})();
 /* visible build stamp — bump APP_VERSION on every release so you can confirm at a glance that the latest is live (matches the Worker /version) */
-var APP_VERSION='2026-07-15-batch9N';
+var APP_VERSION='2026-07-15-batch9P';
 (function(){try{Array.prototype.forEach.call(document.querySelectorAll('.appver'),function(e){e.textContent=APP_VERSION;});}catch(e){}})();
 /* theme toggle in the header (follows device by default; user choice persists) */
 (function(){try{ var hdr=document.querySelector('header.app'); if(!hdr)return;
@@ -3281,6 +3286,13 @@ window.__updateSubrail=function(){
     });
   }
   window.__renderAdminDocs=renderAdminDocs;
+  if(document.getElementById('adocRefresh'))document.getElementById('adocRefresh').addEventListener('click',function(){
+    var code=''; try{code=localStorage.getItem('sm_lic')||'';}catch(e){}
+    var msg=document.getElementById('adocMsg'); if(msg)msg.textContent='Checking…';
+    if(!code){ if(msg)msg.textContent='No licence on this device yet.'; return; }
+    if(window.__pullPushedDocs){ window.__pullPushedDocs(code,function(n){ setTimeout(function(){ try{renderAdminDocs();}catch(e){} if(msg)msg.textContent=(n>0?('Added '+n+' new document'+(n>1?'s':'')+' ✓'):(n===0?'No new documents.':'Could not reach the server — needs internet.')); },250); }); }
+    else { try{renderAdminDocs();}catch(e){} }
+  });
   function docAll(cb){
     docOpen(db=>{const out=[];const st=db.transaction('docs','readonly').objectStore('docs');
       st.openCursor().onsuccess=e=>{const cur=e.target.result;if(cur){out.push(Object.assign({id:cur.key},cur.value));cur.continue();}else cb(out);};});
@@ -3294,10 +3306,32 @@ window.__updateSubrail=function(){
   var __floats={};
   function __dockEl(){var d=document.getElementById('floatDock');if(!d){d=document.createElement('div');d.id='floatDock';d.style.cssText='position:fixed;right:10px;bottom:10px;z-index:6000;display:flex;flex-direction:column;gap:6px;align-items:flex-end;max-width:80vw';document.body.appendChild(d);}return d;}
   function __renderDock(){var d=__dockEl();d.innerHTML='';Object.keys(__floats).forEach(function(k){var f=__floats[k];var pill=document.createElement('div');pill.style.cssText='display:flex;align-items:center;gap:8px;background:#12325a;border:1px solid #2f8bff;color:#dbeafe;border-radius:20px;padding:6px 12px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.4);cursor:pointer;max-width:100%';var lbl=document.createElement('span');lbl.textContent=(f.type==='cl'?'☑ ':'📄 ')+f.title;lbl.style.cssText='white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px';lbl.onclick=function(){__showFloat(k);};var x=document.createElement('span');x.textContent='✕';x.style.cssText='opacity:.85;font-weight:700';x.onclick=function(e){e.stopPropagation();__closeFloat(k);};pill.appendChild(lbl);pill.appendChild(x);d.appendChild(pill);});}
-  function __panelEl(){var p=document.getElementById('floatPanel');if(!p){p=document.createElement('div');p.id='floatPanel';p.style.cssText='position:fixed;right:10px;bottom:64px;width:min(480px,94vw);height:min(64vh,600px);background:#0b1626;border:1px solid #2f8bff;border-radius:12px;z-index:6001;display:none;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.55);overflow:hidden';var bar=document.createElement('div');bar.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#12325a;color:#dbeafe;font-size:13px;font-weight:600';var t=document.createElement('span');t.id='floatPanelTitle';t.style.cssText='white-space:nowrap;overflow:hidden;text-overflow:ellipsis';var c=document.createElement('button');c.textContent='Close';c.style.cssText='background:#0b1626;border:1px solid #2f8bff;color:#dbeafe;border-radius:8px;padding:4px 12px;font-size:12px;cursor:pointer;flex:0 0 auto';c.onclick=function(){p.style.display='none';};bar.appendChild(t);bar.appendChild(c);var body=document.createElement('div');body.id='floatPanelBody';body.style.cssText='flex:1;overflow:auto;background:#fff';p.appendChild(bar);p.appendChild(body);document.body.appendChild(p);}return p;}
-  function __showFloat(k){var f=__floats[k];if(!f)return;var p=__panelEl();p.dataset.k=k;document.getElementById('floatPanelTitle').textContent=f.title;var body=document.getElementById('floatPanelBody');if(f.type==='cl'){body.style.background='#0b1626';body.style.color='#e6eefc';body.style.padding='10px';body.innerHTML=f.html||'';}else{body.style.background='#fff';body.style.color='';body.style.padding='0';if(f.type==='img'){body.innerHTML='<img src="'+f.url+'" style="max-width:100%;display:block;margin:0 auto">';}else{body.innerHTML='<iframe src="'+f.url+'" style="width:100%;height:100%;border:0"></iframe><div style="padding:8px;font-size:12px;background:#0b1626;color:#9fb3d1">If it does not display, <a href="'+f.url+'" download="'+String(f.title).replace(/"/g,'')+'" style="color:#7ec8ff">tap to save / open</a>.</div>';}}p.style.display='flex';}
+  function __panelEl(){var p=document.getElementById('floatPanel');if(!p){p=document.createElement('div');p.id='floatPanel';p.style.cssText='position:fixed;right:10px;bottom:64px;width:min(480px,94vw);height:min(64vh,600px);background:#0b1626;border:1px solid #2f8bff;border-radius:12px;z-index:6001;display:none;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.55);overflow:hidden';var bar=document.createElement('div');bar.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#12325a;color:#dbeafe;font-size:13px;font-weight:600';var t=document.createElement('span');t.id='floatPanelTitle';t.style.cssText='white-space:nowrap;overflow:hidden;text-overflow:ellipsis';var SMALL='position:fixed;right:10px;bottom:64px;width:min(480px,94vw);height:min(64vh,600px);background:#0b1626;border:1px solid #2f8bff;border-radius:12px;z-index:6001;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.55);overflow:hidden';var FULL='position:fixed;inset:0;width:100vw;height:100dvh;background:#0b1626;border:0;border-radius:0;z-index:6001;display:flex;flex-direction:column;overflow:hidden';var x2=document.createElement('button');x2.textContent='⤢ Full';x2.style.cssText='background:#0b1626;border:1px solid #2f8bff;color:#dbeafe;border-radius:8px;padding:4px 12px;font-size:12px;cursor:pointer;flex:0 0 auto';x2.onclick=function(){ if(p.dataset.full==='1'){ p.style.cssText=SMALL; p.dataset.full='0'; x2.textContent='⤢ Full'; } else { p.style.cssText=FULL; p.dataset.full='1'; x2.textContent='⤡ Exit'; } };var c=document.createElement('button');c.textContent='Close';c.style.cssText='background:#0b1626;border:1px solid #2f8bff;color:#dbeafe;border-radius:8px;padding:4px 12px;font-size:12px;cursor:pointer;flex:0 0 auto';c.onclick=function(){p.style.display='none';};bar.appendChild(t);bar.appendChild(x2);bar.appendChild(c);var body=document.createElement('div');body.id='floatPanelBody';body.style.cssText='flex:1;overflow:auto;background:#fff';p.appendChild(bar);p.appendChild(body);document.body.appendChild(p);}return p;}
+  function __showFloat(k){var f=__floats[k];if(!f)return;var p=__panelEl();p.dataset.k=k;document.getElementById('floatPanelTitle').textContent=f.title;var body=document.getElementById('floatPanelBody');if(f.type==='cl'){body.style.background='#0b1626';body.style.color='#e6eefc';body.style.padding='10px';body.innerHTML=f.html||'';}else{body.style.background='#fff';body.style.color='';body.style.padding='0';if(f.type==='img'){body.innerHTML='<img src="'+f.url+'" style="max-width:100%;display:block;margin:0 auto">';}else if(f.type==='pdf'&&f.blob){__renderPdfAllPages(body,f.blob,f.url,f.title);}else{body.innerHTML='<iframe src="'+f.url+'" style="width:100%;height:100%;border:0"></iframe><div style="padding:8px;font-size:12px;background:#0b1626;color:#9fb3d1">If it does not display, <a href="'+f.url+'" download="'+String(f.title).replace(/"/g,'')+'" style="color:#7ec8ff">tap to save / open</a>.</div>';}}p.style.display='flex';}
   function __closeFloat(k){var f=__floats[k];if(!f)return;if(f.url)try{URL.revokeObjectURL(f.url);}catch(e){}delete __floats[k];var p=document.getElementById('floatPanel');if(p&&p.dataset.k===k)p.style.display='none';__renderDock();var d=document.getElementById('floatDock');if(d&&!Object.keys(__floats).length)d.innerHTML='';}
-  window.__floatDoc=function(id,title,blob,mime){var k='doc'+id;if(!__floats[k]){__floats[k]={type:(/^image\//.test(mime||'')?'img':'file'),title:title||('Doc '+id),mime:mime,url:URL.createObjectURL(blob)};}__renderDock();__showFloat(k);};
+  // Render EVERY page of a PDF (pdf.js) into a scrollable stack — iOS iframes only show page 1.
+  function __renderPdfAllPages(container, blob, url, title){
+    container.innerHTML='<div style="padding:12px;color:#333;font:13px sans-serif">Loading PDF…</div>';
+    if(!window.pdfjsLib){ container.innerHTML='<div style="padding:12px;font:13px sans-serif">PDF viewer needs internet the first time. <a href="'+url+'" download="'+String(title||'document').replace(/"/g,'')+'">Tap to save / open</a>.</div>'; return; }
+    var rd=new FileReader();
+    rd.onload=function(){
+      pdfjsLib.getDocument({data:new Uint8Array(rd.result)}).promise.then(function(pdf){
+        container.innerHTML=''; container.style.overflow='auto'; container.style.background='#525659';
+        var wrap=document.createElement('div'); wrap.style.cssText='display:flex;flex-direction:column;gap:10px;align-items:center;padding:10px'; container.appendChild(wrap);
+        var scale=(window.devicePixelRatio||1)*1.4;
+        (function page(n){ if(n>pdf.numPages)return; pdf.getPage(n).then(function(pg){
+          var vp=pg.getViewport({scale:scale});
+          var cvs=document.createElement('canvas'); cvs.width=vp.width; cvs.height=vp.height;
+          cvs.style.cssText='width:100%;max-width:'+Math.round(vp.width/((window.devicePixelRatio||1)))+'px;height:auto;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.4)';
+          wrap.appendChild(cvs);
+          pg.render({canvasContext:cvs.getContext('2d'),viewport:vp}).promise.then(function(){ page(n+1); }).catch(function(){ page(n+1); });
+        }).catch(function(){ page(n+1); }); })(1);
+      }).catch(function(e){ container.innerHTML='<div style="padding:12px;font:13px sans-serif">Could not render this PDF. <a href="'+url+'" download="'+String(title||'document').replace(/"/g,'')+'">Tap to save / open</a>.</div>'; });
+    };
+    rd.onerror=function(){ container.innerHTML='<div style="padding:12px;font:13px sans-serif">Could not read the document.</div>'; };
+    rd.readAsArrayBuffer(blob);
+  }
+  window.__floatDoc=function(id,title,blob,mime){var k='doc'+id;if(!__floats[k]){var isImg=/^image\//.test(mime||'');var isPdf=/pdf/i.test(mime||'')||/\.pdf$/i.test(title||'');__floats[k]={type:isImg?'img':(isPdf?'pdf':'file'),title:title||('Doc '+id),mime:mime,blob:blob,url:URL.createObjectURL(blob)};}__renderDock();__showFloat(k);};
   window.__floatChecklist=function(key,title,html){var k='cl'+key;__floats[k]={type:'cl',title:title||'Checklist',html:html};__renderDock();__showFloat(k);};
   function docOpenView(id){docGet(id,d=>{if(!d)return;window.__floatDoc(id,d.name,d.blob,d.type||'');});}
   function docSelect(id){localStorage.setItem('sm_selDoc',id);docRender();updateDocCurrent();}
