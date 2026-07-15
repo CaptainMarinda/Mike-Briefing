@@ -424,7 +424,7 @@
       <div class="hint">PDF text is extracted in-browser via PDF.js (needs internet the first time). Your last OFP is remembered until you load another.</div>
       <div class="hint" style="margin-top:6px">Tip: on Android you can open your OFP email, tap <b>Share</b> and choose <b>Sky Matrix</b> to load it straight in. On iPhone/iPad, open the PDF and use the file picker above.</div>
       <textarea id="paste" style="display:none"></textarea>
-      <div class="hint" style="margin-top:10px">Load your OFP and tap <b>Sky Matrix AI</b>. Qatar OFPs are read instantly by the built-in reader (works offline); all other airlines are read by Sky Matrix AI. Either way the result feeds Sky Matrix AI so it keeps improving.</div>
+      <div class="hint" style="margin-top:10px">Load an OFP, then tap <b>Sky Matrix AI</b>.</div>
       <div class="row" style="display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;margin-top:6px">
         <button id="aiGo" type="button" style="flex:2;min-width:180px;background:#0e2a44;border:1px solid #2f8bff;color:#cfe6ff;display:inline-flex;align-items:center;justify-content:center;gap:8px"><span id="aiGoMark" style="width:22px;height:22px;flex:0 0 auto;display:inline-flex"></span>Sky Matrix AI</button>
         <button id="reset" type="button" style="flex:1;min-width:150px;background:#3a2140;border:1px solid #b23a5d;color:#f4c9d8">Load another OFP</button>
@@ -435,27 +435,7 @@
   <div class="toolbar" id="tb" style="display:none">
     <button id="print2">Print / Save as PDF</button>
   </div>
-  <div class="panel" style="margin-top:6px;padding:12px 16px;background:transparent;border:0"><h2 style="margin:0;font-size:15px;color:#7ec8ff">2 &mdash; Flight tools</h2><p class="hint" style="margin:4px 0 0">Optional helpers for this flight. Your PA scripts, translate and Announcement Prep now live under the <b>Utilities → PA</b> tab.</p></div>
-  <div class="fcard">
-    <h2>Crew roster</h2>
-    <p class="fsub">Upload a crew roster — photo, PDF, Word or text. Sky Matrix AI reads the flight-deck and cabin names by rank (Captain / CP / Capt · FO / SFO / SO · CSD / CS / LCC / LC).</p>
-    <input id="p_shot" type="file" accept="image/*,.pdf,.txt,.doc,.docx">
-    <span class="hint" id="p_ocr"></span>
-  </div>
-  <div class="fcard">
-    <h2>Checklist maker</h2>
-    <p class="fsub">Turn any document into a tickable checklist — PDF, Word, photo or text. It opens as a floating checklist you can keep open alongside your briefing.</p>
-    <input id="clFile" type="file" accept="image/*,.pdf,.txt,.doc,.docx">
-    <div style="display:flex;gap:16px;align-items:center;margin:10px 0;flex-wrap:wrap">
-      <label style="display:flex;gap:6px;align-items:center;font-size:13px;cursor:pointer"><input type="radio" name="clMode" value="ai" checked> Sky Matrix AI (clean steps)</label>
-      <label style="display:flex;gap:6px;align-items:center;font-size:13px;cursor:pointer"><input type="radio" name="clMode" value="line"> Line by line (offline)</label>
-    </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <input id="clTitle" type="text" placeholder="Checklist name (optional)" style="flex:1;min-width:160px">
-      <button id="clMake" type="button" style="background:#0c3320;border:1px solid #34c759;color:#c9f5d8">Make checklist</button>
-    </div>
-    <span class="hint" id="clMsg"></span>
-  </div>
+  <div class="panel" style="margin-top:6px;padding:12px 16px;background:transparent;border:0"><h2 style="margin:0;font-size:15px;color:#7ec8ff">2 &mdash; Flight tools</h2><p class="hint" style="margin:4px 0 0">Crew roster, checklist maker, your PA scripts and admin documents now live under the <b>Utilities</b> tab.</p></div>
   <div class="fcard">
     <h2>Send feedback</h2>
     <p class="fsub">Tell us what to improve or report a problem — it goes straight to the Sky Matrix team.</p>
@@ -487,6 +467,36 @@
       </div>
       <div id="cl_list"></div>
     </div>
+    <div class="fcard">
+      <h2>Checklist maker</h2>
+      <p class="fsub">Turn any document into a checklist — PDF, Word, photo or text. Review the steps, then add them to your Checklist above.</p>
+      <input id="clFile" type="file" accept="image/*,.pdf,.txt,.doc,.docx">
+      <div style="display:flex;gap:16px;align-items:center;margin:10px 0;flex-wrap:wrap">
+        <label style="display:flex;gap:6px;align-items:center;font-size:13px;cursor:pointer"><input type="radio" name="clMode" value="ai" checked> Sky Matrix AI (clean steps)</label>
+        <label style="display:flex;gap:6px;align-items:center;font-size:13px;cursor:pointer"><input type="radio" name="clMode" value="line"> Line by line (offline)</label>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <input id="clTitle" type="text" placeholder="Checklist name (optional)" style="flex:1;min-width:160px">
+        <button id="clMake" type="button" style="background:#0c3320;border:1px solid #34c759;color:#c9f5d8">Make checklist</button>
+      </div>
+      <span class="hint" id="clMsg"></span>
+      <div id="clReview" style="display:none;margin-top:12px;border-top:1px solid #20304f;padding-top:12px">
+        <label class="lab">Review — edit or remove any step, then add to your Checklist</label>
+        <div id="clReviewList" style="margin:8px 0"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="clApprove" type="button" style="background:#0c3320;border:1px solid #34c759;color:#c9f5d8">Add to Checklist ✓</button>
+          <button id="clDiscard" type="button" class="ghost">Discard</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="subview2" id="cd-crew">
+    <div class="fcard">
+      <h2>Crew roster</h2>
+      <p class="fsub">Upload a crew roster — photo, PDF, Word or text. Sky Matrix AI reads the flight-deck and cabin names by rank (Captain / CP / Capt · FO / SFO / SO · CSD / CS / LCC / LC).</p>
+      <input id="p_shot" type="file" accept="image/*,.pdf,.txt,.doc,.docx">
+      <span class="hint" id="p_ocr"></span>
+    </div>
   </div>
   <div class="subview2" id="cd-dg">
     <div class="fcard">
@@ -504,54 +514,52 @@
   </div>
   <div class="subview2" id="cd-pa">
     <div class="fcard">
-      <h2>Named announcements</h2>
-      <p class="fsub" style="margin-top:2px"><b>Guideline:</b> name a script exactly <b>Welcome</b> and it auto-appears on the <b>Departure</b> page's Welcome PA; name it <b>Descend</b> (or Descent) and it appears on the <b>Arrival</b> page's Descent PA. Any other name (e.g. “Late”, “Diversion”, “Delay”) is just saved here for quick access.</p>
-      <div class="fgrid"><div class="feat-field"><label class="lab">Name</label><input id="na_name" type="text" placeholder="Welcome / Descend / Late / …"></div></div>
-      <textarea id="na_text" placeholder="Type the announcement…" style="min-height:110px;width:100%;font-family:var(--sans);font-size:13px;color:#E6ECF5"></textarea>
-      <div style="margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-        <button id="na_save" type="button">Save announcement</button>
-        <span class="hint" id="na_msg" style="margin-top:0"></span>
+      <h2>Announcement Maker</h2>
+      <div class="fgrid">
+        <div class="feat-field"><label class="lab">Your name</label><input id="ap_name" type="text" placeholder="e.g. Mike"></div>
+        <div class="feat-field"><label class="lab">Position</label><input id="ap_pos" type="text" placeholder="Capt / FO"></div>
+        <div class="feat-field"><label class="lab">Airline</label><input id="ap_air" type="text" placeholder="e.g. Qatar Airways"></div>
       </div>
-      <div id="na_list" style="margin-top:12px"></div>
-    </div>
-    <div class="fcard">
-      <h2>Announcements</h2>
-      <p class="fsub" style="margin-top:2px">All your PA needs in one place. <b>Welcome</b> and <b>Descent</b> PAs are built on the Departure and Arrival pages (Inflight Display). Keep your own scripts, translate any announcement, and let Sky Matrix AI fill a template below.</p>
-      <label class="lab">My announcements (saved on this device)</label>
-      <textarea id="p_custom" placeholder="Your personal announcements / notes…" style="min-height:150px;font-family:var(--sans);font-size:13px;color:#E6ECF5;width:100%"></textarea>
-      <div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <button id="p_customCopy" class="ghost">Copy</button>
-        <label class="ghost" style="cursor:pointer;padding:8px 14px;border-radius:8px;border:1px solid #2a3c5e">Import .txt<input id="p_customFile" type="file" accept=".txt,text/plain" style="display:none"></label>
-        <span class="hint" id="p_customMsg" style="margin-top:0"></span>
-      </div>
+
       <div style="margin-top:14px;border-top:1px solid #20304f;padding-top:12px">
-        <label class="lab">Translate announcement</label>
-        <p class="fsub" style="margin-top:2px">Paste any announcement (or your own text), choose a language, and translate. Needs internet.</p>
-        <textarea id="tr_src" placeholder="Text to translate…" style="min-height:90px;width:100%;font-family:var(--sans);font-size:13px;color:#E6ECF5"></textarea>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
-          <select id="tr_lang"></select>
-          <button id="tr_go" type="button">Translate</button>
-          <button id="tr_copy" type="button" class="ghost">Copy result</button>
-          <span class="hint" id="tr_msg" style="margin-top:0"></span>
+        <label class="lab">Type of announcement</label>
+        <p class="fsub" style="margin-top:2px">Name it <b>Welcome</b> to auto-show on the <b>Departure</b> page, or <b>Descend</b> for the <b>Arrival</b> page. Any other name (Boarding, Delay, Diversion…) is saved for quick access. Type blanks as <b>____</b> or <b>[BRACKETS]</b> and tap <b>Sky Matrix AI</b> to fill them — you can edit the result, then <b>Save</b>.</p>
+        <div class="fgrid">
+          <div class="feat-field"><label class="lab">Name / type</label><input id="na_name" type="text" placeholder="Welcome / Descend / Boarding / Delay / …"></div>
+          <div class="feat-field"><label class="lab">Language (for AI fill)</label><select id="ap_lang"></select></div>
         </div>
-        <textarea id="tr_out" readonly placeholder="Translation…" style="min-height:90px;width:100%;margin-top:8px;font-family:var(--sans);font-size:13px;color:#E6ECF5"></textarea>
-      </div>
-      <div style="margin-top:14px;border-top:1px solid #20304f;padding-top:12px">
-        <label class="lab">Announcement Prep — fill a template with Sky Matrix AI</label>
-        <p class="fsub" style="margin-top:2px">Upload an announcement template (photo/screenshot, PDF or text). Sky Matrix AI reads it, fills the blanks with this flight's data and your details, in your chosen language.</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
-          <input id="ap_name" type="text" placeholder="Your name / rank (e.g. Capt. Mike)" style="flex:1;min-width:180px">
-          <select id="ap_lang"></select>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
-          <label class="ghost" style="cursor:pointer;padding:8px 14px;border-radius:8px;border:1px solid #2a3c5e">Upload template<input id="ap_file" type="file" accept="image/*,.pdf,.txt,text/plain" style="display:none"></label>
-          <button id="ap_go" type="button" style="background:#12324a;border:1px solid #2f8bff;color:#cfe6ff">Fill with Sky Matrix AI</button>
+        <textarea id="na_text" placeholder="Type your announcement here. Use ____ or [BRACKETS] where Sky Matrix AI should fill in the details." style="min-height:130px;width:100%;font-family:var(--sans);font-size:13px;color:#E6ECF5"></textarea>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <label class="ghost" style="cursor:pointer;padding:8px 14px;border-radius:8px;border:1px solid #2a3c5e">Upload template (photo / PDF / Word)<input id="ap_file" type="file" accept="image/*,.pdf,.txt,text/plain" style="display:none"></label>
+          <button id="ap_go" type="button" style="background:#12324a;border:1px solid #2f8bff;color:#cfe6ff">Sky Matrix AI — fill blanks</button>
+          <button id="na_save" type="button">Save announcement</button>
           <span class="hint" id="ap_msg" style="margin-top:0"></span>
+          <span class="hint" id="na_msg" style="margin-top:0"></span>
         </div>
-        <textarea id="ap_tmpl" placeholder="…or paste the template text here (blanks as ____ or [BRACKETS])" style="min-height:80px;width:100%;margin-top:8px;font-family:var(--sans);font-size:13px;color:#E6ECF5"></textarea>
-        <textarea id="ap_out" readonly placeholder="Completed announcement…" style="min-height:110px;width:100%;margin-top:8px;font-family:var(--sans);font-size:13px;color:#E6ECF5"></textarea>
-        <div style="margin-top:8px"><button id="ap_copy" type="button" class="ghost">Copy result</button></div>
+        <textarea id="ap_out" readonly placeholder="Completed announcement — Sky Matrix AI fills your blanks here. Edit if needed, then ‘Use result above’ to save it." style="min-height:110px;width:100%;margin-top:8px;font-family:var(--sans);font-size:13px;color:#E6ECF5"></textarea>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <button id="ap_useSaved" type="button" class="ghost">Use result above</button>
+          <button id="ap_copy" type="button" class="ghost">Copy result</button>
+        </div>
       </div>
+
+      <div style="margin-top:14px;border-top:1px solid #20304f;padding-top:12px">
+        <label class="lab">My announcements</label>
+        <div id="na_list" style="margin-top:8px"></div>
+      </div>
+    </div>
+    <!-- Legacy elements retained (hidden) so their existing handlers bind without error; not shown to the user. -->
+    <div style="display:none" aria-hidden="true">
+      <textarea id="ap_tmpl"></textarea>
+      <textarea id="p_custom"></textarea><button id="p_customCopy"></button><input id="p_customFile" type="file"><span id="p_customMsg"></span>
+      <textarea id="tr_src"></textarea><select id="tr_lang"></select><button id="tr_go"></button><button id="tr_copy"></button><textarea id="tr_out"></textarea><span id="tr_msg"></span>
+    </div>
+  </div>
+  <div class="subview2" id="cd-adoc">
+    <div class="fcard">
+      <h2>Admin documents</h2>
+      <p class="fsub">Documents sent to you by the administrator. They stay here on this device until you delete them. Tap a document to open it.</p>
+      <div id="adocList"><p class="hint">No admin documents yet.</p></div>
     </div>
   </div>
 </div>
@@ -825,8 +833,10 @@
     </nav>
     <nav class="subnav" id="cldgnav" style="display:none">
       <button data-cd="cl" class="active">Checklist</button>
-      <button data-cd="dg">Dangerous Goods</button>
+      <button data-cd="crew">Crew</button>
       <button data-cd="pa">PA</button>
+      <button data-cd="dg">Dangerous Goods</button>
+      <button data-cd="adoc">Admin Docs</button>
     </nav>
   </div><!-- /subrail -->
 </div><!-- /applayout -->
@@ -1225,7 +1235,7 @@ function smMarkSVG(u){return '<svg viewBox="0 0 200 200" xmlns="http://www.w3.or
 +'</svg>';}
 (function(){var i=0;['hdrLogo','lockLogo','footLogo','loginLogo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=smLogoSVG('L'+(i++));});var m=document.getElementById('aiGoMark');if(m)m.innerHTML=smMarkSVG('BTN');})();
 /* visible build stamp — bump APP_VERSION on every release so you can confirm at a glance that the latest is live (matches the Worker /version) */
-var APP_VERSION='2026-07-14-batch9M';
+var APP_VERSION='2026-07-15-batch9N';
 (function(){try{Array.prototype.forEach.call(document.querySelectorAll('.appver'),function(e){e.textContent=APP_VERSION;});}catch(e){}})();
 /* theme toggle in the header (follows device by default; user choice persists) */
 (function(){try{ var hdr=document.querySelector('header.app'); if(!hdr)return;
@@ -2290,6 +2300,8 @@ try{ if(navigator.storage && navigator.storage.persist){ navigator.storage.persi
   add.addEventListener('click',addItem);
   input.addEventListener('keydown',function(e){if(e.key==='Enter')addItem();});
   reset.addEventListener('click',function(){items.forEach(function(it){it.done=false;});save();render();});
+  // used by the Checklist maker: append reviewed/approved steps into this on-device checklist
+  window.__addChecklistItems=function(arr){ if(!Array.isArray(arr))return; arr.forEach(function(t){ t=String(t||'').trim(); if(t)items.push({text:t,done:false}); }); save(); render(); };
   render();
 })();
 
@@ -2305,6 +2317,7 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
   document.querySelectorAll('#view-cldg .subview2').forEach(x=>x.classList.remove('active'));
   b.classList.add('active');
   var v=document.getElementById('cd-'+b.dataset.cd); if(v)v.classList.add('active');
+  if(b.dataset.cd==='adoc'&&window.__renderAdminDocs)window.__renderAdminDocs();
 }));
 
 /* ---- right-hand sub-tab rail: show only the active mode's sub-bar; remember the swap side ---- */
@@ -3254,7 +3267,20 @@ window.__updateSubrail=function(){
       tx.oncomplete=docRender;});
   }
   // add a document pushed from the admin tool (base64) into the on-device DOCS store
-  window.__addPushedDoc=function(name,mime,b64){ try{ var bin=atob(b64); var arr=new Uint8Array(bin.length); for(var i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i); var blob=new Blob([arr],{type:mime||'application/pdf'}); docOpen(function(db){ var tx=db.transaction('docs','readwrite'); tx.objectStore('docs').add({name:name||'document.pdf',type:mime||'application/pdf',blob:blob}); tx.oncomplete=function(){ try{docRender();}catch(e){} }; }); }catch(e){} };
+  window.__addPushedDoc=function(name,mime,b64){ try{ var bin=atob(b64); var arr=new Uint8Array(bin.length); for(var i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i); var blob=new Blob([arr],{type:mime||'application/pdf'}); docOpen(function(db){ var tx=db.transaction('docs','readwrite'); tx.objectStore('docs').add({name:name||'document.pdf',type:mime||'application/pdf',blob:blob,admin:true,at:Date.now()}); tx.oncomplete=function(){ try{docRender();}catch(e){} try{renderAdminDocs();}catch(e){} }; }); }catch(e){} };
+  // Admin Docs sub-tab (Utilities): admin-pushed documents persist here until deleted.
+  function renderAdminDocs(){ var el=document.getElementById('adocList'); if(!el)return;
+    docAll(function(list){
+      var ad=(list||[]).filter(function(d){return d.admin;}).sort(function(a,b){return (b.at||0)-(a.at||0);});
+      if(!ad.length){ el.innerHTML='<p class="hint">No admin documents yet. Documents sent by the administrator appear here automatically.</p>'; return; }
+      el.innerHTML=ad.map(function(d){ return '<div class="adrow" data-id="'+d.id+'" style="display:flex;gap:10px;align-items:center;justify-content:space-between;padding:9px 4px;border-bottom:1px solid #16233a">'+
+        '<span class="adopen" data-id="'+d.id+'" style="flex:1;min-width:120px;cursor:pointer;color:#cfe6ff;display:flex;align-items:center;gap:8px">📄 '+esc(d.name||'document')+'</span>'+
+        '<button class="addel warn" data-id="'+d.id+'" type="button" style="padding:5px 12px">Delete</button></div>'; }).join('');
+      el.querySelectorAll('.adopen').forEach(function(s){ s.addEventListener('click',function(){ docOpenView(+s.getAttribute('data-id')); }); });
+      el.querySelectorAll('.addel').forEach(function(b){ b.addEventListener('click',function(){ if(confirm('Delete this admin document from this device?')){ docDelete(+b.getAttribute('data-id')); setTimeout(renderAdminDocs,120); } }); });
+    });
+  }
+  window.__renderAdminDocs=renderAdminDocs;
   function docAll(cb){
     docOpen(db=>{const out=[];const st=db.transaction('docs','readonly').objectStore('docs');
       st.openCursor().onsuccess=e=>{const cur=e.target.result;if(cur){out.push(Object.assign({id:cur.key},cur.value));cur.continue();}else cb(out);};});
@@ -3386,7 +3412,7 @@ window.__updateSubrail=function(){
   (function(){
     var AN_URL="https://skymatrix-trial.skymatrix.workers.dev/announce";
     var go=$('ap_go'); if(!go)return;
-    var lang=$('ap_lang'), tmpl=$('ap_tmpl'), out=$('ap_out'), msg=$('ap_msg');
+    var lang=$('ap_lang'), tmpl=$('na_text')||$('ap_tmpl'), out=$('ap_out'), msg=$('ap_msg');
     function setM(t){ if(msg)msg.textContent=t||''; }
     function fillLangs(){ if(!lang||lang.options.length)return;
       var LANGS=['English','Arabic','French','Spanish','German','Italian','Portuguese','Dutch','Russian','Turkish','Persian (Farsi)','Urdu','Hindi','Bengali','Tamil','Indonesian','Malay','Thai','Chinese (Simplified)','Japanese','Korean','Greek','Hebrew','Polish','Swahili','Filipino'];
@@ -3394,8 +3420,13 @@ window.__updateSubrail=function(){
       lang.value='English';   // English is the default
     }
     fillLangs();
-    try{ var nm=localStorage.getItem('sm_ap_name'); if(nm&&$('ap_name'))$('ap_name').value=nm; }catch(e){}
+    try{ var nm=localStorage.getItem('sm_ap_name'); if(nm&&$('ap_name'))$('ap_name').value=nm;
+      var _po=localStorage.getItem('sm_ap_pos'); if(_po&&$('ap_pos'))$('ap_pos').value=_po;
+      var _ai=localStorage.getItem('sm_ap_air'); if(_ai&&$('ap_air'))$('ap_air').value=_ai; }catch(e){}
     if($('ap_name'))$('ap_name').addEventListener('input',function(){try{localStorage.setItem('sm_ap_name',$('ap_name').value);}catch(e){}});
+    if($('ap_pos'))$('ap_pos').addEventListener('input',function(){try{localStorage.setItem('sm_ap_pos',$('ap_pos').value);}catch(e){}});
+    if($('ap_air'))$('ap_air').addEventListener('input',function(){try{localStorage.setItem('sm_ap_air',$('ap_air').value);}catch(e){}});
+    if($('ap_useSaved'))$('ap_useSaved').addEventListener('click',function(){ var r=((out&&out.value)||'').trim(); if(!r){setM('Nothing to use yet — fill the blanks first.');return;} var nt=$('na_text'); if(nt){ nt.value=r; try{nt.dispatchEvent(new Event('input',{bubbles:true}));}catch(e){} } setM('Result moved into the announcement — edit or Save it.'); });
     if($('ap_file'))$('ap_file').addEventListener('change',function(){
       var f=$('ap_file').files&&$('ap_file').files[0]; if(!f)return;
       var nm=(f.name||'').toLowerCase();
@@ -3437,13 +3468,13 @@ window.__updateSubrail=function(){
       L.push('Captain name: '+g('p_capt'));
       L.push('First Officer name: '+g('p_fo'));
       L.push('Cabin supervisor name: '+g('p_csd'));
-      L.push('Airline / operator: '+g('p_airline'));
-      L.push('Speaker name / rank: '+(($('ap_name')||{}).value||''));
+      L.push('Airline / operator: '+(g('ap_air')||g('p_airline')));
+      L.push('Speaker name and rank: '+g('ap_name')+(g('ap_pos')?(' — '+g('ap_pos')):''));
       return L.filter(function(x){return !/:\s*$/.test(x);}).join('\n');   // omit blank fields so the AI leaves nothing dangling
     }
     go.addEventListener('click',function(){
       var t=(tmpl.value||'').trim();
-      if(t.length<10){ setM('Upload or paste an announcement template first.'); return; }
+      if(t.length<10){ setM('Type your announcement (with ____ or [BRACKETS] blanks) or upload a template first.'); return; }
       go.disabled=true; setM('Filling with Sky Matrix AI…');
       fetch(AN_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({template:t.slice(0,8000), data:flightData(), lang:(lang&&lang.value)||'English', device:(localStorage.getItem('sm_dev')||''), code:(localStorage.getItem('sm_lic')||'')})})
         .then(function(r){return r.json();})
@@ -3556,12 +3587,15 @@ window.__updateSubrail=function(){
   var CL_URL="https://skymatrix-trial.skymatrix.workers.dev/checklist";
   var __clFile=null;
   function clLines(text){ return String(text||'').split(/\r?\n/).map(function(l){return l.replace(/^[\s\-\*•▪●\d\.\)\(]+/,'').trim();}).filter(function(l){return l.length>=3 && l.length<=200;}); }
-  function clRender(title,items){ if(!items||!items.length){$('clMsg').textContent='No checklist items could be read from that file.';return;}
-    var html='<div style="font-weight:700;margin-bottom:8px;color:#fff">'+esc(title||'Checklist')+'</div>'+
-      items.map(function(it){return '<label style="display:flex;gap:8px;align-items:flex-start;padding:7px 4px;border-bottom:1px solid #16233a;font-size:13px;cursor:pointer"><input type="checkbox" style="margin-top:3px;width:16px;height:16px;flex:0 0 auto"> <span>'+esc(it)+'</span></label>';}).join('')+
-      '<div style="font-size:11px;color:#7e90ad;margin-top:8px">'+items.length+' items · ticks last while this checklist stays open.</div>';
-    window.__floatChecklist(Date.now(), title||'Checklist', html);
-    $('clMsg').textContent='Checklist ready ('+items.length+' items) — open via the floating button (bottom-right).';
+  // Show the generated steps in an editable REVIEW list; nothing is saved until the user approves.
+  function clShowReview(title,items){ if(!items||!items.length){$('clMsg').textContent='No checklist items could be read from that file.';if($('clReview'))$('clReview').style.display='none';return;}
+    var rl=$('clReviewList'); if(!rl)return;
+    rl.innerHTML=items.map(function(it){ return '<div class="clrevrow" style="display:flex;gap:8px;align-items:center;margin-bottom:6px">'+
+        '<input class="clrev-inp" value="'+esc(it)+'" style="flex:1;min-width:140px">'+
+        '<button class="clrev-del ghost" type="button" style="padding:4px 10px">✕</button></div>'; }).join('');
+    rl.querySelectorAll('.clrev-del').forEach(function(b){ b.addEventListener('click',function(){ var row=b.closest('.clrevrow'); if(row&&row.parentNode)row.parentNode.removeChild(row); }); });
+    if($('clReview'))$('clReview').style.display='block';
+    $('clMsg').textContent='Review the '+items.length+' steps below, then add them to your Checklist.';
   }
   if($('clFile'))$('clFile').addEventListener('change',function(){ __clFile=$('clFile').files&&$('clFile').files[0]||null; if($('clMsg'))$('clMsg').textContent=__clFile?('Selected: '+__clFile.name):''; });
   if($('clMake'))$('clMake').addEventListener('click',function(){
@@ -3571,14 +3605,24 @@ window.__updateSubrail=function(){
     $('clMsg').textContent='Reading document…';
     extractRosterText(__clFile).then(function(text){
       if(!text||text.trim().length<2){$('clMsg').textContent='Could not read any text from that file.';return;}
-      if(mode==='line'){ clRender(title,clLines(text)); return; }
+      if(mode==='line'){ clShowReview(title,clLines(text)); return; }
       $('clMsg').textContent='Building checklist with Sky Matrix AI…';
       fetch(CL_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:text.slice(0,9000),title:title, device:(localStorage.getItem('sm_dev')||''), code:(localStorage.getItem('sm_lic')||'')})})
         .then(function(r){return r.json();})
-        .then(function(j){ if(j&&j.ok&&j.items&&j.items.length) clRender(title,j.items); else clRender(title,clLines(text)); })
-        .catch(function(){ clRender(title,clLines(text)); });   // offline / endpoint not deployed -> line-by-line
+        .then(function(j){ if(j&&j.ok&&j.items&&j.items.length) clShowReview(title,j.items); else clShowReview(title,clLines(text)); })
+        .catch(function(){ clShowReview(title,clLines(text)); });   // offline / endpoint not deployed -> line-by-line
     }).catch(function(e){ $('clMsg').textContent='Could not read the file: '+e.message; });
   });
+  // Approve → append the reviewed steps into the on-device Checklist (Checklist sub-tab); Discard → drop them.
+  if($('clApprove'))$('clApprove').addEventListener('click',function(){
+    var vals=[].map.call($('clReviewList').querySelectorAll('.clrev-inp'),function(i){return (i.value||'').trim();}).filter(Boolean);
+    if(!vals.length){$('clMsg').textContent='No steps to add.';return;}
+    if(window.__addChecklistItems)window.__addChecklistItems(vals);
+    if($('clReview'))$('clReview').style.display='none'; $('clReviewList').innerHTML='';
+    __clFile=null; if($('clFile'))$('clFile').value=''; if($('clTitle'))$('clTitle').value='';
+    $('clMsg').textContent='Added '+vals.length+' steps to your Checklist ✓ (scroll up to Checklist).';
+  });
+  if($('clDiscard'))$('clDiscard').addEventListener('click',function(){ if($('clReview'))$('clReview').style.display='none'; $('clReviewList').innerHTML=''; $('clMsg').textContent='Discarded.'; });
 
   $('r_to').addEventListener('input',()=>{$('d_to').value=$('r_to').value;autoRest();calcRest();buildChecks();calcDisplay();});
   ['r_type','r_start','r_end','r_gap'].forEach(id=>$(id).addEventListener('input',()=>{calcRest();calcDisplay();}));
