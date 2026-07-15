@@ -374,7 +374,8 @@ if($('pushBtn'))$('pushBtn').addEventListener('click',function(){
   var rd=new FileReader();
   rd.onload=function(){ var b64=(''+rd.result).split(',')[1]||'';
     H(k,'/admin/pushdoc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:target,name:f.name,mime:f.type||'application/pdf',dataB64:b64})}).then(function(j){
-      if(j&&j.ok){ set($('msgPush'),'Pushed "'+f.name+'" to '+(target==='ALL'?'all licensed devices':target)+'. It lands in their DOCS at the next online open.','ok'); $('pushFile').value=''; }
+      if(j&&j.ok){ set($('msgPush'),'Pushed "'+f.name+'" to '+(target==='ALL'?'all licensed devices':target)+'. It lands in their Utilities → Admin Docs at the next online open.','ok'); $('pushFile').value=''; }
+      else if(j&&j.error==='unauthorized') set($('msgPush'),'Admin token rejected. Re-enter the exact ADMIN_TOKEN you set with wrangler, click “Save token”, then try again. (Tip: click Users → Load users to confirm the token works.)','err');
       else set($('msgPush'),(j&&j.error)||'Failed.','err');
     }).catch(function(){ set($('msgPush'),'Network error.','err'); });
   };
