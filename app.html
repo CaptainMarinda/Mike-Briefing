@@ -424,10 +424,9 @@
       <div class="hint">PDF text is extracted in-browser via PDF.js (needs internet the first time). Your last OFP is remembered until you load another.</div>
       <div class="hint" style="margin-top:6px">Tip: on Android you can open your OFP email, tap <b>Share</b> and choose <b>Sky Matrix</b> to load it straight in. On iPhone/iPad, open the PDF and use the file picker above.</div>
       <textarea id="paste" style="display:none"></textarea>
-      <div class="hint" style="margin-top:10px">Once your OFP is loaded, choose <b>one</b>: <b>Sky Matrix Briefing</b> (fast, works without internet, best on Qatar OFPs) or <b>Sky Matrix AI</b> (reads the OFP pages for the most accurate result across all airlines, needs internet).</div>
+      <div class="hint" style="margin-top:10px">Load your OFP and tap <b>Sky Matrix AI</b>. Qatar OFPs are read instantly by the built-in reader (works offline); all other airlines are read by Sky Matrix AI. Either way the result feeds Sky Matrix AI so it keeps improving.</div>
       <div class="row" style="display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;margin-top:6px">
-        <button id="go" type="button" style="flex:1;min-width:150px;background:#1f6dff;border:1px solid #1f6dff;color:#fff">Sky Matrix Briefing</button>
-        <button id="aiGo" type="button" style="flex:1;min-width:150px;background:#0e2a44;border:1px solid #2f8bff;color:#cfe6ff;display:inline-flex;align-items:center;justify-content:center;gap:8px"><span id="aiGoMark" style="width:22px;height:22px;flex:0 0 auto;display:inline-flex"></span>Sky Matrix AI (beta)</button>
+        <button id="aiGo" type="button" style="flex:2;min-width:180px;background:#0e2a44;border:1px solid #2f8bff;color:#cfe6ff;display:inline-flex;align-items:center;justify-content:center;gap:8px"><span id="aiGoMark" style="width:22px;height:22px;flex:0 0 auto;display:inline-flex"></span>Sky Matrix AI</button>
         <button id="reset" type="button" style="flex:1;min-width:150px;background:#3a2140;border:1px solid #b23a5d;color:#f4c9d8">Load another OFP</button>
       </div>
       <div id="msg" class="msg" style="margin-top:10px"></div>
@@ -1226,7 +1225,7 @@ function smMarkSVG(u){return '<svg viewBox="0 0 200 200" xmlns="http://www.w3.or
 +'</svg>';}
 (function(){var i=0;['hdrLogo','lockLogo','footLogo','loginLogo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=smLogoSVG('L'+(i++));});var m=document.getElementById('aiGoMark');if(m)m.innerHTML=smMarkSVG('BTN');})();
 /* visible build stamp — bump APP_VERSION on every release so you can confirm at a glance that the latest is live (matches the Worker /version) */
-var APP_VERSION='2026-07-14-batch9k';
+var APP_VERSION='2026-07-14-batch9M';
 (function(){try{Array.prototype.forEach.call(document.querySelectorAll('.appver'),function(e){e.textContent=APP_VERSION;});}catch(e){}})();
 /* theme toggle in the header (follows device by default; user choice persists) */
 (function(){try{ var hdr=document.querySelector('header.app'); if(!hdr)return;
@@ -2024,7 +2023,7 @@ async function loadFile(f){
     lastText=await readFile(f);
     if(!lastText||!lastText.trim()) throw new Error('File looks empty after reading.');
     paste.value=lastText.slice(0,200000);
-    setMsg('Loaded '+f.name+'. Now choose one: “Sky Matrix Briefing” or “Sky Matrix AI”.','ok');
+    setMsg('Loaded '+f.name+'. Now tap “Sky Matrix AI”.','ok');
   }catch(e){ setMsg('Could not read file: '+e.message+'  (Try pasting the OFP text below instead.)','err'); }
 }
 function setMsg(t,k){msg.textContent=t;msg.className='msg '+(k||'');}
@@ -2060,11 +2059,17 @@ window.__renderIdent=function(){
     ? `<span>ATC <b>${esc(d.atcCs||'—')}</b></span><span>Flt <b>${esc(d.fltCs||'—')}</b></span>`+route+`<span>OFP ${esc(d.ofpNo||'')}</span>`
     : `<span>Callsign <b>${esc(d.atcCs||'—')}</b></span>`+route;
 };
-document.getElementById('go').onclick=generate;
+var _goBtn=document.getElementById('go'); if(_goBtn)_goBtn.onclick=generate;   // legacy button removed from UI; generate() still used for the Qatar offline path
 /* ---- Read with AI: sends the OFP text to the backend AI reader and fills the visible fields (safe/additive) ---- */
 (function(){
   var AI_URL="https://skymatrix-trial.skymatrix.workers.dev/ofp/parse";
+  var FEED_URL="https://skymatrix-trial.skymatrix.workers.dev/ofp/feed";
   var aiBtn=document.getElementById('aiGo'); if(!aiBtn)return;
+  // Detect a Qatar Airways OFP (Lido): QTR ATC callsign, QR flight numbers, or the airline name.
+  function isQatar(t){ t=(t||'').toUpperCase(); return /\bQTR\s?\d/.test(t) || /\bQR\s?\d{2,4}\b/.test(t) || /QATAR\s*AIRWAYS/.test(t); }
+  // Feed an OFP to Sky Matrix AI for learning WITHOUT a full parse (cheap: server only learns a NEW airline, else no-op).
+  function feedAI(text){ try{ var _h={'Content-Type':'application/json'}; try{var _at=localStorage.getItem('sm_admin_tok'); if(_at)_h['x-admin-token']=_at;}catch(e){}
+    fetch(FEED_URL,{method:'POST',headers:_h,body:JSON.stringify({text:(text||'').slice(0,90000), airline:'QTR', device:(localStorage.getItem('sm_dev')||''), code:(localStorage.getItem('sm_lic')||'')})}).catch(function(){}); }catch(e){} }
   function setF(id,v){ if(v==null||v==='')return; var e=document.getElementById(id); if(e){ e.value=v; e.dataset.touched='1'; try{e.dispatchEvent(new Event('input',{bubbles:true}));}catch(_){} } }
   function m2hhmm(min){ min=parseInt(min,10); if(isNaN(min))return ''; return Math.floor(min/60)+'h '+String(min%60).padStart(2,'0')+'m'; }
   function min2hhmm(min){ min=parseInt(min,10); if(isNaN(min))return ''; var h=Math.floor(min/60),m=min%60; return (h<10?'0':'')+h+(m<10?'0':'')+m; }
@@ -2168,9 +2173,17 @@ document.getElementById('go').onclick=generate;
   aiBtn.addEventListener('click',function(){
     var text=((document.getElementById('paste')||{}).value||'').trim();
     if(!text && !window.__ofpPdfBuf){ setMsg('Load an OFP first, then use Sky Matrix AI.','err'); return; }
+    // Qatar OFP → read instantly with the built-in reader (tuned for Qatar, works offline). Still feed it to Sky Matrix AI
+    // in the background so the AI keeps learning Qatar too. All other airlines → Sky Matrix AI reads the pages.
+    if(text && isQatar(text)){
+      try{ generate(); }catch(e){ setMsg('Parse error — try again.','err'); return; }
+      feedAI(text);
+      setMsg('Qatar OFP — briefing built by the built-in reader. Shared with Sky Matrix AI to keep improving.','ok');
+      return;
+    }
     aiBtn.disabled=true; setMsg(window.__ofpPdfBuf?'Reading the OFP pages with Sky Matrix AI…':'Reading the OFP with Sky Matrix AI…','');
     ofpPageImages()
-      .then(function(images){ return fetch(AI_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:text.slice(0,90000), images:images, device:(localStorage.getItem('sm_dev')||''), code:(localStorage.getItem('sm_lic')||'')})}); })
+      .then(function(images){ var _h={'Content-Type':'application/json'}; try{var _at=localStorage.getItem('sm_admin_tok'); if(_at)_h['x-admin-token']=_at;}catch(e){} /* admin devices auto-teach the reader from each new airline */ return fetch(AI_URL,{method:'POST',headers:_h,body:JSON.stringify({text:text.slice(0,90000), images:images, device:(localStorage.getItem('sm_dev')||''), code:(localStorage.getItem('sm_lic')||'')})}); })
       .then(function(r){return r.json();})
       .then(function(j){
         if(!j||!j.ok){ setMsg((j&&j.error)||'Sky Matrix AI unavailable right now.','err'); return; }
