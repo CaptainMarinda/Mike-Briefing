@@ -186,7 +186,8 @@
   .fcard{background:#13203A;border:1px solid #20304f;border-radius:10px;padding:16px;margin-bottom:16px}
   .fcard h2{margin:0 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:#9FB3D1}
   .fsub{color:#7e90ad;font-size:12px;margin:0 0 14px}
-  .fgrid{display:flex;gap:12px;flex-wrap:wrap}
+  .fgrid{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+  .fgrid>.feat-field{flex:1 1 150px;min-width:140px}
   .fgrid>div{flex:1 1 150px}
   label.lab{display:block;font-size:11px;color:#9FB3D1;margin:0 0 4px;font-weight:600}
   .view select,.view input[type=time],.view input[type=number],.view input[type=text]{width:100%;background:#0f1b31;border:1px solid #2a3c5e;color:#E6ECF5;border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:12px}
@@ -248,10 +249,10 @@
   #lockScreen .warn{margin-top:22px;font-size:11px;color:#ffb3b3;background:#2a1414;border:1px solid #5a2222;border-radius:8px;padding:10px;line-height:1.5}
   #lockScreen .by{margin-top:14px;font-size:11px;color:#7e90ad}
   #lockScreen .by a{color:#7ec8ff;text-decoration:none}
-  #setPinScreen,#loginScreen{display:none;position:fixed;inset:0;background:#0E1726;z-index:101;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;overflow:auto}
-  #setPinScreen .box,#loginScreen .box{max-width:400px;width:100%}
-  #setPinScreen input,#loginScreen input{width:100%;background:#13203A;border:1px solid #2a3c5e;color:#fff;border-radius:8px;padding:12px;font-size:17px;text-align:center;margin-bottom:10px}
-  #setPinScreen button,#loginScreen button{width:100%;padding:12px;font-size:15px}
+  #setPinScreen,#loginScreen,#profileScreen{display:none;position:fixed;inset:0;background:#0E1726;z-index:101;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;overflow:auto}
+  #setPinScreen .box,#loginScreen .box,#profileScreen .box{max-width:400px;width:100%}
+  #setPinScreen input,#loginScreen input,#profileScreen input{width:100%;background:#13203A;border:1px solid #2a3c5e;color:#fff;border-radius:8px;padding:12px;font-size:17px;text-align:center;margin-bottom:10px}
+  #setPinScreen button,#loginScreen button,#profileScreen button{width:100%;padding:12px;font-size:15px}
   .gnote{font-size:12px;color:#9fb3d1;margin:6px 0;line-height:1.5}
   .gerr{color:#ff9aa2;font-size:12.5px;min-height:16px;margin-top:6px}
   .gexp{display:none;background:#3a2412;border:1px solid #d99a1f;color:#ffe8c2;border-radius:8px;padding:9px;font-size:12.5px;margin-bottom:12px}
@@ -337,6 +338,8 @@
       <button id="lockDevShow" type="button" style="width:auto;flex:1;background:#13203A;border:1px solid #2a3c5e;color:#cfe0f5;font-size:13px;padding:9px">Show ID</button>
       <button id="lockDevCopy" type="button" style="width:auto;flex:1;background:#13203A;border:1px solid #2a3c5e;color:#cfe0f5;font-size:13px;padding:9px">Copy ID</button>
     </div>
+    <input id="lockDevName" type="text" maxlength="40" placeholder="Name this device (optional — e.g. My iPad)" autocomplete="off" style="text-align:center;font-size:13px;margin:-2px 0 12px">
+    <script>(function(){try{var n=document.getElementById('lockDevName');if(!n)return;try{n.value=localStorage.getItem('sm_dev_name')||'';}catch(e){}n.addEventListener('change',function(){if(window.__setDeviceName)window.__setDeviceName(n.value);});}catch(e){}})();</script>
     <button id="lockTrial">Start my free 10-day trial</button>
     <button id="lockSub" style="background:#12324a;border:1px solid #2f8bff;color:#cfe6ff;margin-top:8px">Subscribe</button>
     <div id="lockReqMsg" style="font-size:13px;margin-top:6px;min-height:16px"></div>
@@ -371,6 +374,9 @@
     <div class="gnote" style="color:#7fd8ff;letter-spacing:3px;font-size:11px;margin:0 0 12px">FLY INFORMED</div>
     <div id="loginExp" class="gexp"></div>
     <div id="loginUpd" class="gupd"></div>
+    <div id="loginVer" style="font-size:12px;color:#7fd8ff;font-weight:700;margin:2px 0 4px"></div>
+    <a id="loginWhatsNewLink" href="#" style="display:block;margin:0 0 6px;color:#7fd8ff;font-size:12px;text-decoration:none">What's new ▾</a>
+    <div id="loginWhatsNew" style="display:none;font-size:12px;color:#c7d6ee;text-align:left;max-height:150px;overflow:auto;background:#0e1930;border:1px solid #24354f;border-radius:8px;padding:8px 10px;margin:0 0 10px"></div>
     <input id="loginPin" type="password" inputmode="numeric" placeholder="Enter your PIN" maxlength="8" autocomplete="current-password">
     <button id="loginBtn">Unlock</button>
     <button id="loginBio" style="display:none;background:#13203A;border:1px solid #2a3c5e;color:#cfe0f5;margin-top:8px">Unlock with Face ID / fingerprint</button>
@@ -388,6 +394,19 @@
       <button id="forgotBtn" style="background:#13203A;border:1px solid #2a3c5e;color:#cfe0f5">Reset PIN with code</button>
       <div id="forgotErr" class="gerr"></div>
     </div>
+  </div>
+</div>
+
+<div id="profileScreen">
+  <div class="box">
+    <div style="font-weight:800;font-size:20px;letter-spacing:3px;color:#eaf4ff;margin-bottom:8px">YOUR DETAILS</div>
+    <div class="gnote" style="color:#ffd88a;background:rgba(224,163,58,.12);border:1px solid #6b5325;border-radius:8px;padding:10px 12px;text-align:left;line-height:1.5">&#9888; These details are <b>required to use Sky Matrix</b>. They personalise your announcements and are shared with your administrator. Your <b>name is set once and cannot be changed</b> later &mdash; position, airline and aircraft you can update anytime with your PIN.</div>
+    <input id="pf_name" type="text" maxlength="60" placeholder="Full name (set once)" autocomplete="name" style="margin-top:10px">
+    <input id="pf_position" type="text" maxlength="40" placeholder="Position (e.g. Captain / First Officer)">
+    <input id="pf_airline" type="text" maxlength="60" placeholder="Airline (e.g. Qatar Airways)">
+    <input id="pf_aircraft" type="text" maxlength="40" placeholder="Aircraft type (e.g. A350 / B777)">
+    <button id="pf_save">Save and open Sky Matrix</button>
+    <div id="pf_err" class="gerr"></div>
   </div>
 </div>
 
@@ -410,6 +429,7 @@
   <nav class="siderail" id="siderail">
     <button data-v="briefing" class="rail"><svg class="nico" viewBox="0 0 24 24"><path d="M7 3h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg><span>OFP Briefing</span></button>
     <button data-v="disp" class="rail"><svg class="nico fill" viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0 0 11.5 2 1.5 1.5 0 0 0 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg><span>Inflight Display</span></button>
+    <button id="railDocs" type="button" class="rail"><svg class="nico" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span>Docs</span></button>
   </nav>
   <div class="maincol" id="maincol">
 
@@ -458,12 +478,22 @@
 <div class="wrap view" id="view-cldg">
   <div class="subview2 active" id="cd-cl">
     <div class="fcard">
-      <h2>Checklist</h2>
-      <p class="fsub">Your own checklist — add items, tick them off. Saved on this device. Use <b>Reset ticks</b> before each flight.</p>
+      <h2>Checklists</h2>
+      <p class="fsub">Create multiple named checklists. Tap a tab to open it; use &lsaquo; &rsaquo; to reorder. Saved on this device. <b>Reset ticks</b> before each flight.</p>
+      <div id="cl_tabs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+        <input id="cl_newname" type="text" placeholder="New checklist name…" style="flex:1;min-width:140px">
+        <button id="cl_addlist" type="button" style="background:#0c3320;border:1px solid #34c759;color:#c9f5d8">+ New checklist</button>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+        <b id="cl_curname" style="color:#e6eefc;font-size:14px"></b>
+        <button id="cl_rename" type="button" class="ghost" style="font-size:12px;padding:5px 10px">Rename</button>
+        <button id="cl_dellist" type="button" class="warn" style="font-size:12px;padding:5px 10px">Delete list</button>
+        <button id="cl_reset" type="button" class="ghost" style="font-size:12px;padding:5px 10px">Reset ticks</button>
+      </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
-        <input id="cl_new" type="text" placeholder="Add a checklist item…" style="flex:1;min-width:180px">
+        <input id="cl_new" type="text" placeholder="Add an item…" style="flex:1;min-width:180px">
         <button id="cl_add" type="button">Add</button>
-        <button id="cl_reset" type="button" class="ghost">Reset ticks</button>
       </div>
       <div id="cl_list"></div>
     </div>
@@ -520,6 +550,7 @@
         <div class="feat-field"><label class="lab">Position</label><input id="ap_pos" type="text" placeholder="Capt / FO"></div>
         <div class="feat-field"><label class="lab">Airline</label><input id="ap_air" type="text"></div>
       </div>
+      <div style="margin:-2px 0 8px"><a href="#" id="ap_editProfile" style="color:#7ec8ff;font-size:12px;text-decoration:none">&#9998; Edit my saved details (name is fixed; position / airline / aircraft can change)</a></div>
 
       <div style="margin-top:14px;border-top:1px solid #20304f;padding-top:12px">
         <label class="lab">Type of announcement</label>
@@ -572,7 +603,7 @@
   <div class="clockbar">
     <div><div class="t" id="clkTime">--:--:--Z</div><div class="d" id="clkDate">—</div><div class="d" id="clkCall" style="color:#7ec8ff;font-weight:700;letter-spacing:1px"></div></div>
     <div style="display:flex;align-items:center;gap:12px">
-      <button id="d_docs" type="button" class="ghost" style="padding:7px 13px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>DOCS</button>
+      <button id="d_docs" type="button" class="ghost" style="padding:7px 13px;white-space:nowrap;display:none;align-items:center;gap:6px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>DOCS</button>
       <div class="src" id="clkSrc">device clock (UTC)</div>
     </div>
   </div>
@@ -590,7 +621,11 @@
       <div class="feat-field"><label class="lab">Trip time (HH:MM, from OFP)</label><input id="d_trip" type="time"></div>
       <div class="feat-field"><label class="lab">Post-takeoff check every (min)</label><input id="chkInt" type="number" value="30" min="5" max="120" step="5"></div>
     </div>
-    <p class="hint">Tap START at takeoff to capture the airborne time (uses internet UTC). Banners: Top of Climb, then a check every set interval after takeoff. Destination resolves automatically from the OFP. Your saved documents are under the <b>DOCS</b> button in the clock bar.</p>
+    <p class="hint">Tap START at takeoff to capture the airborne time (uses internet UTC). Banners: Top of Climb, then a check every set interval after takeoff. Destination resolves automatically from the OFP. Your saved documents are under the <b>Docs</b> tab on the left.</p>
+  </div>
+  <div class="fcard" id="liveRestCard" style="display:none">
+    <h2 style="font-size:15px">Crew rest <span class="hint" style="font-weight:400">— from the Inflight Rest plan</span></h2>
+    <div id="liveRestBox"></div>
   </div>
   <div class="fcard">
     <h2>GPS auto take-off &amp; landing</h2>
@@ -634,8 +669,10 @@
 
   <div class="subview2" id="disp-nav">
   <div class="fcard" id="navlogCard">
-    <h2>NAV LOG <span class="hint" style="font-weight:400">— live GPS vs OFP plan</span></h2>
-    <div class="dispgrid">
+    <h2>NAV LOG <span class="hint" style="font-weight:400">— waypoint by waypoint (from OFP)</span></h2>
+    <div id="nlWpTable" style="margin:6px 0 4px"></div>
+    <details style="margin:4px 0 8px"><summary style="cursor:pointer;color:#7ec8ff;font-size:13px;font-weight:600">Live GPS vs OFP summary</summary>
+    <div class="dispgrid" style="margin-top:8px">
       <div class="dispbox"><div class="v" id="nl_flown">--</div><div class="l">Dist flown (NM)</div></div>
       <div class="dispbox"><div class="v" id="nl_togo">--</div><div class="l">Dist to go (NM)</div></div>
       <div class="dispbox"><div class="v" id="nl_elapsed">--:--</div><div class="l">Time elapsed</div></div>
@@ -661,6 +698,7 @@
       <div class="dispbox"><div class="v" id="nl_dfueldest">--</div><div class="l">Δ fuel at dest</div></div>
     </div>
     <p class="hint" id="navHint">Arm GPS and load an OFP. Enter your current fuel from EICAS/FMS to see the fuel comparison. Plan distance, time and fuel are taken from the OFP nav log.</p>
+    </details>
   </div>
   <div class="fcard">
     <h2>Airport weather &amp; NOTAMs</h2>
@@ -972,10 +1010,34 @@ var LIC_PUBKEY = "BMxAfrty9p7_t79ebh4KowBcDiZVaiyBIRPPgMGaPK2Bt4yB9EU1W-4z9WQ4E4
    a year): it stops working after that day and is useless on any other device.
    No password is used. */
 (function(){
-  var SC={lock:document.getElementById('lockScreen'),setpin:document.getElementById('setPinScreen'),login:document.getElementById('loginScreen')};
+  var SC={lock:document.getElementById('lockScreen'),setpin:document.getElementById('setPinScreen'),login:document.getElementById('loginScreen'),profile:document.getElementById('profileScreen')};
   function hideAll(){for(var k in SC){if(SC[k])SC[k].style.display='none';}}
   function show(k){hideAll();if(SC[k])SC[k].style.display='flex';}
-  function runApp(){hideAll();try{sessionStorage.setItem('sm_unlocked','1');}catch(e){}if(typeof requestWake==='function')requestWake();}
+  function getProfile(){ try{ return JSON.parse(localStorage.getItem('sm_profile')||'{}')||{}; }catch(e){ return {}; } }
+  function profileComplete(){ var p=getProfile(); return !!(p&&p.name&&p.position&&p.airline&&p.aircraft); }
+  function enterApp(){ hideAll(); try{sessionStorage.setItem('sm_unlocked','1');}catch(e){} if(typeof requestWake==='function')requestWake();
+    try{ var p=getProfile(); var mp={ap_name:p.name,ap_pos:p.position,ap_air:p.airline}; for(var id in mp){ var e=document.getElementById(id); if(e&&mp[id]){ e.value=mp[id]; try{e.dispatchEvent(new Event('input',{bubbles:true}));}catch(_){} } } }catch(e){}
+  }
+  function showProfile(){ var p=getProfile();
+    var n=document.getElementById('pf_name'); if(n){ n.value=p.name||''; if(p.name){ n.readOnly=true; n.style.opacity='.65'; } }
+    var q=document.getElementById('pf_position'); if(q)q.value=p.position||'';
+    var a=document.getElementById('pf_airline'); if(a)a.value=p.airline||'';
+    var c=document.getElementById('pf_aircraft'); if(c)c.value=p.aircraft||'';
+    show('profile');
+  }
+  function runApp(){ if(!profileComplete()){ showProfile(); return; } enterApp(); }
+  window.__editProfile=showProfile;   // re-open the details form (name stays read-only); already behind the PIN
+  (function(){ var b=document.getElementById('pf_save'); if(!b)return;
+    b.addEventListener('click',function(){
+      var name=((document.getElementById('pf_name')||{}).value||'').trim(), pos=((document.getElementById('pf_position')||{}).value||'').trim(), air=((document.getElementById('pf_airline')||{}).value||'').trim(), ac=((document.getElementById('pf_aircraft')||{}).value||'').trim();
+      var err=document.getElementById('pf_err');
+      if(!name||!pos||!air||!ac){ if(err)err.textContent='All four fields are required to use Sky Matrix.'; return; }
+      var prev=getProfile(); var prof={ name: prev.name||name, position:pos, airline:air, aircraft:ac };   // name is set once
+      try{ localStorage.setItem('sm_profile',JSON.stringify(prof)); }catch(e){}
+      try{ var code=localStorage.getItem('sm_lic')||'', dev=localStorage.getItem('sm_dev')||''; if(code&&dev){ fetch('https://skymatrix-trial.skymatrix.workers.dev/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:dev,code:code,name:prof.name,position:prof.position,airline:prof.airline,aircraft:prof.aircraft})}).catch(function(){}); } }catch(e){}
+      if(err)err.textContent=''; enterApp();
+    });
+  })();
 
   var te=function(s){return new TextEncoder().encode(s);};
   function ub64u(s){s=String(s).replace(/-/g,'+').replace(/_/g,'/');var bin;try{bin=atob(s);}catch(e){return null;}var u=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
@@ -1091,7 +1153,7 @@ var LIC_PUBKEY = "BMxAfrty9p7_t79ebh4KowBcDiZVaiyBIRPPgMGaPK2Bt4yB9EU1W-4z9WQ4E4
     return !!a;}
 
   function checkUpdate(el){if(!el)return;try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistration().then(function(reg){if(!reg)return;
-    function chk(){if(reg.waiting){el.style.display='block';el.textContent='An update is ready. Close and reopen the app to update.';}}
+    function chk(){if(reg.waiting){el.style.display='block';el.textContent='🔔 A new version of Sky Matrix is available — close and reopen the app to update.';}}
     try{reg.update();}catch(e){}chk();
     reg.addEventListener('updatefound',function(){var nw=reg.installing;if(nw)nw.addEventListener('statechange',function(){if(nw.state==='installed')chk();});});
   }).catch(function(){});}}catch(e){}}
@@ -1123,10 +1185,18 @@ var LIC_PUBKEY = "BMxAfrty9p7_t79ebh4KowBcDiZVaiyBIRPPgMGaPK2Bt4yB9EU1W-4z9WQ4E4
       try{last=localStorage.getItem('sm_reg_day')||'';}catch(e){}
       if(last===today) return;
       var em=''; try{em=localStorage.getItem('sm_email')||'';}catch(e){}
-      fetch(LIC_WORKER+'/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:DEV,email:em,code:code})})
+      var dn=''; try{dn=localStorage.getItem('sm_dev_name')||'';}catch(e){}
+      fetch(LIC_WORKER+'/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:DEV,email:em,code:code,name:dn})})
         .then(function(){try{localStorage.setItem('sm_reg_day',today);}catch(e){}}).catch(function(){});
     }catch(e){}
   }
+  // let the user name this device; saves locally and (if activated) pushes the name to the admin list immediately
+  window.__setDeviceName=function(name){ name=String(name||'').replace(/[<>]/g,'').slice(0,40).trim();
+    try{localStorage.setItem('sm_dev_name',name);}catch(e){}
+    var code=''; try{code=localStorage.getItem('sm_lic')||'';}catch(e){} var em=''; try{em=localStorage.getItem('sm_email')||'';}catch(e){}
+    if(code){ try{ fetch(LIC_WORKER+'/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:DEV,email:em,code:code,name:name})}).catch(function(){}); }catch(e){} }
+    return name;
+  };
   async function route(){
     if(__blocked){var m=onboardMsgEl();if(m)m.textContent='Access suspended by the administrator. Please contact support@skymatrix.biz.';showOnboarding(false);return;}
     var stored=null;try{stored=localStorage.getItem('sm_lic');}catch(e){}
@@ -1240,8 +1310,30 @@ function smMarkSVG(u){return '<svg viewBox="0 0 200 200" xmlns="http://www.w3.or
 +'</svg>';}
 (function(){var i=0;['hdrLogo','lockLogo','footLogo','loginLogo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=smLogoSVG('L'+(i++));});var m=document.getElementById('aiGoMark');if(m)m.innerHTML=smMarkSVG('BTN');})();
 /* visible build stamp — bump APP_VERSION on every release so you can confirm at a glance that the latest is live (matches the Worker /version) */
-var APP_VERSION='2026-07-15-batch9P';
-(function(){try{Array.prototype.forEach.call(document.querySelectorAll('.appver'),function(e){e.textContent=APP_VERSION;});}catch(e){}})();
+var APP_VERSION='2026-07-20-batch9T';
+/* Friendly public version + changelog shown on the PIN/login screen. Bump APP_VER and prepend a CHANGELOG entry each release. */
+var APP_VER='v1.1';
+var CHANGELOG=[
+  {v:'v1.1', date:'Jul 2026', items:[
+    'Your details (name / position / airline / aircraft) are now required once to use the app, and personalise your announcements.',
+    'New waypoint-by-waypoint NAV LOG built from the OFP — enter your own ATA / AFOB / AFL.',
+    'Multiple named, reorderable checklists.',
+    'Named devices; Admin Docs tab with a “Check for new documents” button.',
+    'PDF viewer shows all pages + full-screen; many stability fixes.'
+  ]},
+  {v:'v1.0', date:'Jul 2026', items:[
+    'One “Sky Matrix AI” button on Load — Qatar OFPs read instantly offline, all other airlines by AI.',
+    'Announcement Maker; Utilities (Checklist, Crew, PA, Admin Docs).',
+    'GPS auto take-off / landing; NOTAM ★ marking; one-device-per-licence.'
+  ]}
+];
+(function(){try{Array.prototype.forEach.call(document.querySelectorAll('.appver'),function(e){e.textContent=APP_VERSION;});}catch(e){}
+  try{ var vEl=document.getElementById('loginVer'); if(vEl)vEl.textContent='Sky Matrix '+APP_VER;
+    var wn=document.getElementById('loginWhatsNew'), lk=document.getElementById('loginWhatsNewLink');
+    if(wn){ wn.innerHTML=CHANGELOG.map(function(c){ return '<div style="font-weight:700;color:#eaf4ff;margin:2px 0 4px">'+c.v+(c.date?(' · '+c.date):'')+'</div><ul style="margin:0 0 6px 16px;padding:0">'+c.items.map(function(i){return '<li style="margin:2px 0">'+i+'</li>';}).join('')+'</ul>'; }).join(''); }
+    if(lk&&wn){ lk.addEventListener('click',function(e){ e.preventDefault(); var openN=wn.style.display!=='none'; wn.style.display=openN?'none':'block'; lk.textContent=openN?"What's new ▾":"What's new ▴"; }); }
+  }catch(e){}
+})();
 /* theme toggle in the header (follows device by default; user choice persists) */
 (function(){try{ var hdr=document.querySelector('header.app'); if(!hdr)return;
   var b=document.createElement('button'); b.className='themebtn'; b.id='themeBtn'; b.type='button';
@@ -2120,9 +2212,12 @@ var _goBtn=document.getElementById('go'); if(_goBtn)_goBtn.onclick=generate;   /
     if(Array.isArray(d.etopsPts)) data.etopsPts=d.etopsPts.map(function(p){return {posn:String((p&&p.posn)||''),lat:String((p&&p.lat)||''),lon:String((p&&p.lon)||''),altn:String((p&&p.altn)||''),eet:String((p&&p.eet)||'')};}).filter(function(p){return p.posn||p.lat;});
     // OFP nav-log: attach the plan's own per-waypoint distance / elapsed / fuel to the coordinate waypoints (by name)
     if(Array.isArray(d.navlog) && d.navlog.length && data.routeWps && data.routeWps.length){
-      var nlm={}; d.navlog.forEach(function(r){ if(!r||!r.wpt)return; var k=String(r.wpt).toUpperCase().trim(); var eetMin=null; var em=/^(\d{1,2}):(\d{2})$/.exec(String(r.eet||'')); if(em)eetMin=+em[1]*60+ +em[2]; nlm[k]={cum:(r.cumDistNM!=null&&!isNaN(+r.cumDistNM))?+r.cumDistNM:null,eet:eetMin,fuel:(r.fuelRemKg!=null&&!isNaN(+r.fuelRemKg))?+r.fuelRemKg:null}; });
-      data.routeWps.forEach(function(w){ var m=nlm[String(w.name).toUpperCase().trim()]; if(m){ if(m.fuel!=null)w.fuel=m.fuel; if(m.eet!=null)w.elapsed=m.eet; /* trust the AI-parsed EET over the offline HHMM heuristic */ if(m.cum!=null)w.ofpCumNM=m.cum; } });
+      var S=function(v){return (v!=null&&v!=='')?String(v):null;};
+      var nlm={}; d.navlog.forEach(function(r){ if(!r||!r.wpt)return; var k=String(r.wpt).toUpperCase().trim(); var eetMin=null; var em=/^(\d{1,2}):(\d{2})$/.exec(String(r.eet||'')); if(em)eetMin=+em[1]*60+ +em[2]; nlm[k]={cum:(r.cumDistNM!=null&&!isNaN(+r.cumDistNM))?+r.cumDistNM:null,eet:eetMin,fuel:(r.fuelRemKg!=null&&!isNaN(+r.fuelRemKg))?+r.fuelRemKg:null,fl:S(r.fl),oat:S(r.oat),wind:S(r.wind),mora:S(r.mora),isaDev:S(r.isaDev),tropo:S(r.tropo),airway:S(r.airway)}; });
+      data.routeWps.forEach(function(w){ var m=nlm[String(w.name).toUpperCase().trim()]; if(m){ if(m.fuel!=null)w.fuel=m.fuel; if(m.eet!=null)w.elapsed=m.eet; /* trust the AI-parsed EET over the offline HHMM heuristic */ if(m.cum!=null)w.ofpCumNM=m.cum; if(m.fl)w.fl=m.fl; if(m.oat)w.oat=m.oat; if(m.wind)w.wind=m.wind; if(m.mora)w.mora=m.mora; if(m.isaDev)w.isaDev=m.isaDev; if(m.tropo)w.tropo=m.tropo; if(m.airway)w.airway=m.airway; } });
       data.navlog=d.navlog;
+      // derive the lowest-tropopause elapsed time from the nav log when it wasn't printed at the fix (e.g. tropo at a lat/long waypoint)
+      if(data.tropo && !data.tropo.elapsed && data.tropo.wpt){ var tw=String(data.tropo.wpt).toUpperCase().replace(/[^A-Z0-9]/g,''); if(tw){ for(var ti=0;ti<data.routeWps.length;ti++){ var rw=data.routeWps[ti]; if(rw.elapsed==null)continue; if(String(rw.name||'').toUpperCase().replace(/[^A-Z0-9]/g,'')===tw){ var mm=+rw.elapsed; if(!isNaN(mm)&&mm<1440){ var hh=Math.floor(mm/60),mn=mm%60; data.tropo.elapsed=(hh<10?'0':'')+hh+':'+(mn<10?'0':'')+mn; } break; } } } }
     }
     if(d.wx && typeof d.wx==='object'){ data.wx=data.wx||{}; for(var ic in d.wx){ if(!/^[A-Z]{4}$/.test(ic))continue; var wv=d.wx[ic]||{}; var pv=data.wx[ic]||{}; data.wx[ic]={name:pv.name||'',metar:(wv.metar||pv.metar||''),taf:(wv.taf||pv.taf||'')}; } }
     if(d.notamsRaw && String(d.notamsRaw).trim()) data.notamRaw=String(d.notamsRaw);
@@ -2192,8 +2287,16 @@ var _goBtn=document.getElementById('go'); if(_goBtn)_goBtn.onclick=generate;   /
     // in the background so the AI keeps learning Qatar too. All other airlines → Sky Matrix AI reads the pages.
     if(text && isQatar(text)){
       try{ generate(); }catch(e){ setMsg('Parse error — try again.','err'); return; }
-      feedAI(text);
-      setMsg('Qatar OFP — briefing built by the built-in reader. Shared with Sky Matrix AI to keep improving.','ok');
+      setMsg('Qatar OFP — briefing built by the built-in reader. Reading the nav log with Sky Matrix AI…','ok');
+      // ENRICH the nav log from the AI (reads the printed nav-log table from the OFP images — foolproof, no text
+      // scrambling). This one online call also feeds auto-learning (replaces the lightweight feed). Offline → keep
+      // the built-in nav log. The rest of the briefing stays on the fast offline parser.
+      ofpPageImages().then(function(images){ var _h={'Content-Type':'application/json'}; try{var _at=localStorage.getItem('sm_admin_tok'); if(_at)_h['x-admin-token']=_at;}catch(e){}
+        return fetch(AI_URL,{method:'POST',headers:_h,body:JSON.stringify({text:text.slice(0,90000), images:images, device:(localStorage.getItem('sm_dev')||''), code:(localStorage.getItem('sm_lic')||'')})}); })
+        .then(function(r){return r.json();}).then(function(j){
+          if(j&&j.ok&&j.data&&Array.isArray(j.data.navlog)&&j.data.navlog.length){ var O=window.__OFP; if(O){ window.__mergeNavlog(O,j.data.navlog); try{if(window.__renderNavLog)window.__renderNavLog();}catch(e){} setMsg('Qatar OFP — nav log enriched by Sky Matrix AI ✓','ok'); } }
+          else setMsg('Qatar OFP — briefing ready (built-in nav log).','ok');
+        }).catch(function(){ setMsg('Qatar OFP — briefing ready (offline; nav log from the built-in reader).','ok'); });
       return;
     }
     aiBtn.disabled=true; setMsg(window.__ofpPdfBuf?'Reading the OFP pages with Sky Matrix AI…':'Reading the OFP with Sky Matrix AI…','');
@@ -2209,6 +2312,8 @@ var _goBtn=document.getElementById('go'); if(_goBtn)_goBtn.onclick=generate;   /
         // the offline parse mis-reads route/FIR/runway/SID/STAR on non-Qatar OFPs — clear them so the AI owns them (blank beats wrong)
         data.firs=[]; data.etopsPts=[]; data.depRwy=''; data.arrRwy=''; data.sid=''; data.star=''; data.highFL='';
         applyAI(data,d);
+        // carry the AI's raw NOTAM text so the NOTAM viewer can show it when the offline parser can't structure them (e.g. PIA)
+        try{ if(d.notamsRaw && !data.notamRaw){ data.notamRaw=String(d.notamsRaw); } }catch(e){}
         try{ build(data); }catch(e){}
         window.__OFP=data;
         try{ localStorage.setItem('sm_ofptext',text); }catch(e){}
@@ -2274,17 +2379,30 @@ try{ if(navigator.storage && navigator.storage.persist){ navigator.storage.persi
   modal.addEventListener('click',function(e){if(e.target===modal)modal.classList.remove('open');});
 })();
 
-/* Checklist (C/L) tab — manual items, tick to complete, saved on this device */
+/* Checklists — multiple NAMED, reorderable lists; tick to complete; saved on this device */
 (function(){
   var $=function(id){return document.getElementById(id);};
-  var listEl=$('cl_list'), input=$('cl_new'), add=$('cl_add'), reset=$('cl_reset');
+  var listEl=$('cl_list'), input=$('cl_new'), add=$('cl_add'), reset=$('cl_reset'), tabsEl=$('cl_tabs');
   if(!listEl||!input||!add) return;
-  var items=[];
-  try{items=JSON.parse(localStorage.getItem('sm_cl')||'[]');}catch(e){items=[];}
-  function save(){try{localStorage.setItem('sm_cl',JSON.stringify(items));}catch(e){}}
   function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-  function render(){
-    if(!items.length){listEl.innerHTML='<p class="hint">No items yet. Add your checklist items above.</p>';return;}
+  var lists=null; try{lists=JSON.parse(localStorage.getItem('sm_checklists')||'null');}catch(e){lists=null;}
+  if(!Array.isArray(lists)||!lists.length){ var old=[]; try{old=JSON.parse(localStorage.getItem('sm_cl')||'[]');}catch(e){} lists=[{name:'Checklist 1',items:Array.isArray(old)?old:[]}]; }
+  var sel=0; try{sel=parseInt(localStorage.getItem('sm_cl_sel')||'0',10)||0;}catch(e){} if(sel<0||sel>=lists.length)sel=0;
+  function save(){try{localStorage.setItem('sm_checklists',JSON.stringify(lists));localStorage.setItem('sm_cl_sel',String(sel));}catch(e){}}
+  function cur(){return lists[sel]||lists[0];}
+  function renderTabs(){ if(!tabsEl)return;
+    tabsEl.innerHTML=lists.map(function(l,i){ var on=i===sel;
+      return '<span class="cltab" style="display:inline-flex;align-items:center;gap:2px;padding:4px 8px;border-radius:16px;font-size:12.5px;border:1px solid '+(on?'#2f8bff':'#2a3c5e')+';background:'+(on?'rgba(47,139,255,.18)':'#12203a')+';color:'+(on?'#dbeafe':'#9fb3d1')+'">'
+        +'<button class="cltab-l" data-i="'+i+'" title="Move left" style="background:none;border:0;color:inherit;cursor:pointer;padding:0 3px;font-size:14px"'+(i===0?' disabled':'')+'>&lsaquo;</button>'
+        +'<span class="cltab-n" data-i="'+i+'" style="cursor:pointer;padding:0 2px">'+esc(l.name)+' <span style="opacity:.6">('+(l.items?l.items.length:0)+')</span></span>'
+        +'<button class="cltab-r" data-i="'+i+'" title="Move right" style="background:none;border:0;color:inherit;cursor:pointer;padding:0 3px;font-size:14px"'+(i===lists.length-1?' disabled':'')+'>&rsaquo;</button>'
+        +'</span>'; }).join('');
+    tabsEl.querySelectorAll('.cltab-n').forEach(function(b){ b.addEventListener('click',function(){ sel=+b.getAttribute('data-i'); save(); renderAll(); }); });
+    tabsEl.querySelectorAll('.cltab-l').forEach(function(b){ b.addEventListener('click',function(){ var i=+b.getAttribute('data-i'); if(i>0){ var t=lists[i-1];lists[i-1]=lists[i];lists[i]=t; sel=(sel===i)?i-1:(sel===i-1?i:sel); save(); renderAll(); } }); });
+    tabsEl.querySelectorAll('.cltab-r').forEach(function(b){ b.addEventListener('click',function(){ var i=+b.getAttribute('data-i'); if(i<lists.length-1){ var t=lists[i+1];lists[i+1]=lists[i];lists[i]=t; sel=(sel===i)?i+1:(sel===i+1?i:sel); save(); renderAll(); } }); });
+  }
+  function render(){ var items=cur().items||[]; var nm=$('cl_curname'); if(nm)nm.textContent=cur().name;
+    if(!items.length){listEl.innerHTML='<p class="hint">No items yet. Add items above, or use the Checklist maker below.</p>';return;}
     listEl.innerHTML=items.map(function(it,i){
       return '<div class="clrow" data-i="'+i+'"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;flex:1">'+
         '<input type="checkbox" class="clchk" '+(it.done?'checked':'')+' style="width:20px;height:20px;flex:0 0 auto">'+
@@ -2293,21 +2411,25 @@ try{ if(navigator.storage && navigator.storage.persist){ navigator.storage.persi
         '<button class="cldn ghost" type="button" title="Move down" style="padding:4px 8px"'+(i===items.length-1?' disabled':'')+'>▼</button>'+
         '<button class="cldel ghost" type="button" style="padding:4px 10px">✕</button></div>';
     }).join('');
-    listEl.querySelectorAll('.clrow').forEach(function(row){
-      var i=+row.dataset.i;
-      row.querySelector('.clchk').addEventListener('change',function(e){items[i].done=e.target.checked;save();render();});
-      row.querySelector('.cldel').addEventListener('click',function(){items.splice(i,1);save();render();});
-      row.querySelector('.clup').addEventListener('click',function(){if(i>0){var t=items[i-1];items[i-1]=items[i];items[i]=t;save();render();}});
-      row.querySelector('.cldn').addEventListener('click',function(){if(i<items.length-1){var t=items[i+1];items[i+1]=items[i];items[i]=t;save();render();}});
+    listEl.querySelectorAll('.clrow').forEach(function(row){ var i=+row.dataset.i; var it2=cur().items;
+      row.querySelector('.clchk').addEventListener('change',function(e){it2[i].done=e.target.checked;save();render();});
+      row.querySelector('.cldel').addEventListener('click',function(){it2.splice(i,1);save();render();});
+      row.querySelector('.clup').addEventListener('click',function(){if(i>0){var t=it2[i-1];it2[i-1]=it2[i];it2[i]=t;save();render();}});
+      row.querySelector('.cldn').addEventListener('click',function(){if(i<it2.length-1){var t=it2[i+1];it2[i+1]=it2[i];it2[i]=t;save();render();}});
     });
   }
-  function addItem(){var v=input.value.trim();if(!v)return;items.push({text:v,done:false});input.value='';save();render();}
+  function renderAll(){ renderTabs(); render(); }
+  function addItem(){var v=input.value.trim();if(!v)return;cur().items.push({text:v,done:false});input.value='';save();renderAll();}
   add.addEventListener('click',addItem);
   input.addEventListener('keydown',function(e){if(e.key==='Enter')addItem();});
-  reset.addEventListener('click',function(){items.forEach(function(it){it.done=false;});save();render();});
-  // used by the Checklist maker: append reviewed/approved steps into this on-device checklist
-  window.__addChecklistItems=function(arr){ if(!Array.isArray(arr))return; arr.forEach(function(t){ t=String(t||'').trim(); if(t)items.push({text:t,done:false}); }); save(); render(); };
-  render();
+  if(reset)reset.addEventListener('click',function(){cur().items.forEach(function(it){it.done=false;});save();render();});
+  var addlist=$('cl_addlist'), newname=$('cl_newname');
+  if(addlist)addlist.addEventListener('click',function(){ var n=((newname&&newname.value)||'').trim()||('Checklist '+(lists.length+1)); lists.push({name:n,items:[]}); sel=lists.length-1; if(newname)newname.value=''; save(); renderAll(); });
+  var rn=$('cl_rename'); if(rn)rn.addEventListener('click',function(){ var n=window.prompt('Rename checklist:',cur().name); if(n!=null){n=(''+n).trim(); if(n){cur().name=n;save();renderAll();}} });
+  var dl=$('cl_dellist'); if(dl)dl.addEventListener('click',function(){ if(lists.length<=1){ if(window.confirm('Clear this checklist?')){cur().items=[];save();renderAll();} return; } if(window.confirm('Delete checklist "'+cur().name+'"?')){ lists.splice(sel,1); if(sel>=lists.length)sel=lists.length-1; save(); renderAll(); } });
+  // used by the Checklist maker: append reviewed/approved steps into the SELECTED checklist
+  window.__addChecklistItems=function(arr){ if(!Array.isArray(arr))return; arr.forEach(function(t){ t=String(t||'').trim(); if(t)cur().items.push({text:t,done:false}); }); save(); renderAll(); };
+  renderAll();
 })();
 
 window.__goSub=function(s){
@@ -2437,6 +2559,7 @@ window.__updateSubrail=function(){
     document.querySelectorAll('#dispnav button').forEach(x=>x.classList.remove('active'));
     document.querySelectorAll('#view-disp .subview2').forEach(x=>x.classList.remove('active'));
     btn.classList.add('active'); const v=$('disp-'+d); if(v)v.classList.add('active');
+    if(d==='nav'){ try{ if(window.__renderNavLog)window.__renderNavLog(); }catch(e){} }
     try{localStorage.setItem('sm_disptab',d);}catch(e){}
   }
   window.__setDispTab=setDispTab;
@@ -2709,7 +2832,8 @@ window.__updateSubrail=function(){
     const start=toM($('r_start').value),end=toM($('r_end').value);
     const gap=+$('r_gap').value||0;
     const tb=$('restTable'),sum=$('restSummary');
-    if(start===null||end===null){tb.innerHTML='';sum.textContent='Enter takeoff (with an OFP loaded) or set rest start/end.';return;}
+    var lrc=document.getElementById('liveRestCard'), lrb=document.getElementById('liveRestBox');
+    if(start===null||end===null){tb.innerHTML='';sum.textContent='Enter takeoff (with an OFP loaded) or set rest start/end.';if(lrc)lrc.style.display='none';return;}
     const gaps=w.length-1,total=w.reduce((a,b)=>a+b,0),unit=restUnit(total,gaps,start,end,gap);
     let s=start,rows='';
     for(let i=0;i<w.length;i++){
@@ -2718,6 +2842,8 @@ window.__updateSubrail=function(){
       s=e+gap;
     }
     tb.innerHTML=rows;
+    if(lrb)lrb.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="color:#7e90ad;text-align:left"><th style="padding:3px 6px">#</th><th>Crew</th><th>From</th><th>To</th><th>Duration</th></tr></thead><tbody>'+rows+'</tbody></table>';
+    if(lrc)lrc.style.display=rows?'block':'none';
     let totalRest=(end-start)<0?(end-start+1440):(end-start);
     sum.textContent='Rest window '+fmt(start)+'–'+fmt(end)+' ('+Math.floor(totalRest/60)+'h '+(totalRest%60)+'m) · one R = '+unit+' min · '+gaps+' handover gap(s) of '+gap+' min.';
   }
@@ -2849,12 +2975,16 @@ window.__updateSubrail=function(){
   let gpsWatch=null,gpsPhase='ground',gpsArmed=false,gpsSeenSlow=false,gpsPos=null,gpsKt=0,gpsFastN=0,gpsSlowN=0;
   function setGpsHint(t){const e=$('gpsHint');if(e)e.textContent=t;}
   function gpsTick(pos){
-    if(pos.coords && pos.coords.latitude!=null && !isNaN(pos.coords.latitude)) gpsPos={lat:pos.coords.latitude,lon:pos.coords.longitude};
-    const sp=pos.coords.speed;
-    if(sp!=null && !isNaN(sp)) gpsKt=sp*1.94384;
+    const c=pos.coords||{}; const now=Date.now();
+    let kt=null;
+    // Prefer the device-reported speed; fall back to distance/time between fixes (iOS often reports speed=null when stationary or on some receivers)
+    if(c.speed!=null && !isNaN(c.speed) && c.speed>=0){ kt=c.speed*1.94384; }
+    else if(c.latitude!=null && gpsPos && gpsPos.t){ const dt=(now-gpsPos.t)/1000; if(dt>=1 && dt<120){ const nm=gcNM(gpsPos.lat,gpsPos.lon,c.latitude,c.longitude); kt=(nm/dt)*3600; } }
+    if(c.latitude!=null && !isNaN(c.latitude)) gpsPos={lat:c.latitude,lon:c.longitude,t:now};
     const spd=$('gpsSpd');
-    if(sp==null||isNaN(sp)){if(spd)spd.value='no speed fix';return;}
-    const kt=sp*1.94384; if(spd)spd.value=Math.round(kt)+' kt';
+    if(kt==null){ if(spd)spd.value='acquiring…'; return; }
+    if(kt<0)kt=0; if(kt>1200)kt=gpsKt;    // reject absurd single-fix jumps
+    gpsKt=kt; if(spd)spd.value=Math.round(kt)+' kt';
     if(kt>=100){
       gpsFastN++; gpsSlowN=0;
       if(gpsPhase!=='air' && gpsFastN>=3){   // 3 consecutive >100 kt readings = genuine take-off (rejects single GPS glitches)
@@ -2875,12 +3005,19 @@ window.__updateSubrail=function(){
         gpsPhase='landed';if(typeof saveState==='function')saveState();if(typeof recalcBlock==='function')recalcBlock();
         setGpsHint('Landing captured '+$('gpsLdg').value+'Z (<100 kt).');
         if(window.__goView)window.__goView('disp'); setDispTab('arr');     // landing → Arrival page
-      } else if(gpsPhase==='ground'){ gpsSeenSlow=true; }
+      } else if(gpsPhase==='ground'){ gpsSeenSlow=true; setGpsHint('GPS fix ✓ '+Math.round(kt)+' kt — armed, watching for take-off (auto-stamps above 100 kt).'); }
     }
   }
-  function gpsErr(e){setGpsHint('GPS: '+(e&&e.message?e.message:'no fix yet')+' — manual START / LDG buttons still work.');}
-  function gpsStartWatch(){ if(!navigator.geolocation)return; if(gpsWatch!=null)navigator.geolocation.clearWatch(gpsWatch); gpsWatch=navigator.geolocation.watchPosition(gpsTick,gpsErr,{enableHighAccuracy:true,maximumAge:1000,timeout:30000}); }
-  function gpsArmOn(reset){ if(!navigator.geolocation){setGpsHint('Geolocation not available in this browser.');return;} gpsArmed=true; if(reset){gpsPhase='ground';gpsSeenSlow=false;} $('gpsArm').textContent='Disarm GPS'; setGpsHint('GPS armed — waiting for a fix… stamps T/O >100 kt, LDG <100 kt.'); gpsStartWatch(); }
+  function gpsErr(e){
+    var code=e&&e.code, msg;
+    if(code===1) msg='Location permission denied. On iPhone/iPad allow Location for Safari/this app; on Android, the app needs Location permission granted (Settings → Apps → Sky Matrix → Permissions → Location → Allow).';
+    else if(code===2) msg='No position available yet (no GPS fix). Try near a window / outdoors.';
+    else if(code===3) msg='GPS timed out — retrying…';
+    else msg=(e&&e.message)||'no fix yet';
+    setGpsHint('GPS: '+msg+' — the manual START / LDG buttons still work.');
+  }
+  function gpsStartWatch(){ if(!navigator.geolocation)return; if(gpsWatch!=null)navigator.geolocation.clearWatch(gpsWatch); gpsWatch=navigator.geolocation.watchPosition(gpsTick,gpsErr,{enableHighAccuracy:true,maximumAge:1000,timeout:60000}); }
+  function gpsArmOn(reset){ if(!navigator.geolocation){setGpsHint('Geolocation not available in this browser/app.');return;} gpsArmed=true; if(reset){gpsPhase='ground';gpsSeenSlow=false;gpsPos=null;} $('gpsArm').textContent='Disarm GPS'; setGpsHint('GPS armed — waiting for a fix… stamps T/O >100 kt, LDG <100 kt.'); try{ navigator.geolocation.getCurrentPosition(gpsTick,gpsErr,{enableHighAccuracy:true,timeout:30000,maximumAge:0}); }catch(e){}  gpsStartWatch(); }
   function gpsArmOff(){ gpsArmed=false; if(gpsWatch!=null&&navigator.geolocation)navigator.geolocation.clearWatch(gpsWatch); gpsWatch=null; $('gpsArm').textContent='Arm GPS'; setGpsHint('GPS auto-capture off.'); }
   $('gpsLdgStart').addEventListener('click',()=>{const n=utcNow();$('gpsLdg').value=pad2(n.getUTCHours())+':'+pad2(n.getUTCMinutes());if($('ar_ldg'))$('ar_ldg').value=$('gpsLdg').value;if(typeof saveState==='function')saveState();if(typeof recalcBlock==='function')recalcBlock();});
   $('gpsArm').addEventListener('click',()=>{ gpsArmed?gpsArmOff():gpsArmOn(true); });
@@ -2951,6 +3088,67 @@ window.__updateSubrail=function(){
       const nh=$('navHint'); if(nh) nh.textContent='Waiting for a GPS fix… distance/fuel comparison needs position. Arm GPS above.';
     }
   }
+
+  /* ---- Waypoint-by-waypoint NAV LOG table (from the OFP), with editable ATA / AFOB / notes ---- */
+  function navSig(O){ return ((O&&O.fltCs)||'')+'|'+((O&&O.dep)||'')+'|'+((O&&O.dest)||'')+'|'+((O&&O.date)||''); }
+  function navStore(){ try{return JSON.parse(localStorage.getItem('sm_navlog')||'{}');}catch(e){return {};} }
+  function navGet(O,wp){ var s=navStore(),g=s[navSig(O)]; return (g&&g[wp])||{}; }
+  function navSet(O,wp,f,v){ var s=navStore(),sig=navSig(O); if(!s[sig])s[sig]={}; if(!s[sig][wp])s[sig][wp]={}; s[sig][wp][f]=v; try{localStorage.setItem('sm_navlog',JSON.stringify(s));}catch(e){} }
+  function wpCum(w){ return (w.ofpCumNM!=null?w.ofpCumNM:(w.cumNM!=null?w.cumNM:null)); }
+  function renderNavLog(){
+    var O=window.__OFP, host=document.getElementById('nlWpTable'); if(!host)return;
+    if(!O||!O.routeWps||O.routeWps.length<2){ host.innerHTML='<p class="hint">Load an OFP to see the waypoint-by-waypoint nav log.</p>'; return; }
+    var wps=O.routeWps; var toV=(($('d_to')||{}).value||''); var toMin=toV?toM(toV):null;
+    var initFL=O.initFL?('FL'+String(O.initFL).replace(/^FL/i,'')):'';
+    var h='<div class="hint" style="margin:0 0 6px">Plan values (<b>RETA</b> / <b>RFOB</b> / <b>PFL</b>) are read from the OFP. Enter your actual <b>ATA</b>, <b>AFOB</b> and <b>AFL</b> as you fly — saved on this device. Tap a waypoint for its OFP detail and notes.</div>';
+    h+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap"><thead><tr style="color:#7e90ad;text-align:left">'
+      +'<th style="padding:4px 6px">Waypoint</th><th>Cum NM</th><th title="Plan ETA (from OFP)">RETA</th><th title="Actual time of arrival">ATA</th><th title="Plan fuel remaining (from OFP)">RFOB</th><th title="Actual fuel on board">AFOB</th><th title="Plan FL (from OFP)">PFL</th><th title="Actual FL">AFL</th></tr></thead><tbody>';
+    for(var i=0;i<wps.length;i++){ var w=wps[i], st=navGet(O,w.name), cum=wpCum(w);
+      var reta=(w.elapsed!=null&&toMin!=null)?fmt((((toMin+w.elapsed)%1440)+1440)%1440)+'Z':(w.elapsed!=null?('+'+fmt(w.elapsed)):'--');
+      var pfl=w.fl?('FL'+String(w.fl).replace(/^FL/i,'')):(initFL||'--');
+      var rfob=(w.fuel!=null)?Math.round(w.fuel).toLocaleString():'--';
+      h+='<tr style="border-top:1px solid #16233a">'
+        +'<td style="padding:5px 6px;cursor:pointer" onclick="window.__nlTog('+i+')"><b style="color:#e6eefc">'+esc(w.name||('WP'+(i+1)))+'</b> <span style="color:#7e90ad">&#9662;</span></td>'
+        +'<td>'+(cum!=null?Math.round(cum):'--')+'</td>'
+        +'<td style="color:#7be0a4">'+reta+'</td>'
+        +'<td><input class="nl-ata" data-wp="'+esc(w.name)+'" value="'+esc(st.ata||'')+'" placeholder="hhmm" inputmode="numeric" style="width:52px;font-size:12px;padding:3px"></td>'
+        +'<td style="color:#7be0a4">'+rfob+'</td>'
+        +'<td><input class="nl-afob" data-wp="'+esc(w.name)+'" value="'+esc(st.afob||'')+'" placeholder="kg" inputmode="numeric" style="width:62px;font-size:12px;padding:3px"></td>'
+        +'<td style="color:#7be0a4">'+pfl+'</td>'
+        +'<td><input class="nl-afl" data-wp="'+esc(w.name)+'" value="'+esc(st.afl||'')+'" placeholder="FL" inputmode="numeric" style="width:52px;font-size:12px;padding:3px"></td>'
+        +'</tr>';
+      h+='<tr id="nlDet'+i+'" style="display:none"><td colspan="8" style="padding:6px 10px;background:#0e1930">'
+        +'<div style="display:flex;gap:14px;flex-wrap:wrap;color:#c7d6ee;font-size:11.5px">'
+        +'<span>Lat/Lon: '+(w.lat!=null?((w.lat).toFixed(2)+' / '+(w.lon).toFixed(2)):'--')+'</span>'
+        +'<span>EET: '+(w.elapsed!=null?fmt(w.elapsed):'--')+'</span>'
+        +(w.wind?('<span>Wind: '+esc(w.wind)+'</span>'):'')
+        +(w.oat!=null?('<span>OAT: '+esc(w.oat)+'&deg;C</span>'):'')
+        +(w.isaDev!=null?('<span>ISA dev: '+esc(w.isaDev)+'</span>'):'')
+        +(w.mora?('<span>MORA: '+esc(w.mora)+'</span>'):'')
+        +(w.tropo?('<span>Tropo: '+esc(w.tropo)+'</span>'):'')
+        +(w.airway?('<span>Airway: '+esc(w.airway)+'</span>'):'')
+        +'</div>'
+        +'<textarea class="nl-notes" data-wp="'+esc(w.name)+'" placeholder="Clearance / notes…" style="width:100%;margin-top:6px;min-height:36px;font-size:12px;color:#e6ecf5">'+esc(st.notes||'')+'</textarea>'
+        +'</td></tr>';
+    }
+    h+='</tbody></table></div>';
+    host.innerHTML=h;
+    function wire(cls,field){ host.querySelectorAll('.'+cls).forEach(function(inp){ inp.addEventListener('change',function(){ navSet(O,inp.getAttribute('data-wp'),field,(inp.value||'').trim()); }); }); }
+    wire('nl-ata','ata'); wire('nl-afob','afob'); wire('nl-afl','afl'); wire('nl-notes','notes');
+  }
+  window.__nlTog=function(i){ var d=document.getElementById('nlDet'+i); if(d)d.style.display=(d.style.display==='none'?'table-row':'none'); };
+  window.__renderNavLog=renderNavLog;
+  // Merge an AI nav-log (reliable, from OFP images) into the loaded OFP's waypoints — used to enrich the Qatar
+  // (offline-parsed) nav log when online, so every airline gets accurate per-waypoint dist/time/fuel/FL/wind/OAT.
+  window.__mergeNavlog=function(O, navlog){
+    if(!O||!O.routeWps||!Array.isArray(navlog)||!navlog.length)return;
+    var S=function(v){return (v!=null&&v!=='')?String(v):null;};
+    var nlm={}; navlog.forEach(function(r){ if(!r||!r.wpt)return; var k=String(r.wpt).toUpperCase().trim(); var eetMin=null; var em=/^(\d{1,2}):(\d{2})$/.exec(String(r.eet||'')); if(em)eetMin=+em[1]*60+ +em[2]; nlm[k]={cum:(r.cumDistNM!=null&&!isNaN(+r.cumDistNM))?+r.cumDistNM:null,eet:eetMin,fuel:(r.fuelRemKg!=null&&!isNaN(+r.fuelRemKg))?+r.fuelRemKg:null,fl:S(r.fl),oat:S(r.oat),wind:S(r.wind),mora:S(r.mora),isaDev:S(r.isaDev),tropo:S(r.tropo),airway:S(r.airway)}; });
+    O.routeWps.forEach(function(w){ var m=nlm[String(w.name).toUpperCase().trim()]; if(m){ if(m.fuel!=null)w.fuel=m.fuel; if(m.eet!=null)w.elapsed=m.eet; if(m.cum!=null)w.ofpCumNM=m.cum; if(m.fl)w.fl=m.fl; if(m.oat)w.oat=m.oat; if(m.wind)w.wind=m.wind; if(m.mora)w.mora=m.mora; if(m.isaDev)w.isaDev=m.isaDev; if(m.tropo)w.tropo=m.tropo; if(m.airway)w.airway=m.airway; } });
+    O.navlog=navlog;
+  };
+  window.addEventListener('ofp-parsed',function(){ try{ renderNavLog(); }catch(e){} });
+  (function(){ var e=document.getElementById('d_to'); if(e)e.addEventListener('change',function(){ try{ renderNavLog(); }catch(e){} }); })();
 
   /* ---- Alerts (sound + pop-up): warm-up / cool-down + reminders ---- */
   var __ac=null;
@@ -3140,9 +3338,17 @@ window.__updateSubrail=function(){
   }catch(e){} }, 30*60*1000);
 
   /* ---- Dep/Arr NOTAM viewer: all NOTAMs, colour-coded by time window, tick the important ones ---- */
+  var __ntmCur=null;   // remember which airport's NOTAMs are open so a star toggle can re-render (persists the ★ when minimized/reopened)
   window.__showAirportNotams=function(ic,label){
-    ic=(ic||'').toUpperCase(); var O=window.__OFP;
-    if(!O||!O.notams||!O.notams[ic]||!O.notams[ic].length){ if(window.__floatChecklist)window.__floatChecklist('ntm'+ic,(label||ic)+' NOTAMs','<div style="color:#e6eefc">No NOTAMs for '+esc(ic)+' in the loaded OFP.</div>'); return; }
+    ic=(ic||'').toUpperCase(); var O=window.__OFP; __ntmCur={ic:ic,label:label};
+    if(!O||!O.notams||!O.notams[ic]||!O.notams[ic].length){
+      // Structured NOTAMs not parsed for this layout (e.g. PIA) — fall back to the raw NOTAM section from the OFP / AI
+      var raw=(O&&(O.notamRaw||O.notamFull||O.notamsRaw||''))||'';
+      var body = raw
+        ? '<div style="font-weight:700;margin-bottom:8px;color:#fff">'+esc(label||ic)+' — NOTAMs (raw from OFP)</div><div style="white-space:pre-wrap;color:#e6eefc;font-size:12px;line-height:1.5">'+esc(String(raw).slice(0,9000))+'</div>'
+        : '<div style="color:#e6eefc">No NOTAMs for '+esc(ic)+' in the loaded OFP.</div>';
+      if(window.__floatChecklist)window.__floatChecklist('ntm'+ic,(label||ic)+' NOTAMs',body); return;
+    }
     var nw=wxNow(); var list=O.notams[ic]; var CH={r:'#ff6b6b',a:'#E0A33A',g:'#34c759',n:'#9fb3d1'};
     function hsh(s){var h=0;for(var i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))|0;}return 'n'+(h>>>0);}
     var star=[]; try{star=JSON.parse(localStorage.getItem('sm_notam_star')||'[]');}catch(e){}
@@ -3166,7 +3372,9 @@ window.__updateSubrail=function(){
     if(window.__floatChecklist)window.__floatChecklist('ntm'+ic,(label||ic)+' NOTAMs',html);
   };
   window.__ntmTog=function(el){ var d=el.nextElementSibling; if(d)d.style.display=(d.style.display==='block'?'none':'block'); };
-  window.__ntmStar=function(el){ var k=el.getAttribute('data-k')||''; if(!k)return; var star=[]; try{star=JSON.parse(localStorage.getItem('sm_notam_star')||'[]');}catch(e){} var i=star.indexOf(k); if(i>=0){star.splice(i,1);el.textContent='☆';el.style.color='#5a6b86';}else{star.push(k);el.textContent='★';el.style.color='#ffd66b';} try{localStorage.setItem('sm_notam_star',JSON.stringify(star.slice(-300)));}catch(e){} };
+  window.__ntmStar=function(el){ var k=el.getAttribute('data-k')||''; if(!k)return; var star=[]; try{star=JSON.parse(localStorage.getItem('sm_notam_star')||'[]');}catch(e){} var i=star.indexOf(k); if(i>=0){star.splice(i,1);el.textContent='☆';el.style.color='#5a6b86';}else{star.push(k);el.textContent='★';el.style.color='#ffd66b';} try{localStorage.setItem('sm_notam_star',JSON.stringify(star.slice(-300)));}catch(e){}
+    // re-render so the stored panel HTML (and its sort order) keeps the star when the viewer is minimized then reopened
+    try{ if(__ntmCur && window.__showAirportNotams) window.__showAirportNotams(__ntmCur.ic, __ntmCur.label); }catch(e){} };
   if($('depNotamBtn'))$('depNotamBtn').addEventListener('click',function(){ var O=window.__OFP; window.__showAirportNotams(O&&O.dep,'Departure '+((O&&O.dep)||'')); });
   if($('arrNotamBtn'))$('arrNotamBtn').addEventListener('click',function(){ var O=window.__OFP; window.__showAirportNotams(O&&O.dest,'Arrival '+((O&&O.dest)||'')); });
 
@@ -3304,35 +3512,56 @@ window.__updateSubrail=function(){
   }
   /* ---- Floating dock: docs & checklists stay open as floating buttons (multiple), shown inline (no pop-up window) ---- */
   var __floats={};
-  function __dockEl(){var d=document.getElementById('floatDock');if(!d){d=document.createElement('div');d.id='floatDock';d.style.cssText='position:fixed;right:10px;bottom:10px;z-index:6000;display:flex;flex-direction:column;gap:6px;align-items:flex-end;max-width:80vw';document.body.appendChild(d);}return d;}
+  function __dockEl(){var d=document.getElementById('floatDock');if(!d){d=document.createElement('div');d.id='floatDock';d.style.cssText='position:fixed;left:10px;bottom:10px;z-index:6000;display:flex;flex-direction:column;gap:6px;align-items:flex-start;max-width:80vw';document.body.appendChild(d);}return d;}
   function __renderDock(){var d=__dockEl();d.innerHTML='';Object.keys(__floats).forEach(function(k){var f=__floats[k];var pill=document.createElement('div');pill.style.cssText='display:flex;align-items:center;gap:8px;background:#12325a;border:1px solid #2f8bff;color:#dbeafe;border-radius:20px;padding:6px 12px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.4);cursor:pointer;max-width:100%';var lbl=document.createElement('span');lbl.textContent=(f.type==='cl'?'☑ ':'📄 ')+f.title;lbl.style.cssText='white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px';lbl.onclick=function(){__showFloat(k);};var x=document.createElement('span');x.textContent='✕';x.style.cssText='opacity:.85;font-weight:700';x.onclick=function(e){e.stopPropagation();__closeFloat(k);};pill.appendChild(lbl);pill.appendChild(x);d.appendChild(pill);});}
-  function __panelEl(){var p=document.getElementById('floatPanel');if(!p){p=document.createElement('div');p.id='floatPanel';p.style.cssText='position:fixed;right:10px;bottom:64px;width:min(480px,94vw);height:min(64vh,600px);background:#0b1626;border:1px solid #2f8bff;border-radius:12px;z-index:6001;display:none;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.55);overflow:hidden';var bar=document.createElement('div');bar.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#12325a;color:#dbeafe;font-size:13px;font-weight:600';var t=document.createElement('span');t.id='floatPanelTitle';t.style.cssText='white-space:nowrap;overflow:hidden;text-overflow:ellipsis';var SMALL='position:fixed;right:10px;bottom:64px;width:min(480px,94vw);height:min(64vh,600px);background:#0b1626;border:1px solid #2f8bff;border-radius:12px;z-index:6001;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.55);overflow:hidden';var FULL='position:fixed;inset:0;width:100vw;height:100dvh;background:#0b1626;border:0;border-radius:0;z-index:6001;display:flex;flex-direction:column;overflow:hidden';var x2=document.createElement('button');x2.textContent='⤢ Full';x2.style.cssText='background:#0b1626;border:1px solid #2f8bff;color:#dbeafe;border-radius:8px;padding:4px 12px;font-size:12px;cursor:pointer;flex:0 0 auto';x2.onclick=function(){ if(p.dataset.full==='1'){ p.style.cssText=SMALL; p.dataset.full='0'; x2.textContent='⤢ Full'; } else { p.style.cssText=FULL; p.dataset.full='1'; x2.textContent='⤡ Exit'; } };var c=document.createElement('button');c.textContent='Close';c.style.cssText='background:#0b1626;border:1px solid #2f8bff;color:#dbeafe;border-radius:8px;padding:4px 12px;font-size:12px;cursor:pointer;flex:0 0 auto';c.onclick=function(){p.style.display='none';};bar.appendChild(t);bar.appendChild(x2);bar.appendChild(c);var body=document.createElement('div');body.id='floatPanelBody';body.style.cssText='flex:1;overflow:auto;background:#fff';p.appendChild(bar);p.appendChild(body);document.body.appendChild(p);}return p;}
+  function __panelEl(){var p=document.getElementById('floatPanel');if(!p){p=document.createElement('div');p.id='floatPanel';p.style.cssText='position:fixed;left:10px;bottom:64px;width:min(480px,94vw);height:min(64vh,600px);background:#0b1626;border:1px solid #2f8bff;border-radius:12px;z-index:6001;display:none;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.55);overflow:hidden';var bar=document.createElement('div');bar.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#12325a;color:#dbeafe;font-size:13px;font-weight:600';var t=document.createElement('span');t.id='floatPanelTitle';t.style.cssText='white-space:nowrap;overflow:hidden;text-overflow:ellipsis';var SMALL='position:fixed;left:10px;bottom:64px;width:min(480px,94vw);height:min(64vh,600px);background:#0b1626;border:1px solid #2f8bff;border-radius:12px;z-index:6001;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.55);overflow:hidden';var FULL='position:fixed;inset:0;width:100vw;height:100dvh;background:#0b1626;border:0;border-radius:0;z-index:6001;display:flex;flex-direction:column;overflow:hidden';var x2=document.createElement('button');x2.textContent='⤢ Full';x2.style.cssText='background:#0b1626;border:1px solid #2f8bff;color:#dbeafe;border-radius:8px;padding:4px 12px;font-size:12px;cursor:pointer;flex:0 0 auto';x2.onclick=function(){ if(p.dataset.full==='1'){ p.style.cssText=SMALL; p.dataset.full='0'; x2.textContent='⤢ Full'; } else { p.style.cssText=FULL; p.dataset.full='1'; x2.textContent='⤡ Exit'; } };var c=document.createElement('button');c.textContent='Close';c.style.cssText='background:#0b1626;border:1px solid #2f8bff;color:#dbeafe;border-radius:8px;padding:4px 12px;font-size:12px;cursor:pointer;flex:0 0 auto';c.onclick=function(){p.style.display='none';};bar.appendChild(t);bar.appendChild(x2);bar.appendChild(c);var body=document.createElement('div');body.id='floatPanelBody';body.style.cssText='flex:1;overflow:auto;background:#fff';p.appendChild(bar);p.appendChild(body);document.body.appendChild(p);}return p;}
   function __showFloat(k){var f=__floats[k];if(!f)return;var p=__panelEl();p.dataset.k=k;document.getElementById('floatPanelTitle').textContent=f.title;var body=document.getElementById('floatPanelBody');if(f.type==='cl'){body.style.background='#0b1626';body.style.color='#e6eefc';body.style.padding='10px';body.innerHTML=f.html||'';}else{body.style.background='#fff';body.style.color='';body.style.padding='0';if(f.type==='img'){body.innerHTML='<img src="'+f.url+'" style="max-width:100%;display:block;margin:0 auto">';}else if(f.type==='pdf'&&f.blob){__renderPdfAllPages(body,f.blob,f.url,f.title);}else{body.innerHTML='<iframe src="'+f.url+'" style="width:100%;height:100%;border:0"></iframe><div style="padding:8px;font-size:12px;background:#0b1626;color:#9fb3d1">If it does not display, <a href="'+f.url+'" download="'+String(f.title).replace(/"/g,'')+'" style="color:#7ec8ff">tap to save / open</a>.</div>';}}p.style.display='flex';}
   function __closeFloat(k){var f=__floats[k];if(!f)return;if(f.url)try{URL.revokeObjectURL(f.url);}catch(e){}delete __floats[k];var p=document.getElementById('floatPanel');if(p&&p.dataset.k===k)p.style.display='none';__renderDock();var d=document.getElementById('floatDock');if(d&&!Object.keys(__floats).length)d.innerHTML='';}
   // Render EVERY page of a PDF (pdf.js) into a scrollable stack — iOS iframes only show page 1.
+  // Memory-SAFE all-pages PDF viewer: lazy-render only pages near the viewport and free them when scrolled away,
+  // at a capped scale, so large PDFs never exhaust iOS Safari's canvas memory (which was crashing the app).
   function __renderPdfAllPages(container, blob, url, title){
     container.innerHTML='<div style="padding:12px;color:#333;font:13px sans-serif">Loading PDF…</div>';
-    if(!window.pdfjsLib){ container.innerHTML='<div style="padding:12px;font:13px sans-serif">PDF viewer needs internet the first time. <a href="'+url+'" download="'+String(title||'document').replace(/"/g,'')+'">Tap to save / open</a>.</div>'; return; }
+    var dl='<a href="'+url+'" download="'+String(title||'document').replace(/"/g,'')+'" style="color:#7ec8ff">Tap to save / open</a>';
+    if(!window.pdfjsLib){ container.innerHTML='<div style="padding:12px;font:13px sans-serif">PDF viewer needs internet the first time. '+dl+'</div>'; return; }
     var rd=new FileReader();
-    rd.onload=function(){
-      pdfjsLib.getDocument({data:new Uint8Array(rd.result)}).promise.then(function(pdf){
-        container.innerHTML=''; container.style.overflow='auto'; container.style.background='#525659';
-        var wrap=document.createElement('div'); wrap.style.cssText='display:flex;flex-direction:column;gap:10px;align-items:center;padding:10px'; container.appendChild(wrap);
-        var scale=(window.devicePixelRatio||1)*1.4;
-        (function page(n){ if(n>pdf.numPages)return; pdf.getPage(n).then(function(pg){
-          var vp=pg.getViewport({scale:scale});
-          var cvs=document.createElement('canvas'); cvs.width=vp.width; cvs.height=vp.height;
-          cvs.style.cssText='width:100%;max-width:'+Math.round(vp.width/((window.devicePixelRatio||1)))+'px;height:auto;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.4)';
-          wrap.appendChild(cvs);
-          pg.render({canvasContext:cvs.getContext('2d'),viewport:vp}).promise.then(function(){ page(n+1); }).catch(function(){ page(n+1); });
-        }).catch(function(){ page(n+1); }); })(1);
-      }).catch(function(e){ container.innerHTML='<div style="padding:12px;font:13px sans-serif">Could not render this PDF. <a href="'+url+'" download="'+String(title||'document').replace(/"/g,'')+'">Tap to save / open</a>.</div>'; });
-    };
     rd.onerror=function(){ container.innerHTML='<div style="padding:12px;font:13px sans-serif">Could not read the document.</div>'; };
+    rd.onload=function(){
+      var task; try{ task=pdfjsLib.getDocument({data:new Uint8Array(rd.result)}); }catch(e){ container.innerHTML='<div style="padding:12px;font:13px sans-serif">Could not open this PDF. '+dl+'</div>'; return; }
+      task.promise.then(function(pdf){
+        container.innerHTML=''; container.style.overflow='auto'; container.style.background='#525659'; try{container.style.webkitOverflowScrolling='touch';}catch(e){}
+        var wrap=document.createElement('div'); wrap.style.cssText='display:flex;flex-direction:column;gap:10px;align-items:center;padding:10px'; container.appendChild(wrap);
+        var cw=Math.min((container.clientWidth||360)-20, 900);
+        var slots=[];
+        function slotFor(n){ var s=document.createElement('div'); s.dataset.page=n; s.dataset.state='0';
+          s.style.cssText='width:100%;max-width:'+cw+'px;min-height:260px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;color:#aaa;font:12px sans-serif';
+          s.textContent='Page '+n+' / '+pdf.numPages; wrap.appendChild(s); slots.push(s); }
+        for(var n=1;n<=pdf.numPages;n++) slotFor(n);
+        function render(s){ if(s.dataset.state!=='0')return; s.dataset.state='1'; var pn=+s.dataset.page;
+          pdf.getPage(pn).then(function(pg){
+            if(s.dataset.state!=='1')return;   // scrolled away before it loaded
+            var b=pg.getViewport({scale:1}); var scale=Math.min(2,(cw/b.width)*Math.min(2,(window.devicePixelRatio||1)));
+            var vp=pg.getViewport({scale:scale});
+            var cvs=document.createElement('canvas'); cvs.width=vp.width; cvs.height=vp.height; cvs.style.cssText='width:100%;height:auto;display:block';
+            s.textContent=''; s.style.minHeight='0'; s.style.color=''; s.appendChild(cvs);
+            pg.render({canvasContext:cvs.getContext('2d'),viewport:vp});
+          }).catch(function(){ s.dataset.state='0'; });
+        }
+        function freeSlot(s){ if(s.dataset.state==='0')return; var pn=s.dataset.page; s.dataset.state='0'; s.innerHTML=''; s.style.minHeight='260px'; s.style.color='#aaa'; s.textContent='Page '+pn+' / '+pdf.numPages; }
+        if('IntersectionObserver' in window){
+          var io=new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting)render(e.target); else freeSlot(e.target); }); },{root:container,rootMargin:'250px 0px'});
+          slots.forEach(function(s){ io.observe(s); });
+        } else { slots.slice(0,2).forEach(render); }
+      }).catch(function(){ container.innerHTML='<div style="padding:12px;font:13px sans-serif">Could not render this PDF. '+dl+'</div>'; });
+    };
     rd.readAsArrayBuffer(blob);
   }
   window.__floatDoc=function(id,title,blob,mime){var k='doc'+id;if(!__floats[k]){var isImg=/^image\//.test(mime||'');var isPdf=/pdf/i.test(mime||'')||/\.pdf$/i.test(title||'');__floats[k]={type:isImg?'img':(isPdf?'pdf':'file'),title:title||('Doc '+id),mime:mime,blob:blob,url:URL.createObjectURL(blob)};}__renderDock();__showFloat(k);};
   window.__floatChecklist=function(key,title,html){var k='cl'+key;__floats[k]={type:'cl',title:title||'Checklist',html:html};__renderDock();__showFloat(k);};
+  // Close all open docs/checklists when the app is switched away or killed (frees memory; per user request)
+  function __closeAllFloats(){ try{ Object.keys(__floats).forEach(function(k){ try{__closeFloat(k);}catch(e){} }); var p=document.getElementById('floatPanel'); if(p)p.style.display='none'; var d=document.getElementById('floatDock'); if(d)d.innerHTML=''; }catch(e){} }
+  document.addEventListener('visibilitychange',function(){ if(document.hidden)__closeAllFloats(); });
+  window.addEventListener('pagehide',__closeAllFloats);
   function docOpenView(id){docGet(id,d=>{if(!d)return;window.__floatDoc(id,d.name,d.blob,d.type||'');});}
   function docSelect(id){localStorage.setItem('sm_selDoc',id);docRender();updateDocCurrent();}
   function docRender(){
@@ -3354,6 +3583,7 @@ window.__updateSubrail=function(){
       const oc=$('docOpenCur');if(oc)oc.onclick=ev=>{ev.preventDefault();docOpenView(sel);};});
   }
   $('d_docs').addEventListener('click',()=>{$('docsModal').classList.add('open');docRender();});
+  if($('railDocs'))$('railDocs').addEventListener('click',()=>{$('docsModal').classList.add('open');docRender();});
   $('docsClose').addEventListener('click',()=>$('docsModal').classList.remove('open'));
   $('docsModal').addEventListener('click',e=>{if(e.target===$('docsModal'))$('docsModal').classList.remove('open');});
   $('docsAdd').addEventListener('change',()=>{if($('docsAdd').files.length){docAdd($('docsAdd').files);$('docsAdd').value='';}});
@@ -3461,6 +3691,7 @@ window.__updateSubrail=function(){
     if($('ap_pos'))$('ap_pos').addEventListener('input',function(){try{localStorage.setItem('sm_ap_pos',$('ap_pos').value);}catch(e){}});
     if($('ap_air'))$('ap_air').addEventListener('input',function(){try{localStorage.setItem('sm_ap_air',$('ap_air').value);}catch(e){}});
     if($('ap_useSaved'))$('ap_useSaved').addEventListener('click',function(){ var r=((out&&out.value)||'').trim(); if(!r){setM('Nothing to use yet — fill the blanks first.');return;} var nt=$('na_text'); if(nt){ nt.value=r; try{nt.dispatchEvent(new Event('input',{bubbles:true}));}catch(e){} } setM('Result moved into the announcement — edit or Save it.'); });
+    if($('ap_editProfile'))$('ap_editProfile').addEventListener('click',function(e){ e.preventDefault(); if(window.__editProfile)window.__editProfile(); });
     if($('ap_file'))$('ap_file').addEventListener('change',function(){
       var f=$('ap_file').files&&$('ap_file').files[0]; if(!f)return;
       var nm=(f.name||'').toLowerCase();
@@ -3840,4 +4071,3 @@ try{
 </script>
 </body>
 </html>
-    

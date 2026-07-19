@@ -21,7 +21,7 @@
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, x-admin-token",
+  "Access-Control-Allow-Headers": "Content-Type, x-admin-token, x-group-token",
 };
 const json = (obj, status=200) =>
   new Response(JSON.stringify(obj), {status, headers: {"Content-Type":"application/json", ...CORS}});
@@ -90,7 +90,7 @@ const OFP_SYSTEM = `You are an expert airline flight dispatcher and OFP analyst.
  "tropopause": {"fl": lowest tropopause height or FL on the route, "wpt": waypoint where it is lowest, "eet": elapsed time from STD to that waypoint "HH:MM" if the nav log shows it},
  "remarks": short dispatcher remarks,
  "route": full ATS route string exactly as printed (airways + waypoints),
- "navlog": [{"wpt":waypoint/fix name as printed,"cumDistNM":cumulative track distance flown to this fix in NM (the running/total distance column, not the leg distance),"eet":cumulative elapsed time from take-off to this fix as "HH:MM","fuelRemKg":planned fuel REMAINING on board at this fix in KILOGRAMS}]  // Read the NAVIGATION LOG / route table row-by-row across the pages provided. Capture as many waypoints as are legible, in order. These give the plan's own distance, time and fuel at each fix. If a column is missing for a row, use null for that field. Omit navlog entirely only if no nav-log table is visible.,
+ "navlog": [{"wpt":waypoint/fix name as printed,"cumDistNM":cumulative track distance flown to this fix in NM (the running/total distance column, not the leg distance),"eet":cumulative elapsed time from take-off to this fix as "HH:MM","fuelRemKg":planned fuel REMAINING on board at this fix in KILOGRAMS,"fl":planned flight level / altitude at this fix as printed (e.g. "350"),"oat":outside-air temperature at this fix in °C as printed (e.g. "-51" or "M51"),"wind":wind at this fix as "DDD/SSS" (e.g. "358/050"),"isaDev":ISA deviation at this fix as printed (e.g. "+3" or "P03"),"mora":minimum off-route/grid altitude (MORA) for this fix/segment if shown (e.g. "FL025"),"tropo":tropopause height/FL at this fix if shown,"airway":the airway or route segment leading TO this fix as printed (e.g. "DCT" or an airway like "N601")}]  // Read the NAVIGATION LOG / route table row-by-row across the pages provided. Capture as many waypoints as are legible, in order, with every column that is printed for that row (distance, time, fuel, FL, OAT, wind, ISA dev, MORA, tropopause, airway). If a column is missing for a row, use null for that field. Omit navlog entirely only if no nav-log table is visible.,
  "depRwy": planned departure runway e.g. "07R",
  "arrRwy": planned or expected arrival runway,
  "sid": SID / departure procedure name if shown,
@@ -118,16 +118,41 @@ Return only the JSON object.`;
 
 // FIX (AI): merge a new OFP correction into the library — supersede any prior line for the SAME airline+field,
 // drop exact duplicates, keep the newest 60. Stops conflicting/duplicate lessons piling up in the prompt.
-function mergeOfpExamples(cur, note){
+function mergeOfpExamples(cur, note, byAirline){
   note = String(note||"").replace(/\s+/g," ").trim();
   let lines = String(cur||"").split("\n").map(function(s){return s.replace(/^\s*-\s*/,"").trim();}).filter(Boolean);
   if(note){
-    const sig = function(s){ return s.toLowerCase().split(/should|:/)[0].trim().slice(0,60); };
+    // field-level dedup for corrections (airline+field); airline-level dedup for whole-format learn rules (one per airline)
+    const sig = byAirline
+      ? function(s){ return s.toLowerCase().split(/ ofps?\b/)[0].trim().slice(0,60); }
+      : function(s){ return s.toLowerCase().split(/should|:/)[0].trim().slice(0,60); };
     const ns = sig(note);
     lines = lines.filter(function(l){ return sig(l)!==ns && l.toLowerCase()!==note.toLowerCase(); });
     lines.push(note);
   }
   return lines.slice(-60).map(function(s){return "- "+s;}).join("\n");
+}
+// ---- silent learning: EVERY registered (licensed) device teaches the reader from each NEW airline it uploads ----
+async function autoLearnFromOfp(env, text, data, device){
+  try{
+    if(!env.ANTHROPIC_API_KEY) return;
+    text = String(text||""); if(text.trim().length < 200) return;   // need enough text to characterise a layout
+    const airline = ((String((data&&data.fltCs)||"").match(/^[A-Za-z]+/)||[""])[0]
+                  || (String((data&&data.reg)||"").match(/^[A-Za-z]+/)||[""])[0]).toUpperCase();
+    if(!airline || airline.length < 2) return;
+    let cur=""; try{ cur = (await env.TRIALS.get("ofp:examples"))||""; }catch(e){}
+    const lc = cur.toLowerCase();
+    if(lc.indexOf('for "'+airline.toLowerCase()+'" ofps')>=0 || lc.indexOf('for '+airline.toLowerCase()+' ofps')>=0) return; // airline already learned — first upload wins
+    // per-device daily cap so no single device can flood the shared library with junk "airlines"
+    if(device && !(await rateOk(env, "autolearn:"+device, 4, 86400))) return;
+    const sys = "You are teaching an OFP parser to read a new airline's flight-plan layout. From the OFP text, write ONE concise line (max 240 characters) that helps a parser read THIS airline's format in future: how to RECOGNISE it (callsign/registration prefix or a distinctive label) and the EXACT labels it uses for registration, dep/dest, ZFW & max ZFW, take-off & max take-off weight, landing & max landing weight, trip/taxi/alternate/reserve/block fuel, trip & block time, cost index, cruise level, and where the route string is printed. Note zero-padding or tonnes, and decimal HH.MM times. Begin with: For \""+airline+"\" OFPs. Return ONLY that single line.";
+    let out; try{ out = await anthropic(env, sys, "OFP TEXT:\n"+text.slice(0,14000), {max_tokens:400, temperature:0}); }catch(e){ return; }
+    const note = out.replace(/```/g,"").replace(/\s+/g," ").trim().slice(0,300);
+    if(!note) return;
+    cur = mergeOfpExamples(cur, note, true);
+    try{ await env.TRIALS.put("ofp:examples", cur); }catch(e){}
+    await bumpUse(env, "ai");
+  }catch(e){}
 }
 async function anthropic(env, system, user, opts){
   opts = opts || {};
@@ -211,6 +236,10 @@ function tokenOk(env, req){
   let out=0; for(let i=0;i<k.length;i++) out |= t.charCodeAt(i)^k.charCodeAt(i);
   return out===0;
 }
+// group-admin: a delegated admin scoped to ONE group, with its own token (independent of the main ADMIN_TOKEN). Returns the group id or "".
+async function groupAdminGroup(env, req){
+  try{ const t=(req.headers.get("x-group-token")||"").trim(); if(!t||t.length<6) return ""; const g=await env.TRIALS.get("gadmin:"+t); return g?String(g):""; }catch(e){ return ""; }
+}
 // the caller holds a valid, device-locked licence code (used to gate the paid AI endpoints against budget abuse)
 async function licOk(env, body){
   try{ const d=((body&&body.device)||"").toUpperCase(); const c=(body&&body.code)||"";
@@ -263,12 +292,34 @@ function codeEmailHtml(env, device, code, expDay){
 // FIX #4: keep a compact summary in each trial: key's KV METADATA, so the admin console can build the
 // user list / mailing list from list() ALONE (1 subrequest per 1000 keys) instead of one get() per user.
 function trialMeta(rec){
+  const pr = rec.profile||{};
   return { e: rec.email||"", p: rec.plan||"", x: (rec.expDay!=null?rec.expDay:null),
-           a: rec.at||0, s: rec.source || (rec.admin?"admin/paid":"self-trial"), g: rec.group||"" };
+           a: rec.at||0, s: rec.source || (rec.admin?"admin/paid":"self-trial"), g: rec.group||"", n: rec.name||"",
+           pn: pr.name||"", pp: pr.position||"", pr: pr.airline||"", pc: pr.aircraft||"" };
 }
 async function putTrial(env, device, rec){
   try{ await env.TRIALS.put("trial:"+device, JSON.stringify(rec), {metadata: trialMeta(rec)}); }
   catch(e){ await env.TRIALS.put("trial:"+device, JSON.stringify(rec)); }
+}
+// Belt-and-braces one-email-per-device: if the email:->device binding is missing, scan the trial metadata to see if
+// any OTHER device already carries this email (cheap: reads KV metadata from list(); legacy records capped).
+async function emailUsedByOther(env, email, device){
+  try{
+    email=(email||"").toLowerCase(); if(!email) return "";
+    let cursor, legacyGets=0;
+    do{
+      const list = await env.TRIALS.list({prefix:"trial:", cursor});
+      for(const k of list.keys){
+        const dev=k.name.slice(6); if(dev===device) continue;
+        let em="";
+        if(k.metadata && k.metadata.e!=null){ em=String(k.metadata.e).toLowerCase(); }
+        else if(legacyGets<300){ legacyGets++; try{ em=((JSON.parse((await env.TRIALS.get(k.name))||"{}").email)||"").toLowerCase(); }catch(e){} }
+        if(em && em===email) return dev;
+      }
+      cursor = list.list_complete ? null : list.cursor;
+    } while(cursor);
+  }catch(e){}
+  return "";
 }
 async function issueTrial(env, device, email, {admin=false, days=null, plan=""} = {}){
   device = device.toUpperCase();
@@ -280,6 +331,7 @@ async function issueTrial(env, device, email, {admin=false, days=null, plan=""} 
   const emNorm = (email||"").trim().toLowerCase();
   if(emNorm && !admin){
     let boundDev=""; try{ boundDev = (await env.TRIALS.get("email:"+emNorm))||""; }catch(e){}
+    if(!boundDev){ const other = await emailUsedByOther(env, emNorm, device); if(other){ boundDev=other; try{ await env.TRIALS.put("email:"+emNorm, other); }catch(e){} } }  // heal a missing binding so one email can't slip onto a 2nd device
     if(boundDev && boundDev !== device) return {ok:false, reason:"email_taken"};        // email already used on another device
     try{ const prior = await env.TRIALS.get("trial:"+device); if(prior){ const pe=((JSON.parse(prior).email)||"").toLowerCase(); if(pe && pe!==emNorm) return {ok:false, reason:"email_locked"}; } }catch(e){}
   }
@@ -344,7 +396,7 @@ export default {
     const url = new URL(request.url);
     if(request.method === "OPTIONS") return new Response(null, {headers: CORS});
     // deploy check: open /version in a browser to confirm the latest code is live
-    if(url.pathname === "/version"){ return json({ok:true, version:"2026-07-14-batch9L", features:["block-nondestructive","admin-grant-auto-unblock","grant-error-check","services","usage-counters","cron-reminders","admin-delete","blocked-clears-on-unblock","email-one-device-lock","admin-lookup","delete-revokes","app-register","reviews","checklist-ai","admin-pushdoc","pusheddocs","mycode","grant-email-required","ofp-navlog","mycode-email-required","ai-licence-gated","pusheddocs-expiry","wx-proxy","ofp-learn","user-groups","mycode-one-device","email-text-replyto","ai-expiry-gate","ai-daily-quota","trial-ratelimit","mail-index-metadata","mail-truthful-total","lemon-product-whitelist","webhook-idempotent","mailtrial-ratelimit","ofp-learn-dedupe"]}); }
+    if(url.pathname === "/version"){ return json({ok:true, version:"2026-07-15-batch9T", features:["pilot-profile","group-admin","subadmin","ofp-navlog-detail","email-metadata-scan","device-name","block-nondestructive","admin-grant-auto-unblock","grant-error-check","services","usage-counters","cron-reminders","admin-delete","blocked-clears-on-unblock","email-one-device-lock","admin-lookup","delete-revokes","app-register","reviews","checklist-ai","admin-pushdoc","pusheddocs","mycode","grant-email-required","ofp-navlog","mycode-email-required","ai-licence-gated","pusheddocs-expiry","wx-proxy","ofp-learn","user-groups","mycode-one-device","email-text-replyto","ai-expiry-gate","ai-daily-quota","trial-ratelimit","mail-index-metadata","mail-truthful-total","lemon-product-whitelist","webhook-idempotent","mailtrial-ratelimit","ofp-learn-dedupe","ofp-autolearn-all","ofp-feed"]}); }
     try{
 
     // ---- public web-form trial ----
@@ -425,17 +477,34 @@ export default {
       const device = (body.device||"").trim().toUpperCase();
       const email  = (body.email||"").trim().toLowerCase();
       const code   = (body.code||"").toString();
+      const name   = (body.name||"").toString().replace(/[<>]/g,"").slice(0,40).trim();   // user-chosen device name
       if(!/^SKM-[A-Z0-9]{6}$/.test(device)) return json({ok:false, error:"bad device"}, 400);
       const v = await verifyLicence(env, device, code);
       if(!v.ok) return json({ok:false, error:"invalid code"}, 400);   // only record devices holding a genuine signed code
       const existing = await env.TRIALS.get("trial:"+device);
       if(!existing){
-        await putTrial(env, device, { email:email||"", expDay:v.expDay, at:Date.now(), admin:false, plan:"External code", source:"app", seen:Date.now() });
+        await putTrial(env, device, { email:email||"", expDay:v.expDay, at:Date.now(), admin:false, plan:"External code", source:"app", seen:Date.now(), name:name||"" });
       } else {
-        try{ const r=JSON.parse(existing); r.seen=Date.now(); if(email && !r.email) r.email=email; await putTrial(env, device, r); }catch(e){}
+        try{ const r=JSON.parse(existing); r.seen=Date.now(); if(email && !r.email) r.email=email; if(name) r.name=name; await putTrial(env, device, r); }catch(e){}
       }
       if(email){ try{ const ek="email:"+email; if(!(await env.TRIALS.get(ek))) await env.TRIALS.put(ek, device); }catch(e){} }
       return json({ok:true});
+    }
+    // ---- app: save the pilot PROFILE (name once + position/airline/aircraft) — required to use the app; stored for the admin ----
+    if(url.pathname === "/profile" && request.method === "POST"){
+      let body={}; try{ body = await request.json(); }catch(e){}
+      const device=(body.device||"").trim().toUpperCase(); const code=(body.code||"").toString();
+      if(!/^SKM-[A-Z0-9]{6}$/.test(device)) return json({ok:false, error:"bad device"}, 400);
+      const v=await verifyLicence(env, device, code); if(!v.ok) return json({ok:false, error:"invalid code"}, 403);
+      const clean=function(s,n){ return (s||"").toString().replace(/[<>]/g,"").slice(0,n).trim(); };
+      const name=clean(body.name,60), position=clean(body.position,40), airline=clean(body.airline,60), aircraft=clean(body.aircraft,40);
+      let rec={}; try{ rec=JSON.parse((await env.TRIALS.get("trial:"+device))||"{}"); }catch(e){}
+      rec.profile=rec.profile||{};
+      if(name && !rec.profile.name) rec.profile.name=name;   // pilot name is set ONCE (immutable thereafter)
+      if(position) rec.profile.position=position; if(airline) rec.profile.airline=airline; if(aircraft) rec.profile.aircraft=aircraft;
+      rec.seen=Date.now(); if(rec.expDay==null)rec.expDay=v.expDay; if(rec.at==null)rec.at=Date.now();
+      await putTrial(env, device, rec);
+      return json({ok:true, profile:rec.profile});
     }
     // ---- admin: look up a single user by Device ID or email ----
     if(url.pathname === "/admin/lookup" && request.method === "GET"){
@@ -492,12 +561,14 @@ export default {
           // FIX #4: prefer the compact summary stored in KV metadata (no per-user read). Only fall back to a
           // get() for legacy records written before metadata existed, and cap those so we never blow the
           // Workers subrequest limit on a very large, un-migrated dataset.
-          if(k.metadata){ const md=k.metadata; rec={ email:md.e, plan:md.p, expDay:(md.x!=null?md.x:null), at:md.a, source:md.s, group:md.g }; }
+          if(k.metadata){ const md=k.metadata; rec={ email:md.e, plan:md.p, expDay:(md.x!=null?md.x:null), at:md.a, source:md.s, group:md.g, name:md.n, profile:{name:md.pn||"",position:md.pp||"",airline:md.pr||"",aircraft:md.pc||""} }; }
           else if(legacyGets < 800){ legacyGets++; try{ rec = JSON.parse((await env.TRIALS.get(k.name))||"{}"); }catch(e){ rec={}; } }
           else { rec = { _partial:true }; }
           const end = rec.expDay ? new Date(rec.expDay*86400000).toISOString().slice(0,10) : "";
+          const pr = rec.profile||{};
           users.push({
-            device: dev, email: rec.email||"", plan: rec.plan||"",
+            device: dev, email: rec.email||"", plan: rec.plan||"", name: rec.name||"",
+            pilot: pr.name||"", position: pr.position||"", airline: pr.airline||"", aircraft: pr.aircraft||"",
             start: rec.at ? new Date(rec.at).toISOString().slice(0,10) : "",
             end, daysLeft: (rec.expDay!=null) ? (rec.expDay-nowDay) : null,
             active: (rec.expDay!=null) ? (rec.expDay>=nowDay) : false,
@@ -733,7 +804,21 @@ export default {
           data = JSON.parse(t);
         }
       }catch(e){ return json({ok:false, error:"AI returned unparseable output.", raw: out.slice(-300)}, 502); }
+      // AUTO-LEARN (silent, ALL registered devices): every successful parse is from a valid licence or admin (the gate
+      // above enforces this), so learn a format rule from each NEW airline in the background — the reader improves with
+      // every flight plan any pilot uploads. Per-device daily cap + first-upload-wins keep it cheap and poison-resistant.
+      try{ ctx.waitUntil(autoLearnFromOfp(env, text, data, ((body.device)||"").toUpperCase())); }catch(e){}
       return json({ok:true, data});
+    }
+    // ---- lightweight learning feed: an airline read WITHOUT the AI (e.g. Qatar, parsed offline) still contributes to
+    // the AI's learning — cheaply. The server only calls the model to learn a NEW airline; a known airline is a no-op. ----
+    if(url.pathname === "/ofp/feed" && request.method === "POST"){
+      let body={}; try{ body = await request.json(); }catch(e){}
+      if(!(await licOk(env, body)) && !tokenOk(env, request)) return json({ok:false, error:"This feature needs an active Sky Matrix licence."}, 403);
+      const text = (body.text||"").toString();
+      const airline = (body.airline||"").toString().replace(/[^A-Za-z0-9]/g,"").slice(0,20);
+      ctx.waitUntil(autoLearnFromOfp(env, text, {fltCs:airline}, ((body.device)||"").toUpperCase()));
+      return json({ok:true});
     }
     // ---- self-improvement: remember a pilot's correction and feed it back to future parses ----
     if(url.pathname === "/ofp/correct" && request.method === "POST"){
@@ -765,7 +850,7 @@ export default {
       const note = out.replace(/```/g,"").replace(/\s+/g," ").trim().slice(0,300);
       if(!note) return json({ok:false, error:"The AI could not summarise this OFP's format."}, 502);
       let cur=""; try{ cur = (await env.TRIALS.get("ofp:examples"))||""; }catch(e){}
-      cur = mergeOfpExamples(cur, note);   // supersede same airline+field, dedupe, keep newest 60
+      cur = mergeOfpExamples(cur, note, true);   // airline-level: one format rule per airline
       try{ await env.TRIALS.put("ofp:examples", cur); }catch(e){}
       return json({ok:true, note});
     }
@@ -887,6 +972,70 @@ export default {
       return json({ok:true, device, group});
     }
 
+    // ---- admin: set a friendly NAME for a device (shows in the users list) ----
+    if(url.pathname === "/admin/name" && request.method === "POST"){
+      if(!tokenOk(env, request)) return json({ok:false, error:"unauthorized"}, 401);
+      let body={}; try{ body = await request.json(); }catch(e){}
+      const device = (body.device||"").trim().toUpperCase();
+      const name = (body.name||"").toString().replace(/[<>]/g,"").slice(0,40).trim();
+      if(!/^SKM-[A-Z0-9]{6}$/.test(device)) return json({ok:false, error:"bad device"}, 400);
+      const s = await env.TRIALS.get("trial:"+device);
+      if(!s) return json({ok:false, error:"no record for this device (it must have run the app first)"}, 404);
+      let rec; try{ rec = JSON.parse(s); }catch(e){ return json({ok:false, error:"record error"}, 500); }
+      rec.name = name;
+      await putTrial(env, device, rec);
+      return json({ok:true, device, name});
+    }
+
+    // ---- MAIN admin: create / list / remove group-admin credentials (a delegated admin scoped to one group) ----
+    if(url.pathname === "/admin/subadmin" && (request.method === "GET" || request.method === "POST")){
+      if(!tokenOk(env, request)) return json({ok:false, error:"unauthorized"}, 401);
+      if(request.method === "POST"){
+        let body={}; try{ body = await request.json(); }catch(e){}
+        const token=(body.token||"").toString().trim();
+        const group=(body.group||"").toString().trim().toUpperCase().replace(/[^A-Z0-9_-]/g,"").slice(0,30);
+        if(body.remove){ if(token){ try{ await env.TRIALS.delete("gadmin:"+token); }catch(e){} } return json({ok:true, removed:true}); }
+        if(token.length<6) return json({ok:false, error:"token must be at least 6 characters"}, 400);
+        if(!group) return json({ok:false, error:"a group id is required"}, 400);
+        await env.TRIALS.put("gadmin:"+token, group);
+        return json({ok:true, token, group});
+      }
+      const out=[]; let cursor;
+      do{ const list=await env.TRIALS.list({prefix:"gadmin:", cursor}); for(const k of list.keys){ let g=""; try{ g=(await env.TRIALS.get(k.name))||""; }catch(e){} out.push({token:k.name.slice(7), group:g}); } cursor=list.list_complete?null:list.cursor; }while(cursor);
+      return json({ok:true, subadmins:out});
+    }
+    // ---- GROUP admin: list the users in MY group only ----
+    if(url.pathname === "/g/users" && request.method === "GET"){
+      const grp=await groupAdminGroup(env, request); if(!grp) return json({ok:false, error:"unauthorized"}, 401);
+      const bl=await readBlocklist(env); const nowDay=Math.floor(Date.now()/86400000); const users=[]; let cursor;
+      do{ const list=await env.TRIALS.list({prefix:"trial:", cursor}); for(const k of list.keys){ const md=k.metadata; if(!md||String(md.g||"").toUpperCase()!==grp) continue; const dev=k.name.slice(6);
+        users.push({device:dev, name:md.n||"", email:md.e||"", plan:md.p||"", end:(md.x!=null?new Date(md.x*86400000).toISOString().slice(0,10):""), daysLeft:(md.x!=null?(md.x-nowDay):null), active:(md.x!=null?(md.x>=nowDay):false), blocked:bl.indexOf(dev)>=0}); }
+        cursor=list.list_complete?null:list.cursor; }while(cursor);
+      return json({ok:true, group:grp, count:users.length, users});
+    }
+    // ---- GROUP admin: push a document to everyone in MY group ----
+    if(url.pathname === "/g/pushdoc" && request.method === "POST"){
+      const grp=await groupAdminGroup(env, request); if(!grp) return json({ok:false, error:"unauthorized"}, 401);
+      let body={}; try{ body = await request.json(); }catch(e){}
+      const name=(body.name||"document.pdf").toString().slice(0,120); const mime=(body.mime||"application/pdf").toString().slice(0,80); const dataB64=(body.dataB64||"").toString();
+      if(!dataB64) return json({ok:false, error:"no file data"}, 400);
+      if(dataB64.length>20000000) return json({ok:false, error:"file too large (about 14 MB max)"}, 413);
+      const id=Date.now()+""+Math.random().toString(36).slice(2,6);
+      await env.TRIALS.put("pushdoc:GROUP:"+grp+":"+id, JSON.stringify({id,name,mime,dataB64,at:Date.now()}), {expirationTtl:60*60*24*120});
+      return json({ok:true, id, group:grp});
+    }
+    // ---- GROUP admin: name a device that is already in MY group ----
+    if(url.pathname === "/g/name" && request.method === "POST"){
+      const grp=await groupAdminGroup(env, request); if(!grp) return json({ok:false, error:"unauthorized"}, 401);
+      let body={}; try{ body = await request.json(); }catch(e){}
+      const device=(body.device||"").trim().toUpperCase(); const nm=(body.name||"").toString().replace(/[<>]/g,"").slice(0,40).trim();
+      if(!/^SKM-[A-Z0-9]{6}$/.test(device)) return json({ok:false, error:"bad device"}, 400);
+      const s=await env.TRIALS.get("trial:"+device); if(!s) return json({ok:false, error:"no record for this device"}, 404);
+      let rec; try{ rec=JSON.parse(s); }catch(e){ return json({ok:false, error:"record error"}, 500); }
+      if(String(rec.group||"").toUpperCase()!==grp) return json({ok:false, error:"that device is not in your group"}, 403);
+      rec.name=nm; await putTrial(env, device, rec); return json({ok:true, device, name:nm});
+    }
+
     // ---- app: pull any docs pushed to this device (or to ALL or its group); verified by licence code ----
     if(url.pathname === "/pusheddocs" && request.method === "POST"){
       let body={}; try{ body = await request.json(); }catch(e){}
@@ -1002,19 +1151,4 @@ export default {
       due.sort(function(a,b){ return a._d - b._d; });
       const rows = due.map(function(s){
         const when = s._d<0 ? ("OVERDUE by "+(-s._d)+" day(s)") : (s._d===0 ? "due today" : ("in "+s._d+" day(s)"));
-        return "<tr><td style='padding:6px 10px;border:1px solid #ddd'>"+he(s.name)+"</td><td style='padding:6px 10px;border:1px solid #ddd'>"+he(s.cost)+"</td><td style='padding:6px 10px;border:1px solid #ddd'>"+he(s.due)+"</td><td style='padding:6px 10px;border:1px solid #ddd'>"+when+"</td></tr>";
-      }).join("");
-      const to = env.REMINDER_EMAIL || "Skymatrix401@gmail.com";
-      const html = "<div style='font-family:Segoe UI,Arial,sans-serif;color:#1e2a44'>"+
-        "<h2 style='color:#1f6dff;margin:0 0 8px'>Sky Matrix — service renewals due soon</h2>"+
-        "<p>These paid services are due within 7 days:</p>"+
-        "<table style='border-collapse:collapse;font-size:14px'><tr>"+
-        "<th style='padding:6px 10px;border:1px solid #ddd;text-align:left'>Service</th>"+
-        "<th style='padding:6px 10px;border:1px solid #ddd;text-align:left'>Cost</th>"+
-        "<th style='padding:6px 10px;border:1px solid #ddd;text-align:left'>Due date</th>"+
-        "<th style='padding:6px 10px;border:1px solid #ddd;text-align:left'>When</th></tr>"+rows+"</table>"+
-        "<p style='color:#5a6b86;font-size:12px'>Update these in your admin console &rarr; Services &amp; billing.</p></div>";
-      await sendMail(env, to, "Sky Matrix — "+due.length+" service renewal(s) due soon", html);
-    }catch(e){}
-  }
-};
+        return "<tr><td style='padding:6px 10px;border:1px solid #ddd'>"+he(s.name)+"</td><td style='padding:6px 10px;border:1px solid #ddd'>"+he(s.cost)+"</td><td 

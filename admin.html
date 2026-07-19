@@ -84,7 +84,7 @@
     </div>
     <div id="msgUsers" class="msg"></div>
     <div class="tblwrap" style="max-height:none"><table id="uTable"><thead><tr>
-      <th>Device ID</th><th>Email</th><th>Plan</th><th>Start</th><th>End</th><th>Days left</th><th>Status</th><th>Source</th><th>Action</th>
+      <th>Device ID</th><th>Name</th><th>Pilot</th><th>Email</th><th>Plan</th><th>Start</th><th>End</th><th>Days left</th><th>Status</th><th>Source</th><th>Action</th>
     </tr></thead><tbody></tbody></table></div>
     <div id="uPager" style="margin-top:12px;display:flex;gap:12px;align-items:center;justify-content:center"></div>
   </div>
@@ -150,6 +150,28 @@
       <button id="grpBtn" style="flex:0 0 auto">Assign group</button>
     </div>
     <div id="msgGrp" class="msg"></div>
+  </div>
+  <div class="card">
+    <label>Name a device</label>
+    <div class="hint">Give a device a friendly name (e.g. <code>Capt Mike – iPad</code>) so you can recognise it in the Users list. The pilot can also name their own device on its lock screen. Leave the name blank and Save to clear it.</div>
+    <div class="row" style="margin-top:8px">
+      <div><input id="nameDev" type="text" placeholder="SKM-XXXXXX" style="text-transform:uppercase"></div>
+      <div><input id="nameVal" type="text" placeholder="Device name" maxlength="40"></div>
+      <button id="nameBtn" style="flex:0 0 auto">Save name</button>
+    </div>
+    <div id="msgName" class="msg"></div>
+  </div>
+  <div class="card">
+    <label>Group admins (delegated)</label>
+    <div class="hint">Create a token for a group's own admin. They open <code>subadmin.html</code> with it to view their group's users, push documents to the group, and name group devices — but they <b>cannot</b> grant, block or delete licences. First assign devices to a group (above); the group admin manages only that group.</div>
+    <div class="row" style="margin-top:8px">
+      <div><input id="saGroup" type="text" placeholder="Group ID (e.g. FLEET-A)" style="text-transform:uppercase"></div>
+      <div><input id="saToken" type="text" placeholder="Token (min 6 chars)"></div>
+      <button id="saGen" type="button" class="ghost" style="flex:0 0 auto">Generate</button>
+      <button id="saMake" style="flex:0 0 auto">Create / update</button>
+    </div>
+    <div id="msgSa" class="msg"></div>
+    <div id="saList" style="margin-top:8px"></div>
   </div>
 </section>
 
@@ -242,7 +264,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(
 var USERS=[], UPAGE=1; var UPP=10;   // 10 users per page
 function renderUsers(){
   var q=(($('uSearch').value||'').toLowerCase());
-  var rows=USERS.filter(function(u){ return !q || (u.device+' '+u.email+' '+u.plan).toLowerCase().indexOf(q)>=0; });
+  var rows=USERS.filter(function(u){ return !q || (u.device+' '+(u.name||'')+' '+u.email+' '+u.plan).toLowerCase().indexOf(q)>=0; });
   var pages=Math.max(1,Math.ceil(rows.length/UPP));
   if(UPAGE>pages)UPAGE=pages; if(UPAGE<1)UPAGE=1;
   var pageRows=rows.slice((UPAGE-1)*UPP, UPAGE*UPP);
@@ -253,7 +275,8 @@ function renderUsers(){
                         : '<button class="warn sm" data-blk="'+esc(u.device)+'">Block</button>')
                         + ' <button class="warn sm" data-del="'+esc(u.device)+'" style="background:#4a0f1e;border-color:#7a1a30">Delete</button>';
     var dl = (u.daysLeft==null)?'–':(u.daysLeft<0?('exp '+(-u.daysLeft)+'d ago'):(u.daysLeft+'d'));
-    return '<tr><td>'+esc(u.device)+'</td><td class="wrap">'+esc(u.email||'—')+'</td><td>'+esc(u.plan||'—')+'</td><td>'+esc(u.start||'—')+'</td><td>'+esc(u.end||'—')+'</td><td>'+dl+'</td><td>'+status+'</td><td>'+esc(u.source||'—')+(u.group?(' · <b style="color:#7ec8ff">'+esc(u.group)+'</b>'):'')+'</td><td>'+act+'</td></tr>';
+    var pilot = u.pilot ? (esc(u.pilot)+(u.position?(' · '+esc(u.position)):'')+(u.airline?('<br><span style="color:#9fb3d1">'+esc(u.airline)+(u.aircraft?(' · '+esc(u.aircraft)):'')+'</span>'):'')) : '—';
+    return '<tr><td>'+esc(u.device)+'</td><td class="wrap">'+esc(u.name||'—')+'</td><td class="wrap">'+pilot+'</td><td class="wrap">'+esc(u.email||'—')+'</td><td>'+esc(u.plan||'—')+'</td><td>'+esc(u.start||'—')+'</td><td>'+esc(u.end||'—')+'</td><td>'+dl+'</td><td>'+status+'</td><td>'+esc(u.source||'—')+(u.group?(' · <b style="color:#7ec8ff">'+esc(u.group)+'</b>'):'')+'</td><td>'+act+'</td></tr>';
   }).join('') || '<tr><td colspan="9" style="text-align:center;color:#9fb3d1">No users.</td></tr>';
   var pg=$('uPager'); if(pg){
     if(rows.length<=UPP){ pg.innerHTML=''; }
@@ -363,6 +386,32 @@ if($('grpBtn'))$('grpBtn').addEventListener('click',function(){
     else set($('msgGrp'),(j&&j.error)||'Failed.','err');
   }).catch(function(){ set($('msgGrp'),'Network error.','err'); });
 });
+if($('nameBtn'))$('nameBtn').addEventListener('click',function(){
+  var k=tok(); if(!k){ set($('msgName'),'Enter your admin token first.','err'); return; }
+  var dev=($('nameDev').value||'').trim().toUpperCase(); var nm=($('nameVal').value||'').trim();
+  if(!/^SKM-[A-Z0-9]{6}$/.test(dev)){ set($('msgName'),'Enter a valid Device ID.','err'); return; }
+  set($('msgName'),'Saving…','');
+  H(k,'/admin/name',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:dev,name:nm})}).then(function(j){
+    if(j&&j.ok){ set($('msgName'), dev+(nm?(' named “'+nm+'” ✓'):' name cleared ✓'),'ok'); try{loadUsers();}catch(e){} }
+    else set($('msgName'),(j&&j.error)||'Failed.','err');
+  }).catch(function(){ set($('msgName'),'Network error.','err'); });
+});
+if($('saGen'))$('saGen').addEventListener('click',function(){ $('saToken').value='ga_'+Math.random().toString(36).slice(2,10)+Math.random().toString(36).slice(2,6); });
+if($('saMake'))$('saMake').addEventListener('click',function(){
+  var k=tok(); if(!k){ set($('msgSa'),'Enter your admin token first.','err'); return; }
+  var g=($('saGroup').value||'').trim().toUpperCase(), t=($('saToken').value||'').trim();
+  if(!g){ set($('msgSa'),'Enter a group id.','err'); return; }
+  if(t.length<6){ set($('msgSa'),'Token must be at least 6 characters (or tap Generate).','err'); return; }
+  set($('msgSa'),'Saving…','');
+  H(k,'/admin/subadmin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:t,group:g})}).then(function(j){
+    if(j&&j.ok){ set($('msgSa'),'Group admin for '+esc(g)+' saved ✓ — give them this token and the subadmin.html link.','ok'); loadSa(); }
+    else set($('msgSa'),(j&&j.error)||'Failed.','err');
+  }).catch(function(){ set($('msgSa'),'Network error.','err'); });
+});
+function loadSa(){ var k=tok(); if(!k)return; H(k,'/admin/subadmin').then(function(j){ if(!(j&&j.ok))return; var el=$('saList'); if(!el)return; var a=j.subadmins||[];
+  el.innerHTML = a.length ? ('<table><thead><tr><th>Group</th><th>Token</th><th></th></tr></thead><tbody>'+a.map(function(s){return '<tr><td>'+esc(s.group)+'</td><td class="wrap"><code>'+esc(s.token)+'</code></td><td><button class="warn sm" data-sadel="'+esc(s.token)+'">Remove</button></td></tr>';}).join('')+'</tbody></table>') : '<p class="hint">No group admins yet.</p>';
+  el.querySelectorAll('[data-sadel]').forEach(function(b){ b.addEventListener('click',function(){ if(!confirm('Remove this group admin token?'))return; H(k,'/admin/subadmin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:b.getAttribute('data-sadel'),remove:true})}).then(function(){loadSa();}); }); });
+}).catch(function(){}); }
 if($('pushBtn'))$('pushBtn').addEventListener('click',function(){
   var k=tok(); if(!k){ set($('msgPush'),'Enter your admin token first.','err'); return; }
   var mode=$('pushTarget').value, target='ALL';
@@ -553,6 +602,7 @@ $('revAdmin').addEventListener('click',function(e){
     if(!k) return;                       // no token on this device yet — user must paste it
     var now=Date.now(); if(now-last<1500) return; last=now;   // debounce
     try{ loadUsers(); }catch(e){}
+    try{ if(typeof loadSa==='function') loadSa(); }catch(e){}
   }
   // 1) on page open, if a token is already saved on this device
   try{ if((($('tok').value)||'').trim()) autoLoadUsers(); }catch(e){}

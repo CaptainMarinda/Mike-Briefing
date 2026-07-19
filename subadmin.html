@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sky Matrix — Group Admin</title>
+<meta name="robots" content="noindex,nofollow">
+<style>
+ :root{--blue:#1f6dff;--navy:#0e1726;--panel:#13203a;--line:#2a3c5e;--ink:#e6ecf5;--soft:#9fb3d1;--good:#7be0a4}
+ *{box-sizing:border-box}
+ body{margin:0;background:var(--navy);color:var(--ink);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.5;padding:18px;max-width:900px;margin:0 auto}
+ h1{font-size:20px;margin:0 0 2px}.sub{color:var(--soft);font-size:13px;margin:0 0 16px}
+ .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin:0 0 14px}
+ label{display:block;font-size:12px;color:var(--soft);margin:0 0 4px;font-weight:600}
+ input,button{font-size:14px;font-family:inherit}
+ input{width:100%;background:#0e1930;border:1px solid var(--line);color:#fff;border-radius:9px;padding:10px}
+ button{background:var(--blue);color:#fff;border:0;border-radius:9px;padding:10px 16px;font-weight:700;cursor:pointer}
+ button.ghost{background:#12324a;border:1px solid #2f8bff;color:#cfe6ff}
+ .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+ .msg{font-size:13px;min-height:18px;margin-top:8px}.err{color:#ff9aa2}.ok{color:var(--good)}
+ table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+ .hint{color:var(--soft);font-size:12px}
+ code{background:#0b1322;padding:1px 5px;border-radius:4px}
+</style></head>
+<body>
+<h1>Sky Matrix — Group Admin</h1>
+<p class="sub">A delegated console for one fleet / group. You can view your group's users, push documents to them, and name their devices. You cannot grant, block or delete licences — that stays with the main administrator.</p>
+
+<div class="card">
+  <label for="gtok">Group admin token</label>
+  <input id="gtok" type="password" placeholder="Your group admin token" autocomplete="off">
+  <div class="hint" style="margin-top:6px">Given to you by the main administrator. Saved on this device only.</div>
+  <button id="load" style="margin-top:10px">Load my group</button>
+  <div id="msgTok" class="msg"></div>
+</div>
+
+<div class="card">
+  <label>My group's users</label>
+  <div id="usersWrap"><p class="hint">Load your group to see its users.</p></div>
+</div>
+
+<div class="card">
+  <label>Push a document to my whole group</label>
+  <div class="row" style="margin-top:6px">
+    <input id="pushFile" type="file" accept=".pdf,.doc,.docx,.txt,image/*" style="flex:1">
+    <button id="pushBtn">Push document</button>
+  </div>
+  <div class="hint" style="margin-top:6px">Lands in each member's Utilities &rarr; Admin Docs at their next online open. Max ~14 MB.</div>
+  <div id="msgPush" class="msg"></div>
+</div>
+
+<div class="card">
+  <label>Name a device in my group</label>
+  <div class="row" style="margin-top:6px">
+    <div style="flex:1"><input id="nameDev" type="text" placeholder="SKM-XXXXXX" style="text-transform:uppercase"></div>
+    <div style="flex:1"><input id="nameVal" type="text" placeholder="Device name" maxlength="40"></div>
+    <button id="nameBtn">Save name</button>
+  </div>
+  <div class="hint" style="margin-top:6px">Only works for devices already assigned to your group by the main admin.</div>
+  <div id="msgName" class="msg"></div>
+</div>
+
+<script>
+var W="https://skymatrix-trial.skymatrix.workers.dev";
+var $=function(id){return document.getElementById(id);};
+function set(el,t,c){el.textContent=t||'';el.className='msg '+(c||'');}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function tok(){var v=($('gtok').value||'').trim();try{localStorage.setItem('sm_group_tok',v);}catch(e){}return v;}
+try{var t=localStorage.getItem('sm_group_tok');if(t)$('gtok').value=t;}catch(e){}
+function H(path,opts){opts=opts||{};opts.headers=Object.assign({'x-group-token':tok()},opts.headers||{});return fetch(W+path,opts).then(function(r){return r.json();});}
+function loadUsers(){var k=tok();if(!k){set($('msgTok'),'Enter your group token first.','err');return;}
+  set($('msgTok'),'Loading…','');
+  H('/g/users').then(function(j){
+    if(!(j&&j.ok)){set($('msgTok'),(j&&j.error)||'Failed (check the token).','err');return;}
+    set($('msgTok'),'Loaded group '+esc(j.group)+' — '+j.count+' user(s) ✓','ok');
+    var el=$('usersWrap');
+    if(!j.users.length){el.innerHTML='<p class="hint">No devices in this group yet. The main admin assigns devices to your group.</p>';return;}
+    el.innerHTML='<table><thead><tr><th>Device</th><th>Name</th><th>Email</th><th>Plan</th><th>Ends</th><th>Status</th></tr></thead><tbody>'+
+      j.users.map(function(u){return '<tr><td>'+esc(u.device)+'</td><td>'+esc(u.name||'—')+'</td><td>'+esc(u.email||'—')+'</td><td>'+esc(u.plan||'—')+'</td><td>'+esc(u.end||'—')+'</td><td>'+(u.blocked?'blocked':(u.active?'active':'expired'))+'</td></tr>';}).join('')+'</tbody></table>';
+  }).catch(function(){set($('msgTok'),'Network error.','err');});
+}
+$('load').addEventListener('click',loadUsers);
+$('gtok').addEventListener('change',function(){if(tok())loadUsers();});
+$('pushBtn').addEventListener('click',function(){
+  var k=tok();if(!k){set($('msgPush'),'Enter your group token first.','err');return;}
+  var f=$('pushFile').files&&$('pushFile').files[0];if(!f){set($('msgPush'),'Choose a document.','err');return;}
+  if(f.size>14*1024*1024){set($('msgPush'),'File too large (~14 MB max).','err');return;}
+  set($('msgPush'),'Uploading '+esc(f.name)+'…','');
+  var rd=new FileReader();rd.onload=function(){var b64=(''+rd.result).split(',')[1]||'';
+    H('/g/pushdoc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:f.name,mime:f.type||'application/pdf',dataB64:b64})}).then(function(j){
+      if(j&&j.ok){set($('msgPush'),'Pushed "'+esc(f.name)+'" to your group ✓','ok');$('pushFile').value='';}
+      else set($('msgPush'),(j&&j.error)||'Failed.','err');
+    }).catch(function(){set($('msgPush'),'Network error.','err');});
+  };rd.onerror=function(){set($('msgPush'),'Could not read the file.','err');};rd.readAsDataURL(f);
+});
+$('nameBtn').addEventListener('click',function(){
+  var k=tok();if(!k){set($('msgName'),'Enter your group token first.','err');return;}
+  var dev=($('nameDev').value||'').trim().toUpperCase(),nm=($('nameVal').value||'').trim();
+  if(!/^SKM-[A-Z0-9]{6}$/.test(dev)){set($('msgName'),'Enter a valid Device ID.','err');return;}
+  set($('msgName'),'Saving…','');
+  H('/g/name',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:dev,name:nm})}).then(function(j){
+    if(j&&j.ok){set($('msgName'),dev+(nm?(' named "'+esc(nm)+'" ✓'):' name cleared ✓'),'ok');loadUsers();}
+    else set($('msgName'),(j&&j.error)||'Failed.','err');
+  }).catch(function(){set($('msgName'),'Network error.','err');});
+});
+try{if(tok())loadUsers();}catch(e){}
+</script>
+</body></html>
