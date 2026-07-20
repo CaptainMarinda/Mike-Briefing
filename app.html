@@ -1365,7 +1365,7 @@ function smMarkSVG(u){return '<svg viewBox="0 0 200 200" xmlns="http://www.w3.or
 +'</svg>';}
 (function(){var i=0;['hdrLogo','lockLogo','footLogo','loginLogo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=smLogoSVG('L'+(i++));});var m=document.getElementById('aiGoMark');if(m)m.innerHTML=smMarkSVG('BTN');})();
 /* visible build stamp — bump APP_VERSION on every release so you can confirm at a glance that the latest is live (matches the Worker /version) */
-var APP_VERSION='2026-07-20-batch22';
+var APP_VERSION='2026-07-20-batch25';
 /* Friendly public version + changelog shown on the PIN/login screen. Bump APP_VER and prepend a CHANGELOG entry each release. */
 var APP_VER='v1.2';
 var CHANGELOG=[
@@ -1865,6 +1865,7 @@ function parseOFP(text, opts){
   try{ applyLidoHeader(data, T); }catch(e){}
   // PIA plans are plain labelled text — read them deterministically (overrides the generic guesses).
   try{ applyPiaOfp(data, T); }catch(e){}
+  try{ data.firs=sanitizeFirs(data.firs); }catch(e){}
   // Fuel bar figures: "PLAN REM x  PLAN REQ y" (tonnes, nav-log header) + "FINL nnnn" (final reserve, kg) + "ALTN <icao> nnnn"
   try{
     var _pr=/PLAN\s+REM\s+([\d.]+)\s+PLAN\s+REQ\s+([\d.]+)/i.exec(T);
@@ -1985,13 +1986,101 @@ function parsePiaOfp(T){
   }
   var fls=T.match(/\/FL(\d{2,3})/g);
   if(fls){ var hi=0; fls.forEach(function(x){ var v=parseInt(x.slice(3),10); if(v>hi)hi=v; }); if(hi)o.highFL=String(hi); }
+  // Destination alternate: fuel table line "ALTN CYOW   4771 00.39"
+  var am=/^ALTN\s+([A-Z]{4})\s+\d/m.exec(T); if(am) o.altnIcao=am[1];
+  // FIR crossings: PIA prints them as nav-log rows, e.g. "ENTER FIR OAKX  23000 ..."
+  var fr=[],sf={},fm,fre=/ENTER\s+FIR\s+([A-Z]{4})/g;
+  while((fm=fre.exec(T))){ if(!sf[fm[1]]){ sf[fm[1]]=1; fr.push({name:'',code:fm[1],country:''}); } }
+  if(fr.length) o.firs=fr;
+  // ETOPS / EDTO equal-time points:
+  //   "ETP1 CRITICAL FUEL CALCULATION   UATT/ENBO"
+  //   "ETP N66 14.5 E055 27.7 / 2162 NM/04.25/40477 ..."
+  var ep=[],em,ere=/ETP(\d)\s+CRITICAL FUEL CALCULATION\s+([A-Z]{4})\s*\/\s*([A-Z]{4})[^\n]*\n\s*ETP\s+([NS][\d\s.]+?)\s+([EW][\d\s.]+?)\s*\/\s*(\d+)\s*NM\/([\d.]+)\//g;
+  while((em=ere.exec(T))){
+    ep.push({posn:'ETP'+em[1], lat:em[4].trim(), lon:em[5].trim(),
+             altn:em[2]+' / '+em[3], eet:em[7].replace('.',':')});
+  }
+  if(ep.length) o.etopsPts=ep;
   delete o._dd;
   return o;
+}
+// METAR / TAF printed inside the OFP itself (PIA prints both for dep, dest and alternates).
+function parseOfpWx(T){
+  var wx={}, m, re=/\b(METAR|TAF)\s+([A-Z]{4})\s+([\s\S]*?)(?=\n\s*(?:METAR|TAF)\s+[A-Z]{4}\b|\n[A-Z][A-Z ]{5,}:|\n-{5,}|$)/g;
+  while((m=re.exec(T))){
+    var kind=m[1], ic=m[2], body=(ic+' '+m[3]).replace(/\s+/g,' ').trim();
+    if(body.length>400) body=body.slice(0,400);
+    if(!/^[A-Z]{4}\s+\d/.test(body)) continue;          // must look like a real report
+    wx[ic]=wx[ic]||{name:'',metar:'',taf:''};
+    if(kind==='METAR'&&!wx[ic].metar) wx[ic].metar='METAR '+body;
+    if(kind==='TAF'  &&!wx[ic].taf)   wx[ic].taf  ='TAF '+body;
+  }
+  return wx;
+}
+// PIA NOTAM / SIGMET / company-NOTAM sections. PIA prints these as plain text, so they are read offline.
+// Entry form:  "*RECENT* CYYZ D2264/26 27JUN0401-27JUN0800"  or  "**RULES**UTAV O0208/26 01JUN0200-30JUN1700"
+// followed by indented body lines. Verified on PIA781: 206 NOTAMs across 40 airports, 13 SIGMETs.
+function parsePiaNotams(T){
+  var res={}, raw=[], lines=T.split('\n'), cur=null, i, ln, s2, m;
+  for(i=0;i<lines.length;i++){
+    ln=lines[i]; s2=ln.trim();
+    m=/^\*+\s*([A-Z]+)\s*\*+\s*([A-Z]{4})\s+(\S+)\s+(\S+)\s*$/.exec(s2);
+    if(m){
+      cur={valid:m[4]+'  ('+m[3]+')', text:[], vobj:null};
+      (res[m[2]]=res[m[2]]||[]).push(cur); raw.push(s2);
+      continue;
+    }
+    if(cur){
+      if(!s2 || /^(Area:|\*+[A-Z]|[A-Z]{4}\s+(?:SIGMET|AIRMET)|STATION COMPANY)/.test(s2)){ cur=null; continue; }
+      if(cur.text.length<12){ cur.text.push(s2); raw.push('   '+s2); }
+    }
+  }
+  var k,j,n=0;
+  for(k in res){ for(j=0;j<res[k].length;j++){ res[k][j].text=res[k][j].text.join(' ').slice(0,400); n++; } }
+  return {notams:res, raw:raw.join('\n'), count:n};
+}
+function parsePiaSigmet(T){
+  var out=[], m, re=/^([A-Z]{4})\s+(SIGMET|AIRMET)\s+([\s\S]{0,300}?)(?=\n[A-Z]{4}\s+(?:SIGMET|AIRMET)|\nArea:|\n\s*\n)/gm, seen={};
+  while((m=re.exec(T))){
+    var t=m[0].replace(/\s+/g,' ').trim().slice(0,280);
+    if(!seen[t]){ seen[t]=1; out.push(t); }
+  }
+  return out;
+}
+function parsePiaCompanyNotams(T){
+  var out=[], m=/STATION COMPANY NOTAMS([\s\S]{0,4000})/.exec(T); if(!m) return out;
+  var blk=m[1], mm, re=/^\s*([A-Z]{4})\s+COMPANY NOTAMS\s*\n([\s\S]{0,400}?)(?=\n\s*[A-Z]{4}\s+COMPANY NOTAMS|\n[A-Z]+ COMPANY NOTAMS:|$)/gm;
+  while((mm=re.exec(blk))){
+    out.push({code:mm[1], subj:mm[2].replace(/\s+/g,' ').trim().slice(0,180), efb:''});
+  }
+  return out;
+}
+// Reject "FIR" entries that are really NOTAM prose (seen on PIA: AGENCY FIR, THE KABUL FIR, WI YEKATERINBURG FIR).
+function sanitizeFirs(list){
+  var BAD={ENTER:1,EXIT:1,INTO:1,WITHIN:1,WI:1,THE:1,AGENCY:1,OPR:1,ACFT:1,AVBL:1,OPNS:1,GNSS:1,DIST:1,
+           EXP:1,REQ:1,SHALL:1,TFC:1,AND:1,FOR:1,NOT:1,ALL:1,ADZ:1,FROM:1,OVER:1,WITH:1,NIL:1,TEMP:1,FUEL:1,TIME:1,
+           XXXX:1,NNNN:1,ZZZZ:1,AAAA:1};   // placeholder codes are not real FIRs
+  var out=[],seen={};
+  (list||[]).forEach(function(f){
+    var c=String((f&&f.code)||'').toUpperCase().trim(), n=String((f&&f.name)||'').toUpperCase();
+    if(!/^[A-Z]{4}$/.test(c)||BAD[c]||seen[c]) return;
+    var w=n.split(/\s+/); for(var i=0;i<w.length;i++){ if(BAD[w[i]]) return; }
+    seen[c]=1; out.push({name:(f.name||''),code:c,country:(f.country||'')});
+  });
+  return out;
 }
 // PIA values are read from labelled text, so they take precedence over a guessed/AI value.
 function applyPiaOfp(data, T){
   var p=parsePiaOfp(T); if(!p) return false;
   for(var k in p){ if(p[k]!=null && p[k]!=='') data[k]=p[k]; }
+  try{ var w=parseOfpWx(T); var n=0; for(var ic in w){ n++; }
+       if(n){ data.wx=data.wx||{}; for(var ic2 in w){ var pv=data.wx[ic2]||{};
+         data.wx[ic2]={name:pv.name||'',metar:w[ic2].metar||pv.metar||'',taf:w[ic2].taf||pv.taf||''}; } } }catch(e){}
+  // NOTAMs / SIGMETs / company NOTAMs, all read straight out of the OFP
+  try{ var nn=parsePiaNotams(T);
+       if(nn.count){ data.notams=nn.notams; if(!data.notamRaw) data.notamRaw=nn.raw; if(!data.notamFull) data.notamFull=nn.raw; } }catch(e){}
+  try{ var sg=parsePiaSigmet(T); if(sg.length) data.sigmet=sg.join('\n'); }catch(e){}
+  try{ var co=parsePiaCompanyNotams(T); if(co.length) data.coCb=(data.coCb&&data.coCb.length)?data.coCb:co; }catch(e){}
   data.elwOver=(data.elwt&&data.mlwt)?(+data.elwt>+data.mlwt):null;
   data.towOver=(data.etow&&data.mtow)?(+data.etow>+data.mtow):null;
   return true;
@@ -2662,12 +2751,37 @@ var _goBtn=document.getElementById('go'); if(_goBtn)_goBtn.onclick=generate;   /
         }).catch(function(){ setMsg('Qatar OFP — briefing ready (offline; nav log from the built-in reader).','ok'); });
       return;
     }
+    // FOOLPROOF FALLBACK: if Sky Matrix AI cannot be reached (no internet, quota, provider down), still build the
+    // whole briefing from the OFP text alone. Qatar / Emirates / Etihad / PIA are fully readable offline.
+    function buildOfflineBriefing(text, why){
+      var data; try{ data=parseOFP(text,{known:'',qseats:0}); }catch(e){ return false; }
+      if(!data || !(data.dep||data.dest||(data.navlog&&data.navlog.length))) return false;
+      try{ data.firs=sanitizeFirs(data.firs); }catch(e){}
+      try{ build(data); }catch(e){}
+      window.__OFP=data;
+      try{ localStorage.setItem('sm_ofptext',text); }catch(e){}
+      var tb=document.getElementById('tb'); if(tb)tb.style.display='flex';
+      if(window.__updateSubrail)window.__updateSubrail();
+      try{ if(window.__goView)window.__goView('briefing'); if(window.__goSub)window.__goSub('ofp'); }catch(e){}
+      try{ setF('dep_from',data.dep); setF('dep_to',data.dest); setF('dep_fnum',data.fltCs); setF('dep_date',data.date); }catch(e){}
+      try{ if(window.__renderIdent)window.__renderIdent(); }catch(e){}
+      try{ window.dispatchEvent(new CustomEvent('ofp-parsed')); }catch(e){}
+      try{ if(typeof calcDisplay==='function')calcDisplay(); }catch(e){}
+      try{ if(typeof saveState==='function')saveState(); }catch(e){}
+      var n=(data.navlog&&data.navlog.length)||0;
+      setMsg('Briefing ready \u2014 read offline from your OFP'+(n?(' ('+n+' waypoints)'):'')+'. '+(why||'Sky Matrix AI was not reachable.'),'warn');
+      return true;
+    }
     aiBtn.disabled=true; setMsg(window.__ofpPdfBuf?'Reading the OFP pages with Sky Matrix AI…':'Reading the OFP with Sky Matrix AI…','');
     ofpPageImages()
       .then(function(images){ var _h={'Content-Type':'application/json'}; try{var _at=localStorage.getItem('sm_admin_tok'); if(_at)_h['x-admin-token']=_at;}catch(e){} /* admin devices auto-teach the reader from each new airline */ return fetch(AI_URL,{method:'POST',headers:_h,body:JSON.stringify({text:text.slice(0,90000), images:images, device:(localStorage.getItem('sm_dev')||''), code:(localStorage.getItem('sm_lic')||'')})}); })
       .then(function(r){return r.json();})
       .then(function(j){
-        if(!j||!j.ok){ setMsg((j&&j.error)||'Sky Matrix AI unavailable right now.','err'); return; }
+        if(!j||!j.ok){
+          var _why=(j&&j.error)||'Sky Matrix AI unavailable right now.';
+          if(!buildOfflineBriefing(text,_why)) setMsg(_why,'err');
+          return;
+        }
         var d=j.data||{}, w=d.weights||{};
         // build the FULL briefing from AI: offline parse gives route/NOTAM/ETOPS structure; AI overrides the header fields
         var data; try{ data=parseOFP(text,{known:'',qseats:0}); }catch(e){ data={raw:text,etopsPts:[]}; }
@@ -2679,15 +2793,16 @@ var _goBtn=document.getElementById('go'); if(_goBtn)_goBtn.onclick=generate;   /
         if(!data.depRwy) data.depRwy=''; if(!data.arrRwy) data.arrRwy='';
         if(!data.sid) data.sid=''; if(!data.star) data.star='';
         data.tropo=null;   // tropopause is not read offline on these layouts — let the AI own it
-        var _xd=applyAIVerified(data,d);
+        // MUST NOT throw: this runs inside the AI promise chain, and an exception here would be caught by the
+        // chain's .catch() and shown to the pilot as "Sky Matrix AI needs internet", which would be misleading.
+        var _xd=null;
+        try{ _xd=applyAIVerified(data,d); }
+        catch(e){ try{ applyAI(data,d); }catch(e2){} if(window.console)console.warn('cross-check failed',e); }
         // Deterministic read of the printed header (runways, SID/STAR, route string, FIR crossings).
         // Fills only what the AI left blank — validated against Emirates, Etihad and Qatar OFPs.
         try{ applyLidoHeader(data, text); }catch(e){}
         try{ applyPiaOfp(data, text); }catch(e){}   // PIA: labelled text beats an AI read of the same page
-        try{
-          if(_xd && _xd.length) setMsg('Briefing ready — Sky Matrix AI cross-check found '+_xd.length+' field(s) that differ. Open Briefing \u2192 Info to review.','warn');
-          else setMsg('Briefing ready — cross-checked against Sky Matrix AI \u2713','ok');
-        }catch(e){}
+        try{ data.firs=sanitizeFirs(data.firs); }catch(e){}   // drop NOTAM prose that merely contains "FIR"
         // carry the AI's raw NOTAM text so the NOTAM viewer can show it when the offline parser can't structure them (e.g. PIA)
         try{ if(d.notamsRaw && !data.notamRaw){ data.notamRaw=String(d.notamsRaw); } }catch(e){}
         try{ build(data); }catch(e){}
@@ -2708,10 +2823,17 @@ var _goBtn=document.getElementById('go'); if(_goBtn)_goBtn.onclick=generate;   /
         try{ if(typeof calcDisplay==='function')calcDisplay(); }catch(e){}
         try{ if(window.__snapAI)window.__snapAI(); }catch(e){}
         var low=[],cf=d.confidence||{}; for(var k in cf){ if(cf[k]==='low')low.push(k); }
-        setMsg('Sky Matrix AI briefing ready'+(d.acType?(' ('+d.acType+(d.reg?(' '+d.reg):'')+')'):'')+'.'+(low.length?(' Check: '+low.join(', ')):' All high-confidence.'),low.length?'':'ok');
+        var _xcTxt = (_xd==null) ? '' : (_xd.length
+              ? (' \u26a0 Cross-check: '+_xd.length+' field(s) differ \u2014 see Briefing \u2192 Info.')
+              : ' Cross-checked against Sky Matrix AI \u2713');
+        setMsg('Briefing ready'+(d.acType?(' ('+d.acType+(d.reg?(' '+d.reg):'')+')'):'')+'.'+_xcTxt+(low.length?(' Check: '+low.join(', ')):''),
+               (_xd&&_xd.length)?'warn':(low.length?'':'ok'));
         if(typeof saveState==='function')saveState();
       })
-      .catch(function(){ setMsg('Sky Matrix AI needs internet (and the Worker key set up).','err'); })
+      .catch(function(){
+        if(!buildOfflineBriefing(text,'No connection to Sky Matrix AI \u2014 this briefing was read offline.'))
+          setMsg('Could not read this OFP offline, and Sky Matrix AI is not reachable. Check your internet connection.','err');
+      })
       .then(function(){ aiBtn.disabled=false; });
   });
 })();
