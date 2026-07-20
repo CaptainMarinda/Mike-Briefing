@@ -1418,7 +1418,7 @@ function smMarkSVG(u){return '<svg viewBox="0 0 200 200" xmlns="http://www.w3.or
 +'</svg>';}
 (function(){var i=0;['hdrLogo','lockLogo','footLogo','loginLogo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=smLogoSVG('L'+(i++));});var m=document.getElementById('aiGoMark');if(m)m.innerHTML=smMarkSVG('BTN');})();
 /* visible build stamp — bump APP_VERSION on every release so you can confirm at a glance that the latest is live (matches the Worker /version) */
-var APP_VERSION='2026-07-20-batch33';
+var APP_VERSION='2026-07-20-batch34';
 /* Friendly public version + changelog shown on the PIN/login screen. Bump APP_VER and prepend a CHANGELOG entry each release. */
 var APP_VER='v1.2';
 var CHANGELOG=[
@@ -2240,6 +2240,15 @@ function applyEyOfp(data, T){
        if(nn && nn.count && (!data.notams || !Object.keys(data.notams).length)){
          data.notams=nn.notams; if(!data.notamRaw)data.notamRaw=nn.raw; if(!data.notamFull)data.notamFull=nn.raw; } }catch(e){}
   try{ var ep=parseEyEtops(T); if(ep.length) data.etopsPts=ep; }catch(e){}
+  // FIR/UIR crossings are printed as their own rule inside the nav log ("|HKNA NAIROBI UIR").
+  // Anything else that mentions "FIR" is NOTAM prose - "FIR ENTERING EMIRATES FIR (OKAC)",
+  // "OPERATING IN MCT FIR (CREW)" - and must never reach this list.
+  try{
+    var fr=[], seenF={}, mF, reF=/^[ \t]*\|([A-Z]{4})[ \t]+([A-Z][A-Z \/-]*?(?:FIR|UIR))[ \t]*$/gm;
+    while((mF=reF.exec(T))){ if(!seenF[mF[1]]){ seenF[mF[1]]=1;
+      fr.push({code:mF[1], name:mF[2].replace(/\s+/g,' ').trim(), country:''}); } }
+    if(fr.length) data.firs=enrichFirs(fr);
+  }catch(e){}
   // Read straight from the printed table - keeps EFOB per waypoint, which an AI read loses.
   try{ var nl=parseEyNavlog(T); if(nl && nl.length>4) data.navlog=nl; }catch(e){}
 }
@@ -2376,8 +2385,18 @@ function parseEyNavlog(T){
     else if(ci>=0) dtd=0;   // last row: distance-to-destination column is blank at the destination
     var fob=B.match(/\b\d+\.\d\b/g); if(!cet||!fob) continue;
     if(first===null&&dtd>0) first=dtd;
-    out.push({wpt:bt[0],cumDistNM:(first!=null&&dtd>=0)?(first-dtd):null,
-              eet:cet.slice(0,2)+':'+cet.slice(2),fuelRemKg:Math.round(parseFloat(fob[fob.length-1])*1000)});
+    // Detail columns are fixed-width either side of the pipe:
+    //   line A  |AWY     FL   ITT  TAS  DTD  CET     line B  |WPT     MORA IMT  MACH DTW  EET
+    // (ITT/IMT are the true and magnetic tracks; MORA is in hundreds of feet.)
+    var A=a.slice(a.indexOf('|')+1), col=function(L,x,y){ return (L.slice(x,y)||'').trim(); };
+    var awy=col(A,0,8), fl=col(A,8,13), itt=col(A,13,18), tas=col(A,18,23),
+        mora=col(B,8,13), imt=col(B,13,18), mach=col(B,18,23);
+    out.push({wpt:bt[0],airway:awy,cumDistNM:(first!=null&&dtd>=0)?(first-dtd):null,
+              eet:cet.slice(0,2)+':'+cet.slice(2),
+              fuelRemKg:Math.round(parseFloat(fob[fob.length-1])*1000),
+              wind:'', fl:(/^\d{2,3}$/.test(fl)?('FL'+fl):''),
+              ittImt:(itt&&imt)?(itt+'/'+imt):(itt||imt||''),
+              mora:mora, tas:tas, mach:mach});
   }
   return nlTrimAtAlternate(out);
 }
