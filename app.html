@@ -1418,7 +1418,7 @@ function smMarkSVG(u){return '<svg viewBox="0 0 200 200" xmlns="http://www.w3.or
 +'</svg>';}
 (function(){var i=0;['hdrLogo','lockLogo','footLogo','loginLogo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=smLogoSVG('L'+(i++));});var m=document.getElementById('aiGoMark');if(m)m.innerHTML=smMarkSVG('BTN');})();
 /* visible build stamp — bump APP_VERSION on every release so you can confirm at a glance that the latest is live (matches the Worker /version) */
-var APP_VERSION='2026-07-20-batch30';
+var APP_VERSION='2026-07-20-batch33';
 /* Friendly public version + changelog shown on the PIN/login screen. Bump APP_VER and prepend a CHANGELOG entry each release. */
 var APP_VER='v1.2';
 var CHANGELOG=[
@@ -1918,6 +1918,7 @@ function parseOFP(text, opts){
   try{ applyLidoHeader(data, T); }catch(e){}
   // PIA plans are plain labelled text — read them deterministically (overrides the generic guesses).
   try{ applyPiaOfp(data, T); }catch(e){}
+  try{ applyEyOfp(data, T); }catch(e){}
   try{ data.firs=enrichFirs(sanitizeFirs(data.firs)); }catch(e){}
   // Fuel bar figures: "PLAN REM x  PLAN REQ y" (tonnes, nav-log header) + "FINL nnnn" (final reserve, kg) + "ALTN <icao> nnnn"
   try{
@@ -2197,6 +2198,51 @@ function sanitizeFirs(list){
   return out;
 }
 // PIA values are read from labelled text, so they take precedence over a guessed/AI value.
+/* ===== Etihad (Lido NOTAM bulletin) — structured NOTAMs + ETOPS points, read offline ===== */
+function parseEyNotams(T){
+  var j=T.indexOf('LIDO-NOTAM-BULLETIN'); if(j<0) return null;
+  var L=T.slice(j).split('\n'), map={}, ic='', cat='', sect='', cur=null, i, ln, t, m, n=0;
+  function push(){ if(cur && ic){ var txt=cur.body.join(' ').replace(/\s+/g,' ').trim();
+      if(txt){ (map[ic]=map[ic]||[]).push({ref:cur.ref, cat:cur.cat, sect:cur.sect,
+          text:(cur.cat?cur.cat+' — ':'')+cur.ref+': '+txt, valid:cur.valid, vobj:cur.vobj}); n++; } }
+    cur=null; }
+  for(i=0;i<L.length;i++){
+    ln=L[i]; t=ln.trim();
+    if(!t) continue;
+    if(/^(DEPARTURE|DESTINATION|TAKEOFF ALTERNATE|DESTINATION ALTERNATE|ENROUTE ALTERNATE|ALTERNATE)\s+AIRPORT/i.test(t)){ push(); sect=t; continue; }
+    if(/^(ENROUTE|FIR|COMPANY|AIRPORTLIST)/i.test(t) && /^[A-Z ]+$/.test(t)){ push(); sect=t; ic=''; continue; }
+    if(/^=+$/.test(t) || /^-+$/.test(t)) continue;
+    m=/^\+{3,}\s*(.+?)\s*\+{3,}$/.exec(t);                 // category banner
+    if(m){ push(); cat=m[1].trim(); continue; }
+    m=/^([A-Z]{4})\s*\/\s*[A-Z0-9]{3}\b(.*)$/.exec(t);      // "HTZA /ZNZ   ABEID AMANI KARUME INTL"
+    if(m){ push(); ic=m[1]; cat=''; continue; }
+    m=/^([A-Z]{0,3}\d[A-Z0-9]*\/\d{2})\s*$/.exec(t);        // NOTAM ref, e.g. 1A131/26  SX5/24
+    if(m){ push(); cur={ref:m[1], cat:cat, sect:sect, body:[], valid:'', vobj:null}; continue; }
+    if(!cur) continue;
+    m=/^VALIDITY:?\s*(\d{2})([A-Z]{3})(\d{2})\s*-\s*(UFN|PERM|(\d{2})([A-Z]{3})(\d{2}))/i.exec(t);
+    if(m){ cur.valid=t.replace(/^VALIDITY:?\s*/i,'');
+           var norm=m[1]+'-'+m[2]+'-'+m[3]+' 0000 - '+(m[5]?(m[5]+'-'+m[6]+'-'+m[7]+' 2359'):'UFN');
+           try{ cur.vobj=parseNotamValidity(norm); }catch(e){} continue; }
+    if(!cur.vobj){ try{ var v=parseNotamValidity(t); if(v){ cur.vobj=v; cur.valid=t; } }catch(e){} }
+    if(cur.body.length<25) cur.body.push(t);
+  }
+  push();
+  return n?{notams:map, count:n, raw:T.slice(j)}:null;
+}
+function parseEyEtops(T){
+  var out=[], m, re=/ETOPS\s+(EEP|EXP|ETP)\s*(\d*)\s+([NS]\d+\.\d+)\s*\/\s*([EW]\d+\.\d+)\s+EET\s*(\d{2})(\d{2})/g;
+  while((m=re.exec(T))) out.push({posn:('ETOPS '+m[1]+(m[2]?' '+m[2]:'')), lat:m[3], lon:m[4], altn:'', eet:m[5]+':'+m[6]});
+  return out;
+}
+function applyEyOfp(data, T){
+  if(!/LIDO-NOTAM-BULLETIN/.test(T)) return;
+  try{ var nn=parseEyNotams(T);
+       if(nn && nn.count && (!data.notams || !Object.keys(data.notams).length)){
+         data.notams=nn.notams; if(!data.notamRaw)data.notamRaw=nn.raw; if(!data.notamFull)data.notamFull=nn.raw; } }catch(e){}
+  try{ var ep=parseEyEtops(T); if(ep.length) data.etopsPts=ep; }catch(e){}
+  // Read straight from the printed table - keeps EFOB per waypoint, which an AI read loses.
+  try{ var nl=parseEyNavlog(T); if(nl && nl.length>4) data.navlog=nl; }catch(e){}
+}
 function applyPiaOfp(data, T){
   var p=parsePiaOfp(T); if(!p) return false;
   for(var k in p){ if(p[k]!=null && p[k]!=='') data[k]=p[k]; }
@@ -2321,14 +2367,16 @@ function parseEyNavlog(T){
     if(a.indexOf('|')<0||b.indexOf('|')<0) continue;
     var at=a.slice(a.indexOf('|')+1).trim().split(/\s+/), B=b.slice(b.indexOf('|')+1), bt=B.trim().split(/\s+/);
     if(!bt.length||!/^[A-Z][A-Z0-9]{1,9}$/.test(bt[0])||NL_SKIP.test(bt[0])) continue;
-    var cet=null,dtd=-1;
-    for(var k=0;k<at.length;k++){
-      if(/^[0-2]\d[0-5]\d$/.test(at[k])) cet=at[k];
-      if(/^\d{3,4}$/.test(at[k])) dtd=Math.max(dtd,parseInt(at[k],10));
-    }
+    // Column order on line A is AWY FL ITT TAS DTD CET - DTD is the token immediately BEFORE CET.
+    // (Taking the largest 3-4 digit number picks TAS/FL once DTD gets small, which corrupted the
+    //  cumulative distance over the last third of the flight.)
+    var cet=null,dtd=-1,ci=-1;
+    for(var k=0;k<at.length;k++){ if(/^[0-2]\d[0-5]\d$/.test(at[k])){ cet=at[k]; ci=k; } }
+    if(ci>0 && /^\d{1,4}$/.test(at[ci-1])) dtd=parseInt(at[ci-1],10);
+    else if(ci>=0) dtd=0;   // last row: distance-to-destination column is blank at the destination
     var fob=B.match(/\b\d+\.\d\b/g); if(!cet||!fob) continue;
     if(first===null&&dtd>0) first=dtd;
-    out.push({wpt:bt[0],cumDistNM:(first!=null&&dtd>0)?(first-dtd):null,
+    out.push({wpt:bt[0],cumDistNM:(first!=null&&dtd>=0)?(first-dtd):null,
               eet:cet.slice(0,2)+':'+cet.slice(2),fuelRemKg:Math.round(parseFloat(fob[fob.length-1])*1000)});
   }
   return nlTrimAtAlternate(out);
@@ -2955,6 +3003,7 @@ var _goBtn=document.getElementById('go'); if(_goBtn)_goBtn.onclick=generate;   /
         // Fills only what the AI left blank — validated against Emirates, Etihad and Qatar OFPs.
         try{ applyLidoHeader(data, text); }catch(e){}
         try{ applyPiaOfp(data, text); }catch(e){}   // PIA: labelled text beats an AI read of the same page
+        try{ applyEyOfp(data, text); }catch(e){}   // Etihad: structured Lido NOTAM bulletin + ETOPS
         try{ data.firs=enrichFirs(sanitizeFirs(data.firs)); }catch(e){}   // drop NOTAM prose that merely contains "FIR"
         // carry the AI's raw NOTAM text so the NOTAM viewer can show it when the offline parser can't structure them (e.g. PIA)
         try{ if(d.notamsRaw && !data.notamRaw){ data.notamRaw=String(d.notamsRaw); } }catch(e){}
