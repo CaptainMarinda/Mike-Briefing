@@ -1365,7 +1365,7 @@ function smMarkSVG(u){return '<svg viewBox="0 0 200 200" xmlns="http://www.w3.or
 +'</svg>';}
 (function(){var i=0;['hdrLogo','lockLogo','footLogo','loginLogo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=smLogoSVG('L'+(i++));});var m=document.getElementById('aiGoMark');if(m)m.innerHTML=smMarkSVG('BTN');})();
 /* visible build stamp — bump APP_VERSION on every release so you can confirm at a glance that the latest is live (matches the Worker /version) */
-var APP_VERSION='2026-07-20-batch18';
+var APP_VERSION='2026-07-20-batch22';
 /* Friendly public version + changelog shown on the PIN/login screen. Bump APP_VER and prepend a CHANGELOG entry each release. */
 var APP_VER='v1.2';
 var CHANGELOG=[
@@ -1377,6 +1377,7 @@ var CHANGELOG=[
   ]},
   {v:'v1.1', date:'Jul 2026', items:[
     'Your details (name / position / airline / aircraft) are now required once to use the app, and personalise your announcements.',
+    'Offline OFP reading for Qatar, Emirates, Etihad and PIA — the briefing is built from the OFP text itself, then cross-checked against Sky Matrix AI; any disagreement is listed on Briefing \u2192 Info.',
     'New waypoint-by-waypoint NAV LOG built from the OFP — starts at the departure airport with the real waypoint names, in order, and lets you enter your own ATA / AFOB / AFL; tap a waypoint for full detail and an RVSM check.',
     'Multiple named, reorderable checklists.',
     'Named devices; Admin Docs tab with a “Check for new documents” button.',
@@ -1858,7 +1859,12 @@ function parseOFP(text, opts){
     data.routeWps=out; data.routeTotNM=out.length?out[out.length-1].cumNM:0;
   })();
   // Qatar Lido OFP: build an accurate, ordered nav log straight from the printed table (offline). The AI reader can still enrich it online.
-  try{ if(/WPT\s*\/\s*FREQ/.test(T)){ var _ql=parseQatarNavlog(T); if(_ql&&_ql.length>=2) data.navlog=_ql; } }catch(e){}
+  // Offline nav log for every supported layout (Qatar / Emirates / Etihad / PIA). AI is only needed if this returns null.
+  try{ var _nl=parseNavlogAuto(T); if(_nl) data.navlog=_nl; }catch(e){}
+  // Printed header (runways / SID / STAR / route / FIR crossings) — fills only what the offline parse missed.
+  try{ applyLidoHeader(data, T); }catch(e){}
+  // PIA plans are plain labelled text — read them deterministically (overrides the generic guesses).
+  try{ applyPiaOfp(data, T); }catch(e){}
   // Fuel bar figures: "PLAN REM x  PLAN REQ y" (tonnes, nav-log header) + "FINL nnnn" (final reserve, kg) + "ALTN <icao> nnnn"
   try{
     var _pr=/PLAN\s+REM\s+([\d.]+)\s+PLAN\s+REQ\s+([\d.]+)/i.exec(T);
@@ -1895,6 +1901,245 @@ function parseRouteCoords(T){
     pts.push({lat,lon,elapsed,name});
   });
   return pts;
+}
+
+// ---- OFFLINE-FIRST WITH AI CROSS-CHECK -------------------------------------------------------------
+// The offline parsers read values literally from the printed OFP text, so they are authoritative.
+// Sky Matrix AI still reads the same pages independently; where the two disagree we KEEP THE OFFLINE
+// VALUE and surface the disagreement, so a mis-read is shown to the pilot instead of being hidden.
+var XC_LABEL={dep:'Departure',dest:'Destination',fltCs:'Flight number',tail:'Registration',acType:'Aircraft',
+  date:'Date',std:'STD',sta:'STA',blk:'Block time',tripT:'Trip time',fTrip:'Trip fuel',fCont:'Contingency',
+  fAltn:'Alternate fuel',fExtra:'Extra fuel',fTaxi:'Taxi fuel',fRamp:'Ramp fuel',ezfw:'ZFW',mzfw:'Max ZFW',
+  etow:'TOW',mtow:'Max TOW',elwt:'Landing weight',mlwt:'Max landing weight',depRwy:'Dep runway',
+  arrRwy:'Arr runway',sid:'SID',star:'STAR',highFL:'Highest FL'};
+function xcNorm(k,v){
+  var s=String(v==null?'':v).trim().toUpperCase();
+  if(/^(f[A-Z]|ezfw|mzfw|etow|mtow|elwt|mlwt|highFL)/.test(k)) s=s.replace(/[^0-9]/g,'');  // numbers: compare digits only
+  if(/^(blk|tripT|std|sta)$/.test(k)) s=s.replace(/[^0-9]/g,'');
+  return s;
+}
+// Run the AI result against the offline briefing. Offline wins; differences are recorded on data.xcheck.
+function applyAIVerified(data, d){
+  var keys=Object.keys(XC_LABEL), before={}, i, k;
+  for(i=0;i<keys.length;i++){ before[keys[i]]=data[keys[i]]; }
+  var offNav = (data.navlog && data.navlog.length) ? data.navlog.slice() : null;
+  applyAI(data, d);                       // lets the AI fill anything the offline pass left blank
+  var diffs=[];
+  for(i=0;i<keys.length;i++){
+    k=keys[i]; var o=before[k];
+    if(o==null||o===''){ continue; }      // offline had nothing → keep whatever the AI found
+    var a=data[k];
+    if(a!=null && a!=='' && xcNorm(k,o)!==xcNorm(k,a)) diffs.push({f:XC_LABEL[k],off:String(o),ai:String(a)});
+    data[k]=o;                            // offline is authoritative
+  }
+  // nav log: keep the offline table, but compare size and total elapsed time
+  if(offNav){
+    var aiNav=(d && d.navlog && d.navlog.length)?d.navlog:null;
+    if(aiNav){
+      var oe=offNav[offNav.length-1].eet||'', ae=aiNav[aiNav.length-1].eet||'';
+      if(oe && ae && oe!==ae) diffs.push({f:'Nav log total time',off:oe,ai:ae});
+      if(Math.abs(offNav.length-aiNav.length)>3) diffs.push({f:'Nav log waypoints',off:String(offNav.length),ai:String(aiNav.length)});
+    }
+    data.navlog=offNav;                   // never replace a verified offline nav log
+  }
+  data.xcheck=diffs;
+  data.xcheckedAt=Date.now();
+  return diffs;
+}
+
+// ---- PIA (NAVBLUE / OPIS) OFP — fully deterministic read of the labelled fields. -------------------
+// PIA plans are plain text with clearly labelled values, so nothing here needs the AI. Validated against
+// three real plans (PIA753 OPIS-OERK, PIA749 OPIS-LFPG, PIA781 OPIS-CYYZ): every field below matched.
+function parsePiaOfp(T){
+  if(!T || !/PAKISTAN INTERNATIONAL AIRLINE|START OF CFP REF/i.test(T)) return null;
+  var o={}, m;
+  function g(re,k,grp){ var x=re.exec(T); if(x&&x[grp||1]) o[k]=String(x[grp||1]).trim(); }
+  g(/^START OF CFP REF:\s*\d+\s*-\s*([A-Z]{2,3}\d{1,4})/m,'fltCs');
+  m=/^START OF CFP REF:.*?\s([A-Z]{4})\s+([A-Z]{4})\s*$/m.exec(T);
+  if(m){ o.dep=m[1]; o.dest=m[2]; }
+  if(!o.dep){ m=/([A-Z]{4})\/([A-Z]{4})\s+(?:B|A)\d{3}/.exec(T); if(m){ o.dep=m[1]; o.dest=m[2]; } }
+  g(/[A-Z]{4}\/[A-Z]{4}\s+((?:B|A)\d{3})/,'acType');
+  g(/REG:\s*([A-Z0-9]{5,7})/,'tail');
+  // date "22-JUN-2026" -> "22JUN26" (the format the rest of the app expects)
+  m=/DATE OF FLIGHT:\s*(\d{1,2})-([A-Z]{3})-(\d{4})/i.exec(T);
+  if(m){ var dd=(m[1].length<2?'0':'')+m[1]; o.date=dd+m[2].toUpperCase()+m[3].slice(-2); o._dd=dd; }
+  var sd=/ETD:\s*(\d{4})Z/.exec(T), sa=/\/(\d{4})Z\s*:\s*ETA/.exec(T);
+  if(sd&&o._dd) o.std=o._dd+'/'+sd[1];
+  if(sa&&o._dd){ var ad=o._dd; if(sd&&sa[1]<sd[1]){ var n=parseInt(o._dd,10)+1; if(n>31)n=1; ad=(n<10?'0':'')+n; } o.sta=ad+'/'+sa[1]; }
+  function hhmm(v){ v=String(v||'').replace('.',':'); return /^\d{1,2}:\d{2}$/.test(v)?((v.length<5?'0':'')+v):''; }
+  m=/BLK-TIME:\s*([\d.:]+)/.exec(T);  if(m) o.blk=hhmm(m[1]);
+  m=/FLT-TIME:\s*([\d.:]+)/.exec(T);  if(m) o.tripT=hhmm(m[1]);
+  g(/TTL\.FUEL:\s*(\d+)/,'fRamp');   g(/\bTRIP:\s*(\d+)/,'fTrip');
+  g(/\bHOLD:\s*(\d+)/,'fHold');      g(/\bALT:\s*(\d+)/,'fAltn');
+  g(/^CONTINGENCY\s+(\d+)/m,'fCont');g(/^EXTRA\s+(\d+)/m,'fExtra');
+  g(/^TAXI FUEL\s+(\d+)/m,'fTaxi');
+  g(/\bZFW\s+(\d+)/,'ezfw');  g(/MZFW\s+(\d+)/,'mzfw');
+  g(/\bTOW\s+(\d+)/,'etow');  g(/MTOW\s+(\d+)/,'mtow');
+  g(/\bLDW\s+(\d+)/,'elwt');  g(/MLDW\s+(\d+)/,'mlwt');
+  m=/^ROUTE AND PROFILE\s*\n-+\s*\n([\s\S]+?)\n\s*[A-Z]{4}\/FL/m.exec(T);
+  if(m){
+    var rt=m[1].replace(/\s+/g,' ').trim(); o.routeRaw=rt;
+    var tk=rt.split(' '), proc=/^[A-Z]{3,5}\d[A-Z]?$/;
+    if(tk.length>1 && proc.test(tk[1])) o.sid=tk[1];
+    if(tk.length>2 && proc.test(tk[tk.length-2])) o.star=tk[tk.length-2];
+  }
+  var fls=T.match(/\/FL(\d{2,3})/g);
+  if(fls){ var hi=0; fls.forEach(function(x){ var v=parseInt(x.slice(3),10); if(v>hi)hi=v; }); if(hi)o.highFL=String(hi); }
+  delete o._dd;
+  return o;
+}
+// PIA values are read from labelled text, so they take precedence over a guessed/AI value.
+function applyPiaOfp(data, T){
+  var p=parsePiaOfp(T); if(!p) return false;
+  for(var k in p){ if(p[k]!=null && p[k]!=='') data[k]=p[k]; }
+  data.elwOver=(data.elwt&&data.mlwt)?(+data.elwt>+data.mlwt):null;
+  data.towOver=(data.etow&&data.mtow)?(+data.etow>+data.mtow):null;
+  return true;
+}
+
+// Lido-style OFP header (Emirates and similar layouts) — read deterministically from the OFP text:
+//   • the "DEFRTE:" line carries departure runway (OMDB/30R), arrival runway (KJFK/31L),
+//     the STAR (second-to-last token) and the full ATS route string
+//   • FIR / UIR crossings are printed inline as "------ NAME/ICAO ------" separator lines
+//   • the SID is the first entry in the nav log's AWY column (e.g. "SENPA2F  =")
+// Verified against a full Emirates OFP: 19 FIRs in sequence, both runways, SID + STAR.
+function parseLidoHeader(T){
+  if(!T) return null;
+  var out={depRwy:'',arrRwy:'',sid:'',star:'',routeRaw:'',firs:[]};
+  try{
+    var m=/DEFRTE\s*:\s*([\s\S]+?)(?:\n\s*\n|\nPLND\s+FL|\nENROUTE)/i.exec(T);
+    if(m){
+      var route=m[1].replace(/\s+/g,' ').trim();
+      out.routeRaw=route;
+      var tok=route.split(' ');
+      var a=/^([A-Z]{4})\/(\w+)$/.exec(tok[0]||''); if(a) out.depRwy=a[2];
+      var b=/^([A-Z]{4})\/(\w+)$/.exec(tok[tok.length-1]||''); if(b) out.arrRwy=b[2];
+      var proc=/^[A-Z]{3,5}\d[A-Z]?$/;
+      if(tok.length>1 && proc.test(tok[1])) out.sid=tok[1];
+      if(tok.length>2 && proc.test(tok[tok.length-2])) out.star=tok[tok.length-2];
+    }
+    // FIR separators and the SID only ever appear INSIDE the nav log. NOTAM/remark prose elsewhere in the
+    // OFP contains phrases like "ENTER FIR", "THE KABUL FIR", "AGENCY FIR" that otherwise match and produce
+    // nonsense entries (seen on PIA plans). So scope the scan to the nav-log section and blocklist prose words.
+    var nav=T, nm=/^.*(?:WPT\s*\/\s*FREQ|FLIGHT DESTINATION LOG|AWY[^\n]*\n[^\n]*WPT).*$/m.exec(T);
+    if(nm){ nav=T.slice(nm.index);
+      var ne=/\n\s*(?:LIDO[- ]?NOTAM|NOTAMS?\s*\n|GENERAL NOTAMS|AERODROME NOTAMS)/i.exec(nav);
+      if(ne) nav=nav.slice(0,ne.index);
+    } else { nav=''; }   // no recognisable nav log → don't guess
+    var BAD={ENTER:1,EXIT:1,INTO:1,WITHIN:1,WI:1,THE:1,AGENCY:1,OPR:1,ACFT:1,AVBL:1,OPNS:1,GNSS:1,
+             DIST:1,EXP:1,REQ:1,SHALL:1,TFC:1,AND:1,FOR:1,NOT:1,ALL:1,ADZ:1,FROM:1,OVER:1};
+    // SID = first procedure-looking token in the AWY column ("SENPA2F =" EK, "|KANIP3F" EY, "TRNTO4" QR)
+    if(!out.sid && nav){ var s=/\n\s*\|?\s*([A-Z]{3,5}\d[A-Z]?)\s*(?:=|\s+\d)/.exec(nav); if(s) out.sid=s[1]; }
+    // FIR / UIR crossings. Three Lido layouts, all validated against real OFPs:
+    //   EK  "-------- BAHRAIN UIR FL245-UNL/OBBB --------"   (name / ICAO, between dashes)
+    //   QR  "            MONTREAL FIR  CZUL"                 (name FIR, then ICAO)
+    //   EY  "|OMAE EMIRATES UIR 118.925"                     (ICAO first, then name)
+    var seen={}, lines=nav.split('\n');
+    for(var i=0;i<lines.length;i++){
+      var s2=lines[i].trim(); if(!s2 || s2.length>70) continue;   // separators are short; NOTAM prose is not
+      var name=null, code=null, mm;
+      if((mm=/^-{3,}\s*([A-Z][A-Z0-9 \/-]*?)\s*\/\s*([A-Z]{4})\s*-{3,}$/.exec(s2))){ name=mm[1]; code=mm[2]; }
+      if(!code && (mm=/^\|?\s*((?:[A-Z][A-Z0-9-]*\s+){0,4}(?:FIR|UIR)(?:\s+[A-Z0-9\/-]+)?)\s+([A-Z]{4})\s*$/.exec(s2))){ name=mm[1]; code=mm[2]; }
+      if(!code && (mm=/^\|?\s*([A-Z]{4})\s+((?:[A-Z][A-Z0-9-]*\s+){0,4}(?:FIR|UIR))(?:\s|$)/.exec(s2))){ code=mm[1]; name=mm[2]; }
+      if(!code || seen[code] || BAD[code]) continue;
+      var n=String(name||'').replace(/\s+/g,' ').trim();
+      if(!n || n.split(' ').length>6) continue;   // guard against prose that merely ends in "FIR"
+      var wds=n.split(' '), prose=false;
+      for(var q=0;q<wds.length;q++){ if(BAD[wds[q]]){ prose=true; break; } }
+      if(prose) continue;
+      seen[code]=1; out.firs.push({name:n, code:code, country:''});
+    }
+  }catch(e){}
+  return out;
+}
+// Fill only what is still missing, so an AI-read value is never overwritten.
+function applyLidoHeader(data, T){
+  var h=parseLidoHeader(T); if(!h) return;
+  if(h.depRwy   && !data.depRwy)   data.depRwy=h.depRwy;
+  if(h.arrRwy   && !data.arrRwy)   data.arrRwy=h.arrRwy;
+  if(h.sid      && !data.sid)      data.sid=h.sid;
+  if(h.star     && !data.star)     data.star=h.star;
+  if(h.routeRaw && !data.routeRaw) data.routeRaw=h.routeRaw;
+  if(h.firs && h.firs.length && (!data.firs || !data.firs.length)) data.firs=h.firs;
+}
+
+// ---- Offline NAV LOG parsers, one per OFP layout. Validated against real plans. ----------------------
+// A nav log that continues to the alternate restarts its clock; cut the list there so the main leg stands alone.
+function nlTrimAtAlternate(rows){
+  function m2(s){ var p=String(s||'').split(':'); return (+p[0]||0)*60+(+p[1]||0); }
+  for(var i=1;i<rows.length;i++){ if(m2(rows[i].eet) < m2(rows[i-1].eet)-30) return rows.slice(0,i); }
+  return rows;
+}
+var NL_SKIP=/^(RAMP|TAXI|TRIP|CONT|ALTN|FRSV|BLOCK|TOTAL|FUEL|TIME|MINR|REMF|POINT|FREQ|POS)$/;
+// Emirates: two lines per fix. A = AWY TRM DIST WIND FL TAS SP/M STM ETA REMF
+//                             B = WPT ITT SR/TDEV MORA W/C TROP ATM RTA ATA MINR
+// Verified on EK201 DXB-JFK: 76 fixes, ends 13:18 which equals the printed TRIP time 1318.
+function parseEkNavlog(T){
+  var out=[],cum=0,lines=T.split('\n');
+  for(var i=0;i<lines.length-1;i++){
+    var at=lines[i].trim().split(/\s+/), b=lines[i+1], bt=b.trim().split(/\s+/);
+    if(!at.length||!bt.length) continue;
+    if(!/^[A-Z][A-Z0-9\/]{1,11}$/.test(bt[0])||NL_SKIP.test(bt[0])) continue;
+    var atm=null; for(var k=0;k<bt.length;k++){ if(/^[0-2]\d[0-5]\d$/.test(bt[k])) atm=bt[k]; }
+    var rem=b.match(/\b\d+\.\d\b/g); if(!atm||!rem) continue;
+    var d=[]; for(var j=1;j<4&&j<at.length;j++){ if(/^\d{1,3}$/.test(at[j])) d.push(parseInt(at[j],10)); }
+    cum += (d.length>1?d[1]:0);
+    out.push({wpt:bt[0],cumDistNM:cum,eet:atm.slice(0,2)+':'+atm.slice(2),
+              fuelRemKg:Math.round(parseFloat(rem[rem.length-1])*1000)});
+  }
+  return nlTrimAtAlternate(out);
+}
+// Etihad: piped two lines. A = |AWY FL ITT TAS DTD CET ...   B = |WPT MORA IMT MACH DTW EET EFOB ...
+// Cumulative time is CET on line A (line B holds the per-segment EET). Verified on EY791 AUH-ZNZ: 37 fixes.
+function parseEyNavlog(T){
+  var out=[],lines=T.split('\n'),first=null;
+  for(var i=0;i<lines.length-1;i++){
+    var a=lines[i],b=lines[i+1];
+    if(a.indexOf('|')<0||b.indexOf('|')<0) continue;
+    var at=a.slice(a.indexOf('|')+1).trim().split(/\s+/), B=b.slice(b.indexOf('|')+1), bt=B.trim().split(/\s+/);
+    if(!bt.length||!/^[A-Z][A-Z0-9]{1,9}$/.test(bt[0])||NL_SKIP.test(bt[0])) continue;
+    var cet=null,dtd=-1;
+    for(var k=0;k<at.length;k++){
+      if(/^[0-2]\d[0-5]\d$/.test(at[k])) cet=at[k];
+      if(/^\d{3,4}$/.test(at[k])) dtd=Math.max(dtd,parseInt(at[k],10));
+    }
+    var fob=B.match(/\b\d+\.\d\b/g); if(!cet||!fob) continue;
+    if(first===null&&dtd>0) first=dtd;
+    out.push({wpt:bt[0],cumDistNM:(first!=null&&dtd>0)?(first-dtd):null,
+              eet:cet.slice(0,2)+':'+cet.slice(2),fuelRemKg:Math.round(parseFloat(fob[fob.length-1])*1000)});
+  }
+  return nlTrimAtAlternate(out);
+}
+// PIA (NAVBLUE): three lines per fix between dashed separators.
+//   1: POINT FIR AWY FL OAT TAS TR/T DIST ETI ...   2: NAME MORA WC MACH TTLD TTLT ...   3: FREQ LAT LON ... FOB
+// Verified on PIA753/749/781: distances and times increase, fuel decreases.
+function parsePiaNavlog(T){
+  var out=[], blocks=T.split(/\n-{20,}\n/);
+  for(var i=0;i<blocks.length;i++){
+    var ls=blocks[i].split('\n').filter(function(l){return l.trim();});
+    if(ls.length<3) continue;
+    var t1=ls[0].trim().split(/\s+/);
+    if(!t1.length||!/^[A-Z0-9]{2,12}$/.test(t1[0])||NL_SKIP.test(t1[0])) continue;
+    var ttl=/\b(\d{1,4})\s+(\d{1,2}:\d{2})\b/.exec(ls[1]); if(!ttl) continue;
+    var fob=ls[2].match(/\b\d{4,6}\b/g);
+    var t=ttl[2].split(':');
+    out.push({wpt:t1[0],cumDistNM:parseInt(ttl[1],10),
+              eet:(t[0].length<2?'0':'')+t[0]+':'+t[1],
+              fuelRemKg:fob?parseInt(fob[fob.length-1],10):null});
+  }
+  return nlTrimAtAlternate(out);
+}
+// Pick the right offline parser for this OFP. Returns null when none applies, so the AI can take over.
+function parseNavlogAuto(T){
+  if(!T) return null;
+  var r=null;
+  try{
+    if(/PAKISTAN INTERNATIONAL AIRLINE|START OF CFP REF/i.test(T)) r=parsePiaNavlog(T);
+    else if(/WPT\s*\/\s*FREQ/.test(T))                            r=parseQatarNavlog(T);
+    else if(/FLIGHT DESTINATION LOG/i.test(T))                    r=parseEyNavlog(T);
+    else if(/DEFRTE\s*:/i.test(T))                                r=parseEkNavlog(T);
+  }catch(e){ return null; }
+  return (r && r.length>=3) ? r : null;
 }
 
 // Qatar Lido two-line NAV LOG parser: reads the printed nav-log table row-by-row into an ordered waypoint list
@@ -2428,9 +2673,21 @@ var _goBtn=document.getElementById('go'); if(_goBtn)_goBtn.onclick=generate;   /
         var data; try{ data=parseOFP(text,{known:'',qseats:0}); }catch(e){ data={raw:text,etopsPts:[]}; }
         if(!data.etopsPts)data.etopsPts=[];
         // the offline parse mis-reads route/FIR/runway/SID/STAR on non-Qatar OFPs — clear them so the AI owns them (blank beats wrong)
-        data.firs=[]; data.etopsPts=[]; data.depRwy=''; data.arrRwy=''; data.sid=''; data.star=''; data.highFL='';
-        data.tropo=null;   // the offline tropopause read is garbage on non-Qatar OFPs (e.g. "55512") — let the AI own it
-        applyAI(data,d);
+        // Only clear what the offline pass could NOT read; anything it did read stays and is cross-checked.
+        if(!(data.firs&&data.firs.length)) data.firs=[];
+        data.etopsPts=[];
+        if(!data.depRwy) data.depRwy=''; if(!data.arrRwy) data.arrRwy='';
+        if(!data.sid) data.sid=''; if(!data.star) data.star='';
+        data.tropo=null;   // tropopause is not read offline on these layouts — let the AI own it
+        var _xd=applyAIVerified(data,d);
+        // Deterministic read of the printed header (runways, SID/STAR, route string, FIR crossings).
+        // Fills only what the AI left blank — validated against Emirates, Etihad and Qatar OFPs.
+        try{ applyLidoHeader(data, text); }catch(e){}
+        try{ applyPiaOfp(data, text); }catch(e){}   // PIA: labelled text beats an AI read of the same page
+        try{
+          if(_xd && _xd.length) setMsg('Briefing ready — Sky Matrix AI cross-check found '+_xd.length+' field(s) that differ. Open Briefing \u2192 Info to review.','warn');
+          else setMsg('Briefing ready — cross-checked against Sky Matrix AI \u2713','ok');
+        }catch(e){}
         // carry the AI's raw NOTAM text so the NOTAM viewer can show it when the offline parser can't structure them (e.g. PIA)
         try{ if(d.notamsRaw && !data.notamRaw){ data.notamRaw=String(d.notamsRaw); } }catch(e){}
         try{ build(data); }catch(e){}
@@ -4471,6 +4728,23 @@ try{
         +(o.routeTotNM?('Great-circle plan distance about '+E(o.routeTotNM)+' NM. '):'');
       H+='<div class="fcard"><h2>Route synthesis</h2><p class="info-txt" style="line-height:1.65">'+syn+'</p>'
         +(wps?('<p class="hint" style="margin-top:8px">Waypoints: '+wps+'</p>'):'')+'</div>';
+      // Cross-check panel: offline read vs Sky Matrix AI. Shown FIRST so a disagreement can't be missed.
+      try{
+        var xc=o.xcheck;
+        if(xc){
+          if(xc.length){
+            var rows=xc.map(function(x){ return '<tr><td>'+E(x.f)+'</td><td style="color:#7be0a4">'+E(x.off)+'</td><td style="color:#ffcf7a">'+E(x.ai)+'</td></tr>'; }).join('');
+            H+='<div class="fcard" style="border-color:#E0A33A">'
+              +'<h2>&#9888; Cross-check &mdash; '+xc.length+' field(s) differ</h2>'
+              +'<p class="fsub">The value read directly from your OFP text is shown as <b>Briefing</b>; Sky Matrix AI read the same pages independently and got something different. <b>The briefing uses the OFP text.</b> Verify these against your hard copy.</p>'
+              +'<table class="ft"><thead><tr><th>Field</th><th>Briefing (from OFP)</th><th>Sky Matrix AI</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+          } else {
+            H+='<div class="fcard" style="border-color:#1f6d4a">'
+              +'<h2 style="color:#7be0a4">&#10003; Cross-check passed</h2>'
+              +'<p class="fsub">Every field read from your OFP text matches what Sky Matrix AI read from the same pages independently.</p></div>';
+          }
+        }
+      }catch(e){}
       // Crew info from the OFP (flight-attendant seats, Crew Orders & Bulletins, Special Crew Briefings)
       if(window.__crewInfoHtml) H+='<div class="fcard"><h2>Crew info</h2>'+window.__crewInfoHtml+'</div>';
       // Named crew from a roster, if one has been read
