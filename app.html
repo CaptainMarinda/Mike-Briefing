@@ -1335,7 +1335,7 @@ function smMarkSVG(u){return '<svg viewBox="0 0 200 200" xmlns="http://www.w3.or
 +'</svg>';}
 (function(){var i=0;['hdrLogo','lockLogo','footLogo','loginLogo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=smLogoSVG('L'+(i++));});var m=document.getElementById('aiGoMark');if(m)m.innerHTML=smMarkSVG('BTN');})();
 /* visible build stamp — bump APP_VERSION on every release so you can confirm at a glance that the latest is live (matches the Worker /version) */
-var APP_VERSION='2026-07-20-batch12';
+var APP_VERSION='2026-07-20-batch13';
 /* Friendly public version + changelog shown on the PIN/login screen. Bump APP_VER and prepend a CHANGELOG entry each release. */
 var APP_VER='v1.2';
 var CHANGELOG=[
@@ -2216,6 +2216,8 @@ async function loadFile(f){
     lastText=await readFile(f);
     if(!lastText||!lastText.trim()) throw new Error('File looks empty after reading.');
     paste.value=lastText.slice(0,200000);
+    // Keep the original OFP document so it can be opened later from Docs → OFP
+    try{ if(window.__saveOfpDoc) window.__saveOfpDoc(f.name, f); }catch(e){}
     setMsg('Loaded '+f.name+'. Now tap “Sky Matrix AI”.','ok');
   }catch(e){ setMsg('Could not read file: '+e.message+'  (Try pasting the OFP text below instead.)','err'); }
 }
@@ -3685,6 +3687,25 @@ document.querySelectorAll('#docsnav button').forEach(b=>b.addEventListener('clic
       [...files].forEach(f=>st.add({name:f.name,type:f.type,blob:f}));
       tx.oncomplete=docRender;});
   }
+  // ---- The ORIGINAL OFP document for the current flight (Docs → OFP tab). Kept on-device so it survives an app restart.
+  // Stored in the same IndexedDB with an ofp:true marker, and filtered out of "My Docs" so it appears only under Docs → OFP.
+  window.__saveOfpDoc=function(name,blob){
+    if(!blob)return;
+    docOpen(function(db){
+      var tx=db.transaction('docs','readwrite'), st=tx.objectStore('docs');
+      st.openCursor().onsuccess=function(e){ var c=e.target.result;
+        if(c){ if(c.value&&c.value.ofp) st.delete(c.key); c.continue(); }
+        else { st.add({name:name||'OFP.pdf',type:blob.type||'application/pdf',blob:blob,ofp:true,at:Date.now()}); }
+      };
+      tx.oncomplete=function(){ try{ if(window.__renderDocsOfp)window.__renderDocsOfp(); }catch(e){} try{docRender();}catch(e){} };
+    });
+  };
+  window.__getOfpDoc=function(cb){
+    docOpen(function(db){ var found=null; var st=db.transaction('docs','readonly').objectStore('docs');
+      st.openCursor().onsuccess=function(e){ var c=e.target.result;
+        if(c){ if(c.value&&c.value.ofp) found=Object.assign({id:c.key},c.value); c.continue(); } else cb(found); }; });
+  };
+  window.__openOfpDoc=function(){ window.__getOfpDoc(function(d){ if(d&&d.blob) window.__floatDoc('ofp',d.name||'OFP',d.blob,d.type||'application/pdf'); }); };
   // add a document pushed from the admin tool (base64) into the on-device DOCS store
   window.__addPushedDoc=function(name,mime,b64){ try{ var bin=atob(b64); var arr=new Uint8Array(bin.length); for(var i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i); var blob=new Blob([arr],{type:mime||'application/pdf'}); docOpen(function(db){ var tx=db.transaction('docs','readwrite'); tx.objectStore('docs').add({name:name||'document.pdf',type:mime||'application/pdf',blob:blob,admin:true,at:Date.now()}); tx.oncomplete=function(){ try{docRender();}catch(e){} try{renderAdminDocs();}catch(e){} }; }); }catch(e){} };
   // Admin Docs sub-tab (Utilities): admin-pushed documents persist here until deleted.
@@ -3773,6 +3794,7 @@ document.querySelectorAll('#docsnav button').forEach(b=>b.addEventListener('clic
   function docRender(){
     docAll(list=>{
       const sel=+localStorage.getItem('sm_selDoc');
+      list=list.filter(d=>!d.ofp);   // the flight's OFP lives on the Docs → OFP tab, not in My Docs
       if(!list.length){$('docsList').innerHTML='<p class="hint">No documents yet. Add one above.</p>';return;}
       $('docsList').innerHTML=list.map(d=>`<div class="docrow"><span class="nm ${d.id===sel?'sel':''}" data-sel="${d.id}">${escF(d.name)}${d.id===sel?' ✓':''}</span>`+
         `<button data-open="${d.id}">Open</button><button class="del" data-del="${d.id}">Delete</button></div>`).join('');
@@ -4356,10 +4378,22 @@ try{
       rn();
     }
     /* ---- OFP doc tab ---- */
-    window.__renderDocsOfp=function(){ var box=$('docsOfpBox'); if(!box)return; var o=window.__OFP;
-      if(o){ box.innerHTML='<p style="color:#dce8ff">Flight <b>'+E((o.fltCs||o.flt||'')||'—')+'</b> &middot; '+E((o.dep||'—')+' → '+(o.dest||'—'))+(o.tripT?(' &middot; '+E(o.tripT)):'')+'</p>'
-          +'<p class="hint">This is the OFP that was loaded for the current flight. Open it from the <b>My Docs</b> tab if you saved it there, or re-load it on the Load tab.</p>'; }
-      else { box.innerHTML='<p class="hint">No OFP document loaded yet. Load an OFP on the Load tab.</p>'; }
+    window.__renderDocsOfp=function(){
+      var box=$('docsOfpBox'); if(!box)return; var o=window.__OFP;
+      var hdr = o ? ('<p style="color:#dce8ff;margin:0 0 8px">Flight <b>'+E((o.fltCs||o.flt||'')||'—')+'</b> &middot; '+E((o.dep||'—')+' → '+(o.dest||'—'))+(o.tripT?(' &middot; '+E(o.tripT)):'')+'</p>') : '';
+      if(!window.__getOfpDoc){ box.innerHTML=hdr+'<p class="hint">No OFP document stored yet.</p>'; return; }
+      window.__getOfpDoc(function(d){
+        if(d&&d.blob){
+          box.innerHTML=hdr
+            +'<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">'
+            +'<button id="docsOfpOpen" type="button" style="background:#0e2a44;border:1px solid #2f8bff;color:#cfe6ff">Open the OFP document</button>'
+            +'<span class="hint" style="margin-top:0">'+E(d.name||'OFP')+'</span></div>'
+            +'<p class="hint" style="margin-top:8px">Opens in the document viewer — all pages, expandable to full screen.</p>';
+          var b=$('docsOfpOpen'); if(b)b.onclick=function(){ if(window.__openOfpDoc)window.__openOfpDoc(); };
+        } else {
+          box.innerHTML=hdr+'<p class="hint">The OFP document is not stored on this device yet. Load the OFP again on the <b>Load</b> tab and it will appear here.</p>';
+        }
+      });
     };
     /* ---- INFO page: route synthesis + crew ---- */
     window.__renderInfo=function(){ var el=$('out-info'); if(!el)return; var o=window.__OFP; var H='';
