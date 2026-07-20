@@ -428,7 +428,7 @@
   <nav class="siderail" id="siderail">
     <button data-v="briefing" class="rail"><svg class="nico" viewBox="0 0 24 24"><path d="M7 3h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg><span>OFP Briefing</span></button>
     <button data-v="disp" class="rail"><svg class="nico fill" viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0 0 11.5 2 1.5 1.5 0 0 0 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg><span>Inflight Display</span></button>
-    <button id="railDocs" type="button" class="rail"><svg class="nico" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span>Docs</span></button>
+    <button id="railDocs" data-v="docs" type="button" class="rail"><svg class="nico" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span>Docs</span></button>
   </nav>
   <div class="maincol" id="maincol">
 
@@ -545,37 +545,37 @@
   <div class="subview2 active" id="cd-pa">
     <div class="fcard">
       <h2>Announcement Maker</h2>
-      <div class="fgrid">
-        <div class="feat-field"><label class="lab">Your name</label><input id="ap_name" type="text"></div>
-        <div class="feat-field"><label class="lab">Position</label><input id="ap_pos" type="text" placeholder="Capt / FO"></div>
-        <div class="feat-field"><label class="lab">Airline</label><input id="ap_air" type="text"></div>
+      <p class="fsub" id="ap_who" style="margin-top:2px"></p>
+      <div style="margin:-2px 0 10px"><a href="#" id="ap_editProfile" style="color:#7ec8ff;font-size:12px;text-decoration:none">&#9998; Edit my saved details (name is fixed; position / airline / aircraft can change)</a></div>
+      <!-- Your name / position / airline are set once on the Load page and kept here for the AI to use. -->
+      <div style="display:none" aria-hidden="true">
+        <input id="ap_name" type="text"><input id="ap_pos" type="text"><input id="ap_air" type="text">
       </div>
-      <div style="margin:-2px 0 8px"><a href="#" id="ap_editProfile" style="color:#7ec8ff;font-size:12px;text-decoration:none">&#9998; Edit my saved details (name is fixed; position / airline / aircraft can change)</a></div>
 
-      <div style="margin-top:14px;border-top:1px solid #20304f;padding-top:12px">
-        <label class="lab">Type of announcement</label>
-        <p class="fsub" style="margin-top:2px">Name it <b>Welcome</b> to auto-show on the <b>Departure</b> page, or <b>Descend</b> for the <b>Arrival</b> page. Any other name (Boarding, Delay, Diversion…) is saved for quick access. Type blanks as <b>____</b> or <b>[BRACKETS]</b> and tap <b>Sky Matrix AI</b> to fill them — you can edit the result, then <b>Save</b>.</p>
+      <div style="margin-top:6px;border-top:1px solid #20304f;padding-top:12px">
         <div class="fgrid">
-          <div class="feat-field"><label class="lab">Name / type</label><input id="na_name" type="text" placeholder="Welcome / Descend / Boarding / Delay / …"></div>
+          <div class="feat-field"><label class="lab">Announcement Type</label><input id="na_name" type="text" placeholder="Welcome / Descend / Boarding / Delay / …"></div>
           <div class="feat-field"><label class="lab">Language (for AI fill)</label><select id="ap_lang"></select></div>
+          <div class="feat-field"><label class="lab">&nbsp;</label>
+            <label class="ghost" style="display:block;text-align:center;cursor:pointer;padding:9px 14px;border-radius:8px;border:1px solid #2a3c5e">UPLOAD AN ANNOUNCEMENT<input id="ap_file" type="file" accept="image/*,.pdf,.txt,text/plain" style="display:none"></label></div>
         </div>
-        <textarea id="na_text" placeholder="Type your announcement here. Use ____ or [BRACKETS] where Sky Matrix AI should fill in the details." style="min-height:130px;width:100%;font-family:var(--sans);font-size:13px;color:#E6ECF5"></textarea>
-        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <label class="ghost" style="cursor:pointer;padding:8px 14px;border-radius:8px;border:1px solid #2a3c5e">Upload template (photo / PDF / Word)<input id="ap_file" type="file" accept="image/*,.pdf,.txt,text/plain" style="display:none"></label>
-          <button id="ap_go" type="button" style="background:#12324a;border:1px solid #2f8bff;color:#cfe6ff">Sky Matrix AI — fill blanks</button>
-          <button id="na_save" type="button">Save announcement</button>
+        <p class="fsub" style="margin:2px 0 6px">Name it <b>Welcome</b> to auto-show on the <b>Departure</b> page, or <b>Descend</b> for the <b>Arrival</b> page — both are auto-filled for the current flight. Any other name (Boarding, Delay, Diversion…) is saved for quick access.</p>
+        <label class="lab">Type with fillable fields as <b>----</b> or <b>( )</b></label>
+        <textarea id="na_text" placeholder="Type your announcement here. Put ---- or ( ) — or ____ / [BRACKETS] — wherever Sky Matrix AI should fill in the details." style="min-height:140px;width:100%;font-family:var(--sans);font-size:13px;color:#E6ECF5"></textarea>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <button id="ap_go" type="button" style="background:#12324a;border:1px solid #2f8bff;color:#cfe6ff;font-weight:700">SKY MATRIX AI</button>
+          <button id="ap_useSaved" type="button" class="ghost">EDIT</button>
+          <button id="na_save" type="button" style="font-weight:700">SAVE</button>
+          <button id="ap_copy" type="button" class="ghost">Copy</button>
           <span class="hint" id="ap_msg" style="margin-top:0"></span>
           <span class="hint" id="na_msg" style="margin-top:0"></span>
         </div>
-        <textarea id="ap_out" readonly placeholder="Completed announcement — Sky Matrix AI fills your blanks here. Edit if needed, then ‘Use result above’ to save it." style="min-height:110px;width:100%;margin-top:8px;font-family:var(--sans);font-size:13px;color:#E6ECF5"></textarea>
-        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-          <button id="ap_useSaved" type="button" class="ghost">Use result above</button>
-          <button id="ap_copy" type="button" class="ghost">Copy result</button>
-        </div>
+        <textarea id="ap_out" readonly placeholder="Completed announcement — Sky Matrix AI fills your blanks and corrects spelling &amp; grammar here. Tap EDIT to move it up for changes, then SAVE." style="min-height:120px;width:100%;margin-top:10px;font-family:var(--sans);font-size:13px;color:#E6ECF5"></textarea>
       </div>
 
       <div style="margin-top:14px;border-top:1px solid #20304f;padding-top:12px">
-        <label class="lab">My announcements</label>
+        <label class="lab">MY ANNOUNCEMENTS</label>
+        <p class="fsub" style="margin-top:2px">Tap <b>Sky Matrix AI</b> on any saved announcement to expand it and fill it with the current flight's details.</p>
         <div id="na_list" style="margin-top:8px"></div>
       </div>
     </div>
@@ -1041,6 +1041,7 @@ var LIC_PUBKEY = "BMxAfrty9p7_t79ebh4KowBcDiZVaiyBIRPPgMGaPK2Bt4yB9EU1W-4z9WQ4E4
   function profileComplete(){ var p=getProfile(); return !!(p&&p.name&&p.position&&p.airline&&p.aircraft); }
   function enterApp(){ hideAll(); try{sessionStorage.setItem('sm_unlocked','1');}catch(e){} if(typeof requestWake==='function')requestWake();
     try{ var p=getProfile(); var mp={ap_name:p.name,ap_pos:p.position,ap_air:p.airline}; for(var id in mp){ var e=document.getElementById(id); if(e&&mp[id]){ e.value=mp[id]; try{e.dispatchEvent(new Event('input',{bubbles:true}));}catch(_){} } } }catch(e){}
+    try{ if(window.__paWho)window.__paWho(); }catch(e){}
   }
   function showProfile(){ var p=getProfile();
     var n=document.getElementById('pf_name'); if(n){ n.value=p.name||''; if(p.name){ n.readOnly=true; n.style.opacity='.65'; } }
@@ -1334,7 +1335,7 @@ function smMarkSVG(u){return '<svg viewBox="0 0 200 200" xmlns="http://www.w3.or
 +'</svg>';}
 (function(){var i=0;['hdrLogo','lockLogo','footLogo','loginLogo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=smLogoSVG('L'+(i++));});var m=document.getElementById('aiGoMark');if(m)m.innerHTML=smMarkSVG('BTN');})();
 /* visible build stamp — bump APP_VERSION on every release so you can confirm at a glance that the latest is live (matches the Worker /version) */
-var APP_VERSION='2026-07-20-batch11';
+var APP_VERSION='2026-07-20-batch12';
 /* Friendly public version + changelog shown on the PIN/login screen. Bump APP_VER and prepend a CHANGELOG entry each release. */
 var APP_VER='v1.2';
 var CHANGELOG=[
@@ -2047,26 +2048,27 @@ function build(data){
   oRoute.insertAdjacentHTML('beforeend',s2+'</div>');
 
   const roles=airportRoles(data);
-  let s3=sheet('CREW ALERTS • SIGMET • TAF DECODE',ident);
-  s3+=sec('CREW INFO');
-  s3+=`<div class="body">`;
-  s3+=`<p class="item"><b>Flight attendant seats: ${esc(data.faSeats||'?')}</b> ${data.seatCfg?('('+esc(data.seatCfg)+')'):''}</p>`;
+  let s3=sheet('WEATHER ALERTS • SIGMET • TAF DECODE',ident);
+  // CREW INFO is built here but rendered on the Briefing → INFO page (11.docx), not on the Weather Alerts page.
+  let ci=`<div class="body">`;
+  ci+=`<p class="item"><b>Flight attendant seats: ${esc(data.faSeats||'?')}</b> ${data.seatCfg?('('+esc(data.seatCfg)+')'):''}</p>`;
   if(data.coCb && data.coCb.length){
-    s3+=`<p class="item" style="margin-top:8px"><b>Crew Orders &amp; Bulletins — summary (${data.coCb.length} item(s)):</b></p>`;
+    ci+=`<p class="item" style="margin-top:8px"><b>Crew Orders &amp; Bulletins — summary (${data.coCb.length} item(s)):</b></p>`;
     data.coCb.forEach(x=>{
       let subj=(x.subj||'').replace(/\s+/g,' ').trim();
       if(subj.length>160) subj=subj.slice(0,160)+'…';
       const efb=x.efb?` <b style="color:#1f6dff">— EFB / OIS v${esc(x.efb)}</b>`:'';
-      s3+=`<p class="item" style="margin:0 0 5px"><span class="chip n">${esc(x.code)}</span>${esc(subj||'(no subject text)')}${efb}</p>`;
+      ci+=`<p class="item" style="margin:0 0 5px"><span class="chip n">${esc(x.code)}</span>${esc(subj||'(no subject text)')}${efb}</p>`;
     });
-  } else s3+=`<p class="item" style="margin-top:6px">No Crew Orders / Crew Bulletins detected in the OFP (check the OFP has a CREW ALERT / BULLETIN section).</p>`;
+  } else ci+=`<p class="item" style="margin-top:6px">No Crew Orders / Crew Bulletins detected in the OFP (check the OFP has a CREW ALERT / BULLETIN section).</p>`;
   if(data.scb && data.scb.length){
-    s3+=`<p class="item" style="margin-top:10px"><b>Active Special Crew Briefings — matched to this route (${data.scb.length}):</b></p>`;
+    ci+=`<p class="item" style="margin-top:10px"><b>Active Special Crew Briefings — matched to this route (${data.scb.length}):</b></p>`;
     data.scb.forEach(x=>{
-      s3+=`<p class="item" style="margin:0 0 5px"><span class="chip a">SCB ${esc(x.num)}</span>${esc(x.desc)} <span style="color:#6B7280">— ${esc(x.why)}</span></p>`;
+      ci+=`<p class="item" style="margin:0 0 5px"><span class="chip a">SCB ${esc(x.num)}</span>${esc(x.desc)} <span style="color:#6B7280">— ${esc(x.why)}</span></p>`;
     });
   }
-  s3+=`</div>`;
+  ci+=`</div>`;
+  try{ window.__crewInfoHtml=ci; if(window.__renderInfo)window.__renderInfo(); }catch(e){}
   s3+=sec('SIGMET / AIRMET');
   s3+=`<div class="body">`;
   s3+=`<p class="item"><b>AIRMETs:</b> ${data.airmet&&!/No Wx/i.test(data.airmet)?esc(data.airmet):'none issued.'}</p>`;
@@ -3228,24 +3230,26 @@ document.querySelectorAll('#docsnav button').forEach(b=>b.addEventListener('clic
     var cell=function(lbl,v){ return (v==null||v===''||v==='--')?'':('<span><span style="color:#7e90ad">'+lbl+':</span> '+esc(v)+'</span>'); };
     var initFL=O.initFL?('FL'+String(O.initFL).replace(/^FL/i,'')):'';
     var h='<div class="hint" style="margin:0 0 6px">Plan values (<b>RETA</b> / <b>RFOB</b> / <b>PFL</b>) are read from the OFP. Enter your actual <b>ATA</b>, <b>AFOB</b> and <b>AFL</b> as you fly — saved on this device. Tap a waypoint for its OFP detail and notes.</div>';
-    h+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap"><thead><tr style="color:#7e90ad;text-align:left">'
-      +'<th style="padding:4px 6px">Waypoint</th><th>Cum NM</th><th title="Plan ETA (from OFP)">RETA</th><th title="Actual time of arrival">ATA</th><th title="Plan fuel remaining (from OFP)">RFOB</th><th title="Actual fuel on board">AFOB</th><th title="Plan FL (from OFP)">PFL</th><th title="Actual FL">AFL</th><th></th></tr></thead><tbody>';
+    h+='<div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="nlTbl" style="width:100%;border-collapse:collapse;font-size:11px;white-space:nowrap"><thead><tr style="color:#7e90ad;text-align:left">'
+      +'<th style="padding:3px 4px">Waypoint</th><th title="Cumulative distance">NM</th><th title="Plan ETA (from OFP)">RETA</th><th title="Actual time of arrival">ATA</th><th title="Plan fuel remaining (from OFP)">RFOB</th><th title="Actual fuel on board">AFOB</th><th title="Plan FL (from OFP)">PFL</th><th title="Actual FL">AFL</th><th></th></tr></thead><tbody>';
     for(var i=0;i<wps.length;i++){ var w=wps[i], st=navGet(O,w.name), cum=wpCum(w);
       var reta=(w.elapsed!=null&&toMinAbs!=null)?fmt((((toMinAbs+w.elapsed)%1440)+1440)%1440)+'Z':(w.elapsed!=null?('+'+fmt(w.elapsed)):'--');
-      var pfl=w.fl?('FL'+String(w.fl).replace(/^FL/i,'')):(initFL||'--');
+      // "CLB"/"DSC" are climb/descent markers, not levels — don't prefix them with FL.
+      var _f=String(w.fl||'').replace(/^FL/i,'').trim();
+      var pfl=_f?(/^\d+$/.test(_f)?('FL'+_f):_f):(initFL||'--');
       var rfob=(w.fuel!=null)?Math.round(w.fuel).toLocaleString():'--';
       h+='<tr style="border-top:1px solid #16233a">'
-        +'<td style="padding:5px 6px;cursor:pointer" onclick="window.__nlTog('+i+')"><b style="color:#e6eefc">'+esc(w.name||('WP'+(i+1)))+'</b>'
+        +'<td style="padding:4px 4px;cursor:pointer" onclick="window.__nlTog('+i+')"><b style="color:#e6eefc">'+esc(w.name||('WP'+(i+1)))+'</b>'
         +(ov.dir===w.name?' <span style="background:#12324a;border:1px solid #2f8bff;color:#cfe6ff;border-radius:4px;padding:0 5px;font-size:10px">DIR TO</span>':'')
         +(w.user?' <span style="background:#3a2a12;border:1px solid #E0A33A;color:#ffdf9e;border-radius:4px;padding:0 5px;font-size:10px">USER</span>':'')
         +' <span style="color:#7e90ad">&#9662;</span></td>'
         +'<td>'+(cum!=null?Math.round(cum):'--')+'</td>'
         +'<td style="color:#7be0a4">'+reta+'</td>'
-        +'<td><input class="nl-ata" data-wp="'+esc(w.name)+'" value="'+esc(st.ata||'')+'" placeholder="hhmm" inputmode="numeric" style="width:52px;font-size:12px;padding:3px"></td>'
+        +'<td><input class="nl-ata" data-wp="'+esc(w.name)+'" value="'+esc(st.ata||'')+'" placeholder="hhmm" inputmode="numeric" style="width:44px;font-size:11px;padding:2px 3px"></td>'
         +'<td style="color:#7be0a4">'+rfob+'</td>'
-        +'<td><input class="nl-afob" data-wp="'+esc(w.name)+'" value="'+esc(st.afob||'')+'" placeholder="kg" inputmode="numeric" style="width:62px;font-size:12px;padding:3px"></td>'
+        +'<td><input class="nl-afob" data-wp="'+esc(w.name)+'" value="'+esc(st.afob||'')+'" placeholder="kg" inputmode="numeric" style="width:52px;font-size:11px;padding:2px 3px"></td>'
         +'<td style="color:#7be0a4">'+pfl+'</td>'
-        +'<td><input class="nl-afl" data-wp="'+esc(w.name)+'" value="'+esc(st.afl||'')+'" placeholder="FL" inputmode="numeric" style="width:52px;font-size:12px;padding:3px"></td>'
+        +'<td><input class="nl-afl" data-wp="'+esc(w.name)+'" value="'+esc(st.afl||'')+'" placeholder="FL" inputmode="numeric" style="width:40px;font-size:11px;padding:2px 3px"></td>'
         +'<td><button type="button" class="nl-menu" data-wp="'+esc(w.name)+'" title="Waypoint actions" style="background:none;border:0;color:#7e90ad;cursor:pointer;font-size:16px;padding:2px 6px;line-height:1">&#8942;</button></td>'
         +'</tr>';
       h+='<tr id="nlDet'+i+'" style="display:none"><td colspan="9" style="padding:6px 10px;background:#0e1930">'
@@ -3917,6 +3921,11 @@ document.querySelectorAll('#docsnav button').forEach(b=>b.addEventListener('clic
     if($('ap_air'))$('ap_air').addEventListener('input',function(){try{localStorage.setItem('sm_ap_air',$('ap_air').value);}catch(e){}});
     if($('ap_useSaved'))$('ap_useSaved').addEventListener('click',function(){ var r=((out&&out.value)||'').trim(); if(!r){setM('Nothing to use yet — fill the blanks first.');return;} var nt=$('na_text'); if(nt){ nt.value=r; try{nt.dispatchEvent(new Event('input',{bubbles:true}));}catch(e){} } setM('Result moved into the announcement — edit or Save it.'); });
     if($('ap_editProfile'))$('ap_editProfile').addEventListener('click',function(e){ e.preventDefault(); if(window.__editProfile)window.__editProfile(); });
+    // Show who the announcements will be spoken by (from the profile set once on the Load page)
+    window.__paWho=function(){ var w=$('ap_who'); if(!w)return;
+      var n=(($('ap_name')||{}).value||'').trim(), p=(($('ap_pos')||{}).value||'').trim(), a=(($('ap_air')||{}).value||'').trim();
+      w.textContent = n ? ('Speaking as '+n+(p?(' — '+p):'')+(a?(', '+a):'')) : 'Your details are set once on the Load page.'; };
+    try{ window.__paWho(); }catch(e){}
     if($('ap_file'))$('ap_file').addEventListener('change',function(){
       var f=$('ap_file').files&&$('ap_file').files[0]; if(!f)return;
       var nm=(f.name||'').toLowerCase();
@@ -4363,13 +4372,14 @@ try{
         +(o.routeTotNM?('Great-circle plan distance about '+E(o.routeTotNM)+' NM. '):'');
       H+='<div class="fcard"><h2>Route synthesis</h2><p style="line-height:1.65;color:#dce8ff">'+syn+'</p>'
         +(wps?('<p class="hint" style="margin-top:8px">Waypoints: '+wps+'</p>'):'')+'</div>';
+      // Crew info from the OFP (flight-attendant seats, Crew Orders & Bulletins, Special Crew Briefings)
+      if(window.__crewInfoHtml) H+='<div class="fcard"><h2>Crew info</h2>'+window.__crewInfoHtml+'</div>';
+      // Named crew from a roster, if one has been read
       var cr=window.__lastCrew; if(!cr){ try{cr=JSON.parse(localStorage.getItem('sm_crew')||'null');}catch(e){} }
-      var crH='';
       if(cr){ var fd=cr.flightDeck||[], cb=cr.cabin||[];
         function row(x){return '<tr><td style="opacity:.7">'+E(x.rank||'')+'</td><td>'+E(x.name||'')+'</td></tr>';}
-        if(fd.length||cb.length){ crH='<table class="ft"><thead><tr><th>Rank</th><th>Name</th></tr></thead><tbody>'
-          +fd.map(row).join('')+cb.map(row).join('')+'</tbody></table>'; } }
-      H+='<div class="fcard"><h2>Crew</h2>'+(crH||'<p class="hint">Upload a crew roster in <b>Utilities → PA</b> to show the crew here.</p>')+'</div>';
+        if(fd.length||cb.length){ H+='<div class="fcard"><h2>Crew</h2><table class="ft"><thead><tr><th>Rank</th><th>Name</th></tr></thead><tbody>'
+          +fd.map(row).join('')+cb.map(row).join('')+'</tbody></table></div>'; } }
       el.innerHTML=H;
     };
    }catch(e){ if(window.console)console.warn('restructure failed',e); }
