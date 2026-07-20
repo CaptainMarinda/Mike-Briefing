@@ -403,7 +403,7 @@
     <div class="gnote" style="color:#ffd88a;background:rgba(224,163,58,.12);border:1px solid #6b5325;border-radius:8px;padding:10px 12px;text-align:left;line-height:1.5">&#9888; These details are <b>required to use Sky Matrix</b>. They personalise your announcements and are shared with your administrator. Your <b>name is set once and cannot be changed</b> later &mdash; position, airline and aircraft you can update anytime with your PIN.</div>
     <input id="pf_name" type="text" maxlength="60" placeholder="Full name (set once)" autocomplete="name" style="margin-top:10px">
     <input id="pf_position" type="text" maxlength="40" placeholder="Position (e.g. Captain / First Officer)">
-    <input id="pf_airline" type="text" maxlength="60" placeholder="Airline (e.g. Qatar Airways)">
+    <input id="pf_airline" type="text" maxlength="60" placeholder="Airline / operator">
     <input id="pf_aircraft" type="text" maxlength="40" placeholder="Aircraft type (e.g. A350 / B777)">
     <button id="pf_save">Save and open Sky Matrix</button>
     <div id="pf_err" class="gerr"></div>
@@ -421,7 +421,6 @@
   <button data-v="load" class="active"><svg class="nico" viewBox="0 0 24 24"><path d="M12 3v11"/><path d="M8 10l4 4 4-4"/><path d="M4 16v2a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-2"/></svg>Load</button>
   <span class="navsep" aria-hidden="true"></span>
   <button data-v="cldg"><svg class="nico" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M8.5 12.5l2 2 4-4"/></svg>Utilities</button>
-  <button data-v="rest"><svg class="nico" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/><path d="M17 3l.7 1.8L19.5 5.5l-1.8.7L17 8l-.7-1.8L14.5 5.5l1.8-.7z"/></svg>Inflight Rest</button>
 </nav>
 <div class="identbar empty" id="identbar"><span id="identClock" class="iclk">--:--:--Z</span><span id="identInfo">No flight loaded — open an OFP in the Briefing tab</span></div>
 <div class="warnbar"><b>For reference only — not for operational use.</b> Use the official hard-copy OFP for flight operations. Individual use only.</div>
@@ -473,6 +472,7 @@
   <div id="out-route" class="subview"></div>
   <div id="out-wx" class="subview"></div>
   <div id="out-notam" class="subview"></div>
+  <div id="out-info" class="subview"></div>
 </div>
 
 <div class="wrap view" id="view-cldg">
@@ -542,7 +542,7 @@
       <div id="dgLetterDetail"></div>
     </div>
   </div>
-  <div class="subview2" id="cd-pa">
+  <div class="subview2 active" id="cd-pa">
     <div class="fcard">
       <h2>Announcement Maker</h2>
       <div class="fgrid">
@@ -858,6 +858,25 @@
     <p class="hint" id="restSummary"></p>
   </div>
 </div>
+
+<div class="wrap view" id="view-docs">
+  <div class="subview2 active" id="docs-ofp">
+    <div class="fcard">
+      <h2>OFP document</h2>
+      <p class="fsub">The original OFP document used to build this flight's briefing.</p>
+      <div id="docsOfpBox"><p class="hint">No OFP document loaded yet. Load an OFP on the <b>Load</b> tab.</p></div>
+    </div>
+  </div>
+  <div class="subview2" id="docs-my">
+    <div class="fcard">
+      <h2>My documents</h2>
+      <p class="fsub">Add your own reference documents (PDF, images, etc.). Stored on this device only; they stay until you remove them. Tap a document name to set it as current; use Open to view.</p>
+      <div id="docsMyMount"></div>
+    </div>
+  </div>
+  <div class="subview2" id="docs-cl"></div>
+  <div class="subview2" id="docs-adoc"></div>
+</div>
   </div><!-- /maincol -->
   <div class="subrail" id="subrail">
     <button type="button" class="railswap" id="railSwap" title="Move the sub-bar to the other side">&#8646; Swap side</button>
@@ -866,19 +885,24 @@
       <button data-s="route">Route</button>
       <button data-s="wx">Weather Alerts</button>
       <button data-s="notam">NOTAMs &amp; Enroute</button>
+      <button data-s="info">Info</button>
     </nav>
     <nav class="subnav" id="dispnav" style="display:none">
       <button data-d="dep">Departure</button>
-      <button data-d="live" class="active">Live</button>
-      <button data-d="nav">Nav</button>
+      <button data-d="nav">Nav Log</button>
       <button data-d="arr">Arrival</button>
+      <button data-d="live" class="active">Time</button>
     </nav>
     <nav class="subnav" id="cldgnav" style="display:none">
-      <button data-cd="cl" class="active">Checklist</button>
-      <button data-cd="crew">Crew</button>
-      <button data-cd="pa">PA</button>
+      <button data-cd="pa" class="active">PA</button>
       <button data-cd="dg">Dangerous Goods</button>
-      <button data-cd="adoc">Admin Docs</button>
+      <button data-cd="ac">Aircraft Lookup</button>
+    </nav>
+    <nav class="subnav" id="docsnav" style="display:none">
+      <button data-dc="ofp" class="active">OFP</button>
+      <button data-dc="my">My Docs</button>
+      <button data-dc="cl">Checklist</button>
+      <button data-dc="adoc">Admin Docs</button>
     </nav>
   </div><!-- /subrail -->
 </div><!-- /applayout -->
@@ -1310,13 +1334,19 @@ function smMarkSVG(u){return '<svg viewBox="0 0 200 200" xmlns="http://www.w3.or
 +'</svg>';}
 (function(){var i=0;['hdrLogo','lockLogo','footLogo','loginLogo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=smLogoSVG('L'+(i++));});var m=document.getElementById('aiGoMark');if(m)m.innerHTML=smMarkSVG('BTN');})();
 /* visible build stamp — bump APP_VERSION on every release so you can confirm at a glance that the latest is live (matches the Worker /version) */
-var APP_VERSION='2026-07-20-batch9T';
+var APP_VERSION='2026-07-20-batch11';
 /* Friendly public version + changelog shown on the PIN/login screen. Bump APP_VER and prepend a CHANGELOG entry each release. */
-var APP_VER='v1.1';
+var APP_VER='v1.2';
 var CHANGELOG=[
+  {v:'v1.2', date:'Jul 2026', items:[
+    'New layout: OFP Briefing (with an INFO page — route synthesis + crew), Inflight Display (Dep / Nav Log / Arr / Time), and a dedicated Docs tab (OFP / My Docs / Checklist / Admin Docs).',
+    'Inflight Display “Time” page gathers In-flight Rest, flight-time capture, a time marker and the full block of times.',
+    'Utilities is now PA, Dangerous Goods and Aircraft Lookup; the crew roster reader lives inside PA.',
+    'Announcements: your Welcome / Descend scripts auto-fill with the current flight, and Sky Matrix AI can fill + proofread any saved announcement on the spot.'
+  ]},
   {v:'v1.1', date:'Jul 2026', items:[
     'Your details (name / position / airline / aircraft) are now required once to use the app, and personalise your announcements.',
-    'New waypoint-by-waypoint NAV LOG built from the OFP — enter your own ATA / AFOB / AFL.',
+    'New waypoint-by-waypoint NAV LOG built from the OFP — starts at the departure airport with the real waypoint names, in order, and lets you enter your own ATA / AFOB / AFL; tap a waypoint for full detail and an RVSM check.',
     'Multiple named, reorderable checklists.',
     'Named devices; Admin Docs tab with a “Check for new documents” button.',
     'PDF viewer shows all pages + full-screen; many stability fixes.'
@@ -1796,6 +1826,16 @@ function parseOFP(text, opts){
     for(let i=0;i<wps.length;i++){ if(i>0)cum+=gcNM(wps[i-1].lat,wps[i-1].lon,wps[i].lat,wps[i].lon); out.push({name:wps[i].name,lat:wps[i].lat,lon:wps[i].lon,cumNM:Math.round(cum),elapsed:wps[i].elapsed}); }
     data.routeWps=out; data.routeTotNM=out.length?out[out.length-1].cumNM:0;
   })();
+  // Qatar Lido OFP: build an accurate, ordered nav log straight from the printed table (offline). The AI reader can still enrich it online.
+  try{ if(/WPT\s*\/\s*FREQ/.test(T)){ var _ql=parseQatarNavlog(T); if(_ql&&_ql.length>=2) data.navlog=_ql; } }catch(e){}
+  // Fuel bar figures: "PLAN REM x  PLAN REQ y" (tonnes, nav-log header) + "FINL nnnn" (final reserve, kg) + "ALTN <icao> nnnn"
+  try{
+    var _pr=/PLAN\s+REM\s+([\d.]+)\s+PLAN\s+REQ\s+([\d.]+)/i.exec(T);
+    var _fn=/\bFINL\s+(\d{3,6})\b/i.exec(T);
+    var _al=/\bALTN\s+(?:[A-Z]{4}\s+)?(\d{3,6})\b/i.exec(T);
+    if(_pr){ data.fuelBar={ remT:parseFloat(_pr[1]), reqT:parseFloat(_pr[2]),
+      finalT:_fn?(parseInt(_fn[1],10)/1000):null, altnT:_al?(parseInt(_al[1],10)/1000):null }; }
+  }catch(e){}
   return data;
 }
 
@@ -1824,6 +1864,50 @@ function parseRouteCoords(T){
     pts.push({lat,lon,elapsed,name});
   });
   return pts;
+}
+
+// Qatar Lido two-line NAV LOG parser: reads the printed nav-log table row-by-row into an ordered waypoint list
+// (name, airway, cumulative distance, elapsed time [summed from the STM column], fuel remaining, wind, tracks).
+// This gives an accurate, correctly-ordered nav log OFFLINE — starting at the departure airport — for Qatar OFPs.
+function parseQatarNavlog(T){
+  if(!T) return null;
+  function hhmm(mins){ mins=Math.max(0,mins|0); var h=Math.floor(mins/60), m=mins%60; return (h<10?'0':'')+h+':'+(m<10?'0':'')+m; }
+  var lines=T.split('\n'), out=[], cum=0, eet=0, started=false;
+  for(var i=0;i<lines.length-1;i++){
+    var a=lines[i], b=lines[i+1], as=a.trim(), bs=b.trim();
+    if(/WPT\s*\/\s*FREQ/.test(a)){ started=true; continue; }
+    if(!started) continue;
+    var at=as.split(/\s+/), bt=bs.split(/\s+/);
+    // departure / arrival runway row: "CYYZ/33R" on line a, "ELEV ..." on line b
+    if(/^[A-Z]{4}\/\w/.test(as) && /ELEV/i.test(b)){
+      var rr=b.match(/\b\d+\.\d\b/g);
+      out.push({wpt:at[0],airway:'',cumDistNM:cum,eet:hhmm(eet),fuelRemKg:rr?Math.round(parseFloat(rr[rr.length-1])*1000):null,wind:'',fl:'',ittImt:'',mora:''});
+      i++; continue;
+    }
+    // data pair: line b carries a 4-digit cumulative-time token and a trailing decimal (RFOB, tonnes)
+    var ctm=null; for(var k=0;k<bt.length;k++){ if(/^[0-2]\d[0-5]\d$/.test(bt[k]))ctm=bt[k]; }
+    var rfm=bs.match(/\b\d+\.\d\b/g);
+    if(ctm && rfm){
+      // Segment time = the LAST bare 1-3 digit token on line a (the STM column prints after AWY/ITT/FL/WIND/ISAD).
+      // Verified against a full Qatar OFP: total matches TRIP + ALTN time exactly. A >180 value is not a segment time.
+      var stm=null; for(var m2=0;m2<at.length;m2++){ if(/^\d{1,3}$/.test(at[m2]))stm=parseInt(at[m2],10); }
+      if(stm!=null && stm<=180) eet+=stm;   // elapsed = running sum of the segment-time column (the printed CTM column rolls over)
+      var name=bt[0], rest=bt.slice(1);
+      if(rest.length && /^\d{2,3}\.\d{1,2}$/.test(rest[0])) rest=rest.slice(1);   // drop a navaid frequency token
+      var imt=null,dis=null;
+      for(var n=0;n<rest.length;n++){ var t=rest[n];
+        if(imt===null && /^[0-3]\d\d$/.test(t)) imt=t;
+        else if(imt!==null && dis===null && /^\d{1,3}$/.test(t)){ dis=parseInt(t,10); break; } }
+      cum+=(dis||0);
+      var windm=a.match(/\b\d{3}\/\d{3}\b/);
+      var itt=(at.length>1&&/^\d{3}$/.test(at[1]))?at[1]:'';
+      var awy=(at[0]&&/^[A-Z]/.test(at[0])&&!/^(CLB|DSC|MONTREAL|GANDER|SHANWICK|BREST|REYKJAVIK|OCEANIC|FIR|UIR)$/.test(at[0]))?at[0]:'';
+      var flm=a.match(/\b(CLB|DSC)\b/); flm=flm?flm[1]:'';
+      out.push({wpt:name,airway:awy,cumDistNM:cum,eet:hhmm(eet),fuelRemKg:Math.round(parseFloat(rfm[rfm.length-1])*1000),wind:windm?windm[0]:'',fl:flm,ittImt:(itt&&imt)?(itt+'/'+imt):'',mora:''});
+      i++; continue;
+    }
+  }
+  return out.length>=2?out:null;
 }
 
 function isRelevantNotam(s){
@@ -2437,6 +2521,7 @@ window.__goSub=function(s){
   document.querySelectorAll('#view-briefing .subview').forEach(x=>x.classList.remove('active'));
   var b=document.querySelector('#subnav button[data-s="'+s+'"]'); if(b)b.classList.add('active');
   var v=document.getElementById('out-'+s); if(v)v.classList.add('active');
+  if(s==='info'&&window.__renderInfo)try{window.__renderInfo();}catch(e){}
 };
 document.querySelectorAll('#subnav button').forEach(b=>b.addEventListener('click',()=>window.__goSub(b.dataset.s)));
 document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('click',()=>{
@@ -2450,19 +2535,29 @@ document.querySelectorAll('#cldgnav button').forEach(b=>b.addEventListener('clic
 /* ---- right-hand sub-tab rail: show only the active mode's sub-bar; remember the swap side ---- */
 window.__updateSubrail=function(){
   var a=document.querySelector('.view.active'); var v=a?a.id.replace('view-',''):'';
-  var map={briefing:'subnav',disp:'dispnav',cldg:'cldgnav'};
-  ['subnav','dispnav','cldgnav'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display='none';});
+  var map={briefing:'subnav',disp:'dispnav',cldg:'cldgnav',docs:'docsnav'};
+  ['subnav','dispnav','cldgnav','docsnav'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display='none';});
   var id=map[v], show=id?(id==='subnav'?!!window.__OFP:true):false;
   if(id&&show){var e=document.getElementById(id);if(e)e.style.display='flex';}
   var sr=document.getElementById('subrail'); if(sr)sr.style.display=(id&&show)?'flex':'none';
 };
+window.__goDocsTab=function(dc){
+  document.querySelectorAll('#docsnav button').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('#view-docs .subview2').forEach(x=>x.classList.remove('active'));
+  var b=document.querySelector('#docsnav button[data-dc="'+dc+'"]'); if(b)b.classList.add('active');
+  var v=document.getElementById('docs-'+dc); if(v)v.classList.add('active');
+  if(dc==='adoc'&&window.__renderAdminDocs)try{window.__renderAdminDocs();}catch(e){}
+  if(dc==='ofp'&&window.__renderDocsOfp)try{window.__renderDocsOfp();}catch(e){}
+  if(dc==='my'&&window.__docRender)try{window.__docRender();}catch(e){}
+};
+document.querySelectorAll('#docsnav button').forEach(b=>b.addEventListener('click',()=>window.__goDocsTab(b.dataset.dc)));
 (function(){
   var ap=document.querySelector('.applayout'), sw=document.getElementById('railSwap');
   try{ if(localStorage.getItem('sm_railside')==='mirror'&&ap)ap.classList.add('mirror'); }catch(e){}
   if(sw&&ap)sw.addEventListener('click',function(){ ap.classList.toggle('mirror'); try{localStorage.setItem('sm_railside',ap.classList.contains('mirror')?'mirror':'normal');}catch(e){} });
 })();
 (function(){
-  const VIEWS=['load','briefing','disp','cldg','rest'];
+  const VIEWS=['load','briefing','disp','cldg','docs'];
   function goView(v){
     const btn=document.querySelector('#topnav button[data-v="'+v+'"], #siderail button[data-v="'+v+'"]'); if(!btn)return;
     document.querySelectorAll('#topnav button, #siderail button').forEach(x=>x.classList.remove('active'));
@@ -3095,20 +3190,55 @@ window.__updateSubrail=function(){
   function navGet(O,wp){ var s=navStore(),g=s[navSig(O)]; return (g&&g[wp])||{}; }
   function navSet(O,wp,f,v){ var s=navStore(),sig=navSig(O); if(!s[sig])s[sig]={}; if(!s[sig][wp])s[sig][wp]={}; s[sig][wp][f]=v; try{localStorage.setItem('sm_navlog',JSON.stringify(s));}catch(e){} }
   function wpCum(w){ return (w.ofpCumNM!=null?w.ofpCumNM:(w.cumNM!=null?w.cumNM:null)); }
+  // Per-flight nav-log edits (delete / insert user point / DIR TO). Stored on the device, never altering the OFP data.
+  function navOv(O){ var s=navStore(),g=s[navSig(O)]; var o=(g&&g.__ov)||{}; return {del:o.del||[], ins:o.ins||[], dir:o.dir||''}; }
+  function navSetOv(O,ov){ var s=navStore(),sig=navSig(O); if(!s[sig])s[sig]={}; s[sig].__ov=ov; try{localStorage.setItem('sm_navlog',JSON.stringify(s));}catch(e){} }
+  function elMinOf(s){ var em=/^(\d{1,2}):(\d{2})$/.exec(String(s||'')); return em?(+em[1]*60+ +em[2]):null; }
+  // Row source for the nav log: PREFER the AI/structured nav log (real waypoint names, true order, starts at the
+  // departure airport) over the coordinate-only routeWps list (which drops named fixes and mislabels airways as names).
+  function navRows(O){
+    if(O && Array.isArray(O.navlog) && O.navlog.length){
+      var rows=O.navlog.map(function(r){
+        return { name:(r.wpt!=null?String(r.wpt):'').trim(),
+          cumNM:(r.cumDistNM!=null&&!isNaN(+r.cumDistNM))?+r.cumDistNM:null,
+          elapsed:elMinOf(r.eet),
+          fuel:(r.fuelRemKg!=null&&!isNaN(+r.fuelRemKg))?+r.fuelRemKg:null,
+          fl:r.fl||'', oat:r.oat, wind:r.wind, mora:r.mora, isaDev:r.isaDev, tropo:r.tropo, airway:r.airway,
+          ias:r.ias, gs:r.gs, component:r.component, shear:r.shear,
+          lat:(r.lat!=null&&!isNaN(+r.lat))?+r.lat:null, lon:(r.lon!=null&&!isNaN(+r.lon))?+r.lon:null,
+          ittImt:r.ittImt, cdist:r.cdistNM, rdist:r.rdistNM, airspace:r.airspace, freq:r.freq, ctm:r.ctm, rtime:r.rtime };
+      }).filter(function(x){ return x.name && !/^-{2,}$/.test(x.name); });
+      if(rows.length>=2) return rows;
+    }
+    return (O&&O.routeWps)?O.routeWps:[];
+  }
   function renderNavLog(){
     var O=window.__OFP, host=document.getElementById('nlWpTable'); if(!host)return;
-    if(!O||!O.routeWps||O.routeWps.length<2){ host.innerHTML='<p class="hint">Load an OFP to see the waypoint-by-waypoint nav log.</p>'; return; }
-    var wps=O.routeWps; var toV=(($('d_to')||{}).value||''); var toMin=toV?toM(toV):null;
+    var wps=navRows(O); wps=wps?wps.slice():[];
+    if(!O||!wps||wps.length<2){ host.innerHTML='<p class="hint">Load an OFP to see the waypoint-by-waypoint nav log.</p>'; return; }
+    // apply this flight's own nav-log edits
+    var ov=navOv(O);
+    if(ov.del.length) wps=wps.filter(function(w){ return ov.del.indexOf(w.name)<0; });
+    if(ov.ins.length) ov.ins.forEach(function(ins){
+      var np={name:ins.name,user:true,cumNM:null,elapsed:null,fuel:null,fl:'',airway:''}, k=-1;
+      for(var z=0;z<wps.length;z++){ if(wps[z].name===ins.after){k=z;break;} }
+      if(k>=0) wps.splice(k+1,0,np); else wps.push(np);
+    });
+    var toV=(($('d_to')||{}).value||''); var toMinAbs=toV?toM(toV):null;
+    var cell=function(lbl,v){ return (v==null||v===''||v==='--')?'':('<span><span style="color:#7e90ad">'+lbl+':</span> '+esc(v)+'</span>'); };
     var initFL=O.initFL?('FL'+String(O.initFL).replace(/^FL/i,'')):'';
     var h='<div class="hint" style="margin:0 0 6px">Plan values (<b>RETA</b> / <b>RFOB</b> / <b>PFL</b>) are read from the OFP. Enter your actual <b>ATA</b>, <b>AFOB</b> and <b>AFL</b> as you fly — saved on this device. Tap a waypoint for its OFP detail and notes.</div>';
     h+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap"><thead><tr style="color:#7e90ad;text-align:left">'
-      +'<th style="padding:4px 6px">Waypoint</th><th>Cum NM</th><th title="Plan ETA (from OFP)">RETA</th><th title="Actual time of arrival">ATA</th><th title="Plan fuel remaining (from OFP)">RFOB</th><th title="Actual fuel on board">AFOB</th><th title="Plan FL (from OFP)">PFL</th><th title="Actual FL">AFL</th></tr></thead><tbody>';
+      +'<th style="padding:4px 6px">Waypoint</th><th>Cum NM</th><th title="Plan ETA (from OFP)">RETA</th><th title="Actual time of arrival">ATA</th><th title="Plan fuel remaining (from OFP)">RFOB</th><th title="Actual fuel on board">AFOB</th><th title="Plan FL (from OFP)">PFL</th><th title="Actual FL">AFL</th><th></th></tr></thead><tbody>';
     for(var i=0;i<wps.length;i++){ var w=wps[i], st=navGet(O,w.name), cum=wpCum(w);
-      var reta=(w.elapsed!=null&&toMin!=null)?fmt((((toMin+w.elapsed)%1440)+1440)%1440)+'Z':(w.elapsed!=null?('+'+fmt(w.elapsed)):'--');
+      var reta=(w.elapsed!=null&&toMinAbs!=null)?fmt((((toMinAbs+w.elapsed)%1440)+1440)%1440)+'Z':(w.elapsed!=null?('+'+fmt(w.elapsed)):'--');
       var pfl=w.fl?('FL'+String(w.fl).replace(/^FL/i,'')):(initFL||'--');
       var rfob=(w.fuel!=null)?Math.round(w.fuel).toLocaleString():'--';
       h+='<tr style="border-top:1px solid #16233a">'
-        +'<td style="padding:5px 6px;cursor:pointer" onclick="window.__nlTog('+i+')"><b style="color:#e6eefc">'+esc(w.name||('WP'+(i+1)))+'</b> <span style="color:#7e90ad">&#9662;</span></td>'
+        +'<td style="padding:5px 6px;cursor:pointer" onclick="window.__nlTog('+i+')"><b style="color:#e6eefc">'+esc(w.name||('WP'+(i+1)))+'</b>'
+        +(ov.dir===w.name?' <span style="background:#12324a;border:1px solid #2f8bff;color:#cfe6ff;border-radius:4px;padding:0 5px;font-size:10px">DIR TO</span>':'')
+        +(w.user?' <span style="background:#3a2a12;border:1px solid #E0A33A;color:#ffdf9e;border-radius:4px;padding:0 5px;font-size:10px">USER</span>':'')
+        +' <span style="color:#7e90ad">&#9662;</span></td>'
         +'<td>'+(cum!=null?Math.round(cum):'--')+'</td>'
         +'<td style="color:#7be0a4">'+reta+'</td>'
         +'<td><input class="nl-ata" data-wp="'+esc(w.name)+'" value="'+esc(st.ata||'')+'" placeholder="hhmm" inputmode="numeric" style="width:52px;font-size:12px;padding:3px"></td>'
@@ -3116,26 +3246,91 @@ window.__updateSubrail=function(){
         +'<td><input class="nl-afob" data-wp="'+esc(w.name)+'" value="'+esc(st.afob||'')+'" placeholder="kg" inputmode="numeric" style="width:62px;font-size:12px;padding:3px"></td>'
         +'<td style="color:#7be0a4">'+pfl+'</td>'
         +'<td><input class="nl-afl" data-wp="'+esc(w.name)+'" value="'+esc(st.afl||'')+'" placeholder="FL" inputmode="numeric" style="width:52px;font-size:12px;padding:3px"></td>'
+        +'<td><button type="button" class="nl-menu" data-wp="'+esc(w.name)+'" title="Waypoint actions" style="background:none;border:0;color:#7e90ad;cursor:pointer;font-size:16px;padding:2px 6px;line-height:1">&#8942;</button></td>'
         +'</tr>';
-      h+='<tr id="nlDet'+i+'" style="display:none"><td colspan="8" style="padding:6px 10px;background:#0e1930">'
-        +'<div style="display:flex;gap:14px;flex-wrap:wrap;color:#c7d6ee;font-size:11.5px">'
-        +'<span>Lat/Lon: '+(w.lat!=null?((w.lat).toFixed(2)+' / '+(w.lon).toFixed(2)):'--')+'</span>'
-        +'<span>EET: '+(w.elapsed!=null?fmt(w.elapsed):'--')+'</span>'
-        +(w.wind?('<span>Wind: '+esc(w.wind)+'</span>'):'')
-        +(w.oat!=null?('<span>OAT: '+esc(w.oat)+'&deg;C</span>'):'')
-        +(w.isaDev!=null?('<span>ISA dev: '+esc(w.isaDev)+'</span>'):'')
-        +(w.mora?('<span>MORA: '+esc(w.mora)+'</span>'):'')
-        +(w.tropo?('<span>Tropo: '+esc(w.tropo)+'</span>'):'')
-        +(w.airway?('<span>Airway: '+esc(w.airway)+'</span>'):'')
+      h+='<tr id="nlDet'+i+'" style="display:none"><td colspan="9" style="padding:6px 10px;background:#0e1930">'
+        +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(115px,1fr));gap:6px 14px;color:#c7d6ee;font-size:11.5px">'
+        +cell('Airway',w.airway)+cell('EET',w.elapsed!=null?fmt(w.elapsed):'')+cell('CTM',w.ctm)+cell('RTIME',w.rtime)
+        +cell('IAS',w.ias)+cell('G/S',w.gs)+cell('Wind',w.wind)+cell('Component',w.component)
+        +cell('Tropo',w.tropo)+cell('OAT',w.oat!=null?(w.oat+'°C'):'')+cell('ISA dev',w.isaDev)+cell('Shear',w.shear)
+        +cell('MORA',w.mora)+cell('CDIST',w.cdist)+cell('RDIST',w.rdist)
+        +cell('Lat',w.lat!=null?w.lat.toFixed(2):'')+cell('Long',w.lon!=null?w.lon.toFixed(2):'')
+        +cell('ITT/IMT',w.ittImt)+cell('Airspace',w.airspace)+cell('Frequency',w.freq)
         +'</div>'
         +'<textarea class="nl-notes" data-wp="'+esc(w.name)+'" placeholder="Clearance / notes…" style="width:100%;margin-top:6px;min-height:36px;font-size:12px;color:#e6ecf5">'+esc(st.notes||'')+'</textarea>'
+        +'<label style="display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;color:#c7d6ee;cursor:pointer"><input type="checkbox" class="nl-rvsm" data-wp="'+esc(w.name)+'"'+(st.rvsm?' checked':'')+' style="width:16px;height:16px"> RVSM check</label>'
         +'</td></tr>';
     }
     h+='</tbody></table></div>';
+    var last=wps[wps.length-1];
+    if(last){
+      var dRETA=(last.elapsed!=null&&toMinAbs!=null)?fmt((((toMinAbs+last.elapsed)%1440)+1440)%1440)+'Z':(last.elapsed!=null?('+'+fmt(last.elapsed)):'--');
+      var dFOB=(last.fuel!=null)?(Math.round(last.fuel).toLocaleString()+' kg'):'--';
+      var dNM=wpCum(last); dNM=(dNM!=null?Math.round(dNM)+' NM':'--');
+      var fb=O.fuelBar;
+      if(fb && fb.remT){
+        var maxT=Math.max(fb.remT,(fb.reqT||0))*1.08, pc=function(v){ return Math.max(0,Math.min(100,(v/maxT)*100)); };
+        var marg=fb.remT-(fb.reqT||0);
+        h+='<div style="margin-top:10px;padding:12px;background:#0b1526;border:1px solid #23324e;border-radius:10px">'
+          +'<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:baseline;font-size:12.5px;margin-bottom:10px">'
+          +'<span style="color:#7be0a4;font-weight:700">Destination '+esc(O.dest||'--')+'</span>'
+          +'<span><span style="color:#7e90ad">RETA:</span> '+dRETA+'</span>'
+          +'<span><span style="color:#7e90ad">MDF Margin:</span> <b style="color:'+(marg>=0?'#7be0a4':'#ff9aa2')+'">'+(marg>=0?'+':'')+marg.toFixed(1)+' t</b></span>'
+          +'<span><span style="color:#7e90ad">Est FOB at Dest:</span> <b style="color:#7be0a4">'+fb.remT.toFixed(1)+' t</b></span>'
+          +'<span><span style="color:#7e90ad">Plan distance:</span> '+dNM+'</span></div>'
+          +'<div style="position:relative;height:16px;background:#12203a;border-radius:8px">'
+            +'<div style="position:absolute;left:0;top:0;bottom:0;width:'+pc(fb.remT)+'%;background:linear-gradient(90deg,#1f8a4c,#34c759);border-radius:8px"></div>'
+            +(fb.finalT?('<div title="Final Reserve" style="position:absolute;left:'+pc(fb.finalT)+'%;top:-4px;bottom:-4px;width:2px;background:#ffffff"></div>'):'')
+            +(fb.reqT?('<div title="Min Diversion Fuel" style="position:absolute;left:'+pc(fb.reqT)+'%;top:-4px;bottom:-4px;width:2px;background:#ffd27a"></div>'):'')
+          +'</div>'
+          +'<div style="display:flex;justify-content:space-between;font-size:11px;color:#9fb3d1;margin-top:6px">'
+            +'<span>Final Reserve '+(fb.finalT!=null?fb.finalT.toFixed(1):'--')+' t</span>'
+            +'<span>Min Diversion Fuel '+(fb.reqT!=null?fb.reqT.toFixed(1):'--')+' t</span></div>'
+          +'</div>';
+      } else {
+        h+='<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin-top:10px;padding:10px 12px;background:#0e2a1e;border:1px solid #1f6d4a;border-radius:10px;font-size:12.5px">'
+          +'<span style="color:#7be0a4;font-weight:700">Destination '+esc(O.dest||'--')+'</span>'
+          +'<span><span style="color:#7e90ad">Plan RETA:</span> '+dRETA+'</span>'
+          +'<span><span style="color:#7e90ad">Plan FOB at dest:</span> '+dFOB+'</span>'
+          +'<span><span style="color:#7e90ad">Plan distance:</span> '+dNM+'</span>'
+          +'</div>';
+      }
+      if(ov.del.length||ov.ins.length||ov.dir) h+='<div style="margin-top:8px"><button type="button" id="nlResetOv" class="ghost" style="padding:5px 12px;font-size:12px">Reset nav-log edits</button></div>';
+    }
     host.innerHTML=h;
     function wire(cls,field){ host.querySelectorAll('.'+cls).forEach(function(inp){ inp.addEventListener('change',function(){ navSet(O,inp.getAttribute('data-wp'),field,(inp.value||'').trim()); }); }); }
     wire('nl-ata','ata'); wire('nl-afob','afob'); wire('nl-afl','afl'); wire('nl-notes','notes');
+    host.querySelectorAll('.nl-rvsm').forEach(function(inp){ inp.addEventListener('change',function(){ navSet(O,inp.getAttribute('data-wp'),'rvsm',inp.checked?1:''); }); });
+    var rb=document.getElementById('nlResetOv');
+    if(rb)rb.addEventListener('click',function(){ if(confirm('Undo all your nav-log edits (deleted / inserted points and DIR TO) for this flight?')){ navSetOv(O,{del:[],ins:[],dir:''}); renderNavLog(); } });
+    host.querySelectorAll('.nl-menu').forEach(function(b){
+      b.addEventListener('click',function(ev){
+        ev.stopPropagation(); closeNlMenu();
+        var wp=b.getAttribute('data-wp');
+        var m=document.createElement('div'); m.id='nlMenu';
+        m.style.cssText='position:absolute;z-index:60;background:#16233d;border:1px solid #2f4368;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.5);padding:6px;min-width:190px';
+        var mk=function(label,fn){ var x=document.createElement('button'); x.type='button'; x.textContent=label;
+          x.style.cssText='display:block;width:100%;text-align:left;background:none;border:0;color:#dfeaff;padding:9px 10px;font-size:13px;cursor:pointer;border-radius:6px';
+          x.addEventListener('mouseenter',function(){x.style.background='#1e2f4e';});
+          x.addEventListener('mouseleave',function(){x.style.background='none';});
+          x.addEventListener('click',function(e2){ e2.stopPropagation(); closeNlMenu(); fn(); }); return x; };
+        var cur=navOv(O);
+        m.appendChild(mk('›  Insert DIR TO', function(){ cur.dir=(cur.dir===wp?'':wp); navSetOv(O,cur); renderNavLog(); }));
+        m.appendChild(mk('+  Create User Point After', function(){
+          var nm=prompt('Name of the new waypoint to insert after '+wp+':'); nm=(nm||'').trim().toUpperCase();
+          if(!nm)return; cur.ins.push({after:wp,name:nm}); navSetOv(O,cur); renderNavLog(); }));
+        m.appendChild(mk('✗  Delete Waypoint', function(){
+          if(!confirm('Remove '+wp+' from your nav log? (Your OFP is not changed.)'))return;
+          if(cur.del.indexOf(wp)<0)cur.del.push(wp); navSetOv(O,cur); renderNavLog(); }));
+        document.body.appendChild(m);
+        var r=b.getBoundingClientRect();
+        m.style.top=(window.scrollY+r.bottom+4)+'px';
+        m.style.left=Math.max(8,Math.min(window.scrollX+r.left-150, window.scrollX+window.innerWidth-210))+'px';
+      });
+    });
   }
+  function closeNlMenu(){ var m=document.getElementById('nlMenu'); if(m&&m.parentNode)m.parentNode.removeChild(m); }
+  document.addEventListener('click',closeNlMenu);
   window.__nlTog=function(i){ var d=document.getElementById('nlDet'+i); if(d)d.style.display=(d.style.display==='none'?'table-row':'none'); };
   window.__renderNavLog=renderNavLog;
   // Merge an AI nav-log (reliable, from OFP images) into the loaded OFP's waypoints — used to enrich the Qatar
@@ -3145,7 +3340,13 @@ window.__updateSubrail=function(){
     var S=function(v){return (v!=null&&v!=='')?String(v):null;};
     var nlm={}; navlog.forEach(function(r){ if(!r||!r.wpt)return; var k=String(r.wpt).toUpperCase().trim(); var eetMin=null; var em=/^(\d{1,2}):(\d{2})$/.exec(String(r.eet||'')); if(em)eetMin=+em[1]*60+ +em[2]; nlm[k]={cum:(r.cumDistNM!=null&&!isNaN(+r.cumDistNM))?+r.cumDistNM:null,eet:eetMin,fuel:(r.fuelRemKg!=null&&!isNaN(+r.fuelRemKg))?+r.fuelRemKg:null,fl:S(r.fl),oat:S(r.oat),wind:S(r.wind),mora:S(r.mora),isaDev:S(r.isaDev),tropo:S(r.tropo),airway:S(r.airway)}; });
     O.routeWps.forEach(function(w){ var m=nlm[String(w.name).toUpperCase().trim()]; if(m){ if(m.fuel!=null)w.fuel=m.fuel; if(m.eet!=null)w.elapsed=m.eet; if(m.cum!=null)w.ofpCumNM=m.cum; if(m.fl)w.fl=m.fl; if(m.oat)w.oat=m.oat; if(m.wind)w.wind=m.wind; if(m.mora)w.mora=m.mora; if(m.isaDev)w.isaDev=m.isaDev; if(m.tropo)w.tropo=m.tropo; if(m.airway)w.airway=m.airway; } });
-    O.navlog=navlog;
+    // If a reliable offline nav log already exists (Qatar), keep its order/names/dist/time/fuel and only ENRICH it with AI detail fields — don't replace it with a possibly less-complete AI list.
+    if(Array.isArray(O.navlog) && O.navlog.length>=2){
+      var aim={}; navlog.forEach(function(r){ if(r&&r.wpt)aim[String(r.wpt).toUpperCase().trim()]=r; });
+      O.navlog.forEach(function(w){ var r=aim[String(w.wpt||'').toUpperCase().trim()]; if(!r)return;
+        ['oat','isaDev','mora','tropo','fl','gs','ias','component','shear','airspace','freq','cdistNM','rdistNM','lat','lon','rtime','ctm'].forEach(function(f){ if((w[f]==null||w[f]==='')&&r[f]!=null&&r[f]!=='')w[f]=r[f]; });
+        if((!w.wind)&&r.wind)w.wind=r.wind; });
+    } else { O.navlog=navlog; }
   };
   window.addEventListener('ofp-parsed',function(){ try{ renderNavLog(); }catch(e){} });
   (function(){ var e=document.getElementById('d_to'); if(e)e.addEventListener('change',function(){ try{ renderNavLog(); }catch(e){} }); })();
@@ -3403,7 +3604,8 @@ window.__updateSubrail=function(){
   async function fr24(cs){
     // Primary: official paid FR24 API through the Worker (/fr24/lookup)
     try{
-      var j=await acJ(SM_WORKER+'/fr24/lookup?callsign='+encodeURIComponent(cs));
+      var _lic='&device='+encodeURIComponent(localStorage.getItem('sm_dev')||'')+'&code='+encodeURIComponent(localStorage.getItem('sm_lic')||'');
+      var j=await acJ(SM_WORKER+'/fr24/lookup?callsign='+encodeURIComponent(cs)+_lic);
       var p=j&&j.ok&&j.data&&j.data.data&&j.data.data[0];
       if(p){ return {
         airline:(p.operating_as||p.painted_as)?{name:(p.operating_as||p.painted_as)}:null,
@@ -3582,10 +3784,11 @@ window.__updateSubrail=function(){
       $('docCurrent').innerHTML='Current: <a href="#" id="docOpenCur">'+escF(d.name)+'</a>';
       const oc=$('docOpenCur');if(oc)oc.onclick=ev=>{ev.preventDefault();docOpenView(sel);};});
   }
-  $('d_docs').addEventListener('click',()=>{$('docsModal').classList.add('open');docRender();});
-  if($('railDocs'))$('railDocs').addEventListener('click',()=>{$('docsModal').classList.add('open');docRender();});
-  $('docsClose').addEventListener('click',()=>$('docsModal').classList.remove('open'));
-  $('docsModal').addEventListener('click',e=>{if(e.target===$('docsModal'))$('docsModal').classList.remove('open');});
+  window.__docRender=docRender;
+  $('d_docs').addEventListener('click',()=>{if(window.__goView){window.__goView('docs');window.__goDocsTab('my');}});
+  if($('railDocs'))$('railDocs').addEventListener('click',()=>{if(window.__goView){window.__goView('docs');window.__goDocsTab('my');}});
+  if($('docsClose'))$('docsClose').addEventListener('click',()=>$('docsModal').classList.remove('open'));
+  if($('docsModal'))$('docsModal').addEventListener('click',e=>{if(e.target===$('docsModal'))$('docsModal').classList.remove('open');});
   $('docsAdd').addEventListener('change',()=>{if($('docsAdd').files.length){docAdd($('docsAdd').files);$('docsAdd').value='';}});
 
   updateDocCurrent();
@@ -3644,11 +3847,24 @@ window.__updateSubrail=function(){
     function render(){ var a=load(), el=$('na_list'); if(!el)return;
       if(!a.length){ el.innerHTML='<div class="hint">No named announcements yet.</div>'; return; }
       el.innerHTML=a.map(function(x,i){ var r=routeOf(x.name); var badge=r==='welcome'?'<span style="color:#7be0a4">→ Departure Welcome PA</span>':(r==='descent'?'<span style="color:#7ec8ff">→ Arrival Descent PA</span>':'');
-        return '<div style="border:1px solid #2a3c5e;border-radius:8px;padding:8px 10px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="color:#fff">'+esc2(x.name)+'</b> <span style="font-size:11px">'+badge+'</span></div><div style="color:#9fb3d1;font-size:12px;margin-top:3px;white-space:pre-wrap;max-height:60px;overflow:hidden">'+esc2((x.text||'').slice(0,180))+'</div><div style="margin-top:6px;display:flex;gap:8px"><button type="button" class="ghost" data-copy="'+i+'" style="padding:5px 12px;font-size:12px">Copy</button><button type="button" class="ghost" data-load="'+i+'" style="padding:5px 12px;font-size:12px">Edit</button><button type="button" class="ghost" data-del="'+i+'" style="padding:5px 12px;font-size:12px;color:#ffb0b0;border-color:#633">Delete</button></div></div>';
+        return '<div style="border:1px solid #2a3c5e;border-radius:8px;padding:8px 10px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="color:#fff">'+esc2(x.name)+'</b> <span style="font-size:11px">'+badge+'</span></div><div style="color:#9fb3d1;font-size:12px;margin-top:3px;white-space:pre-wrap;max-height:60px;overflow:hidden">'+esc2((x.text||'').slice(0,180))+'</div><div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap"><button type="button" data-ai="'+i+'" style="padding:5px 12px;font-size:12px;background:#12324a;border:1px solid #2f8bff;color:#cfe6ff">Sky Matrix AI</button><button type="button" class="ghost" data-copy="'+i+'" style="padding:5px 12px;font-size:12px">Copy</button><button type="button" class="ghost" data-load="'+i+'" style="padding:5px 12px;font-size:12px">Edit</button><button type="button" class="ghost" data-del="'+i+'" style="padding:5px 12px;font-size:12px;color:#ffb0b0;border-color:#633">Delete</button></div><div data-fillbox="'+i+'" style="display:none;margin-top:8px"></div></div>';
       }).join('');
       el.querySelectorAll('[data-copy]').forEach(function(b){b.onclick=function(){var t=(load()[+b.dataset.copy]||{}).text||'';if(navigator.clipboard)navigator.clipboard.writeText(t);var m=$('na_msg');if(m){m.textContent='Copied ✓';setTimeout(function(){m.textContent='';},1200);}};});
       el.querySelectorAll('[data-load]').forEach(function(b){b.onclick=function(){var x=load()[+b.dataset.load];if(x){$('na_name').value=x.name;$('na_text').value=x.text;}};});
       el.querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(){var a=load();a.splice(+b.dataset.del,1);store(a);syncRoutes();render();};});
+      el.querySelectorAll('[data-ai]').forEach(function(b){b.onclick=function(){
+        var i=+b.dataset.ai, x=load()[i]; if(!x)return;
+        var box=el.querySelector('[data-fillbox="'+i+'"]'); if(!box)return;
+        box.style.display='block'; box.textContent='Sky Matrix AI is filling this with the current flight…';
+        if(!window.__aiFillAnnouncement){ box.textContent='Sky Matrix AI needs internet.'; return; }
+        window.__aiFillAnnouncement(x.text).then(function(t){
+          box.innerHTML='';
+          var ta=document.createElement('textarea'); ta.value=t||''; ta.style.cssText='width:100%;min-height:130px;background:#0f1b31;border:1px solid #2a3c5e;color:#dce8ff;border-radius:8px;padding:8px;font-family:var(--sans);font-size:13px';
+          var cp=document.createElement('button'); cp.type='button'; cp.className='ghost'; cp.textContent='Copy'; cp.style.cssText='margin-top:6px;padding:5px 12px;font-size:12px';
+          cp.onclick=function(){try{navigator.clipboard.writeText(ta.value);}catch(e){}};
+          box.appendChild(ta); box.appendChild(cp);
+        }).catch(function(){ box.textContent='Sky Matrix AI unavailable (needs internet and the current flight loaded).'; });
+      };});
     }
     if($('na_save'))$('na_save').addEventListener('click',function(){
       var name=($('na_name').value||'').trim(), text=($('na_text').value||'').trim();
@@ -3669,6 +3885,15 @@ window.__updateSubrail=function(){
     if($('paModalTitle'))$('paModalTitle').textContent=mode==='welcome'?'Welcome PA':'Descent PA';
     if(mode==='welcome')buildPAWelcome();else buildPADescent();
     if($('paModal'))$('paModal').classList.add('open');
+    // Auto-populate the routed Welcome/Descent announcement with the CURRENT flight (fills blanks + fixes wording)
+    try{
+      var ta=mode==='welcome'?$('paText'):$('paTextD');
+      var raw=ta?(ta.value||''):'';
+      if(ta && raw.trim() && /_{2,}|\[[^\]]+\]/.test(raw) && window.__aiFillAnnouncement){
+        var prev=raw; ta.value='Sky Matrix AI is personalising this for the current flight…';
+        window.__aiFillAnnouncement(prev).then(function(t){ ta.value=(t&&t.trim())?t:prev; }).catch(function(){ ta.value=prev; });
+      }
+    }catch(e){}
   }
   if($('pa_welcome_btn'))$('pa_welcome_btn').addEventListener('click',function(){openPA('welcome');});
   if($('pa_descent_btn'))$('pa_descent_btn').addEventListener('click',function(){openPA('descent');});
@@ -3737,6 +3962,11 @@ window.__updateSubrail=function(){
       L.push('Speaker name and rank: '+g('ap_name')+(g('ap_pos')?(' — '+g('ap_pos')):''));
       return L.filter(function(x){return !/:\s*$/.test(x);}).join('\n');   // omit blank fields so the AI leaves nothing dangling
     }
+    // Reusable: fill an announcement's blanks with the current flight + fix spelling/grammar. Returns a promise of the final text.
+    window.__aiFillAnnouncement=function(template){
+      return fetch(AN_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({template:String(template||'').slice(0,8000), data:flightData(), lang:(lang&&lang.value)||'English', proofread:true, device:(localStorage.getItem('sm_dev')||''), code:(localStorage.getItem('sm_lic')||'')})})
+        .then(function(r){return r.json();}).then(function(j){ if(j&&j.ok)return j.text||''; throw new Error((j&&j.error)||'unavailable'); });
+    };
     go.addEventListener('click',function(){
       var t=(tmpl.value||'').trim();
       if(t.length<10){ setM('Type your announcement (with ____ or [BRACKETS] blanks) or upload a template first.'); return; }
@@ -3824,6 +4054,8 @@ window.__updateSubrail=function(){
   }
   function applyCrew(crew){
     crew=crew||{}; var fd=crew.flightDeck||[], cb=crew.cabin||[], msg=[];
+    try{ window.__lastCrew=crew; localStorage.setItem('sm_crew',JSON.stringify(crew)); }catch(e){}
+    try{ if(window.__renderInfo)window.__renderInfo(); }catch(e){}
     var capt=fd.filter(function(x){return /capt/i.test(x.rank||'');})[0]||fd[0];
     var fo=fd.filter(function(x){return /first|second|relief/i.test(x.rank||'');})[0]||(fd[1]||null);
     var csd=cb[0];
@@ -3962,8 +4194,9 @@ window.__updateSubrail=function(){
   var IDS=Object.keys(LBL);
   window.__snapAI=function(){ setTimeout(function(){ try{ var O=window.__OFP||{}; window.__aiSnap={ air:(String(O.fltCs||'').match(/^[A-Z]+/)||[''])[0]||'', dep:O.dep||'', dest:O.dest||'', vals:{} }; IDS.forEach(function(id){ var e=document.getElementById(id); if(e)window.__aiSnap.vals[id]=(e.value||''); }); }catch(_){} },500); };
   function teachSubmit(note,bar){
+    // Teaching the AI is an ADMIN-only action. Never prompt a pilot for the master admin token: if this device has
+    // not been set up as an admin device, the correction is simply skipped.
     var tok=''; try{tok=localStorage.getItem('sm_admin_tok')||'';}catch(e){}
-    if(!tok){ tok=((window.prompt&&window.prompt('Enter your admin token to save Sky Matrix AI corrections (asked once, then remembered):'))||'').trim(); if(tok){try{localStorage.setItem('sm_admin_tok',tok);}catch(e){}} }
     if(!tok){ if(bar&&bar.parentNode)bar.parentNode.removeChild(bar); return; }
     fetch('https://skymatrix-trial.skymatrix.workers.dev/ofp/correct',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':tok},body:JSON.stringify({note:note})})
       .then(function(r){return r.json();}).then(function(j){ if(bar){ bar.innerHTML=(j&&j.ok)?'<span style="color:#7be0a4">Taught Sky Matrix AI &#10003; — it will apply this next time.</span>':'<span style="color:#ff9aa2">'+esc((j&&j.error)||'Failed (check admin token).')+'</span>'; setTimeout(function(){if(bar.parentNode)bar.parentNode.removeChild(bar);},2600); } })
@@ -4068,6 +4301,81 @@ try{
     }
   }
 }catch(e){}
+</script>
+<script>
+/* ===== 11.docx navigation restructure — runtime re-parenting (preserves all existing handlers) ===== */
+(function(){
+  function $(id){return document.getElementById(id);}
+  function E(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function clkUTC(){ var ct=$('clkTime'); if(ct&&/\d\d:\d\d:\d\d/.test(ct.textContent))return ct.textContent.replace(/Z.*/,'').trim(); var n=new Date(); function p(x){return String(x).padStart(2,'0');} return p(n.getUTCHours())+':'+p(n.getUTCMinutes())+':'+p(n.getUTCSeconds()); }
+  function run(){
+   try{
+    /* ---- Utilities: Aircraft Lookup tab (move the lookup card out of the Time page) ---- */
+    var cldg=$('view-cldg');
+    if(cldg && !$('cd-ac')){
+      var wrapAc=document.createElement('div'); wrapAc.className='subview2'; wrapAc.id='cd-ac';
+      var acGet=$('ac_get'), acCard=acGet?acGet.closest('.fcard'):null;
+      if(acCard){ wrapAc.appendChild(acCard); } else { wrapAc.innerHTML='<div class="fcard"><h2>Aircraft / flight lookup</h2><p class="hint">Unavailable.</p></div>'; }
+      cldg.appendChild(wrapAc);
+    }
+    /* ---- PA page: merge the crew roster reader into the top of PA ---- */
+    var pa=$('cd-pa'), crew=$('cd-crew');
+    if(pa && crew){ var cc=crew.querySelector('.fcard'); if(cc)pa.insertBefore(cc,pa.firstChild); if(crew.parentNode)crew.parentNode.removeChild(crew); }
+    /* ---- Docs view: pull in Checklist, Admin Docs and the My-Docs file controls ---- */
+    (function(){ var d=$('docs-cl'), s=$('cd-cl'); if(d&&s){ while(s.firstChild)d.appendChild(s.firstChild); if(s.parentNode)s.parentNode.removeChild(s);} })();
+    (function(){ var d=$('docs-adoc'), s=$('cd-adoc'); if(d&&s){ while(s.firstChild)d.appendChild(s.firstChild); if(s.parentNode)s.parentNode.removeChild(s);} })();
+    (function(){ var m=$('docsMyMount'), a=$('docsAdd'), l=$('docsList'); if(m&&a&&l){ a.style.display=''; m.appendChild(a); m.appendChild(l); if(window.__docRender)try{window.__docRender();}catch(e){} } })();
+    /* ---- Inflight Display → Time tab: bring In-flight Rest cards to the top ---- */
+    var rest=$('view-rest'), live=$('disp-live');
+    if(rest && live){ var kids=Array.prototype.slice.call(rest.children); var ref=live.firstChild; kids.forEach(function(n){ live.insertBefore(n,ref); }); }
+    /* ---- Time marker card ---- */
+    if(live && !$('tm_card')){
+      var tm=document.createElement('div'); tm.className='fcard'; tm.id='tm_card';
+      tm.innerHTML='<h2>Time marker</h2><p class="fsub">Stamp the current UTC against any event and keep a running list.</p>'
+        +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">'
+        +'<input id="tm_label" type="text" placeholder="Label (e.g. TOC, oceanic entry)" style="flex:1;min-width:160px">'
+        +'<button id="tm_mark" type="button">Mark now (UTC)</button>'
+        +'<button id="tm_clr" type="button" class="ghost">Clear all</button></div><div id="tm_list"></div>';
+      live.appendChild(tm);
+      var marks=[]; try{marks=JSON.parse(localStorage.getItem('sm_timemarks')||'[]');}catch(e){}
+      function sv(){try{localStorage.setItem('sm_timemarks',JSON.stringify(marks));}catch(e){}}
+      function rn(){ var el=$('tm_list'); if(!el)return; if(!marks.length){el.innerHTML='<p class="hint">No marks yet.</p>';return;}
+        el.innerHTML=marks.map(function(m,i){return '<div class="docrow"><span class="nm">'+m.t+'Z — '+((m.l||'(no label)'))+'</span><button class="del" data-i="'+i+'">Delete</button></div>';}).join('');
+        el.querySelectorAll('[data-i]').forEach(function(b){b.onclick=function(){marks.splice(+b.dataset.i,1);sv();rn();};}); }
+      var b1=$('tm_mark'); if(b1)b1.onclick=function(){ marks.unshift({t:clkUTC(),l:(($('tm_label').value||'').trim())}); $('tm_label').value=''; sv(); rn(); };
+      var b2=$('tm_clr'); if(b2)b2.onclick=function(){ if(confirm('Clear all time marks?')){marks=[];sv();rn();} };
+      rn();
+    }
+    /* ---- OFP doc tab ---- */
+    window.__renderDocsOfp=function(){ var box=$('docsOfpBox'); if(!box)return; var o=window.__OFP;
+      if(o){ box.innerHTML='<p style="color:#dce8ff">Flight <b>'+E((o.fltCs||o.flt||'')||'—')+'</b> &middot; '+E((o.dep||'—')+' → '+(o.dest||'—'))+(o.tripT?(' &middot; '+E(o.tripT)):'')+'</p>'
+          +'<p class="hint">This is the OFP that was loaded for the current flight. Open it from the <b>My Docs</b> tab if you saved it there, or re-load it on the Load tab.</p>'; }
+      else { box.innerHTML='<p class="hint">No OFP document loaded yet. Load an OFP on the Load tab.</p>'; }
+    };
+    /* ---- INFO page: route synthesis + crew ---- */
+    window.__renderInfo=function(){ var el=$('out-info'); if(!el)return; var o=window.__OFP; var H='';
+      if(!o){ el.innerHTML='<div class="fcard"><h2>Flight info</h2><p class="hint">Load an OFP to see the route synthesis and crew.</p></div>'; return; }
+      var wps=''; try{ var arr=(o.routeWps&&o.routeWps.length?o.routeWps:(o.route||[])); wps=arr.map(function(w){return E(w.name||w.id||w.ident||'');}).filter(Boolean).join('  →  '); }catch(e){}
+      var syn='Flight '+E((o.fltCs||o.flt||'')||'')+' from '+E(o.dep||'—')+' to '+E(o.dest||'—')
+        +(o.altn?(' with alternate '+E(o.altn)):'')+'. '
+        +(o.tripT?('Planned trip time '+E(o.tripT)+'. '):'')
+        +(o.highFL?('Highest planned level FL'+E(o.highFL)+'. '):'')
+        +(o.routeTotNM?('Great-circle plan distance about '+E(o.routeTotNM)+' NM. '):'');
+      H+='<div class="fcard"><h2>Route synthesis</h2><p style="line-height:1.65;color:#dce8ff">'+syn+'</p>'
+        +(wps?('<p class="hint" style="margin-top:8px">Waypoints: '+wps+'</p>'):'')+'</div>';
+      var cr=window.__lastCrew; if(!cr){ try{cr=JSON.parse(localStorage.getItem('sm_crew')||'null');}catch(e){} }
+      var crH='';
+      if(cr){ var fd=cr.flightDeck||[], cb=cr.cabin||[];
+        function row(x){return '<tr><td style="opacity:.7">'+E(x.rank||'')+'</td><td>'+E(x.name||'')+'</td></tr>';}
+        if(fd.length||cb.length){ crH='<table class="ft"><thead><tr><th>Rank</th><th>Name</th></tr></thead><tbody>'
+          +fd.map(row).join('')+cb.map(row).join('')+'</tbody></table>'; } }
+      H+='<div class="fcard"><h2>Crew</h2>'+(crH||'<p class="hint">Upload a crew roster in <b>Utilities → PA</b> to show the crew here.</p>')+'</div>';
+      el.innerHTML=H;
+    };
+   }catch(e){ if(window.console)console.warn('restructure failed',e); }
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run); else setTimeout(run,0);
+})();
 </script>
 </body>
 </html>

@@ -90,7 +90,7 @@ const OFP_SYSTEM = `You are an expert airline flight dispatcher and OFP analyst.
  "tropopause": {"fl": lowest tropopause height or FL on the route, "wpt": waypoint where it is lowest, "eet": elapsed time from STD to that waypoint "HH:MM" if the nav log shows it},
  "remarks": short dispatcher remarks,
  "route": full ATS route string exactly as printed (airways + waypoints),
- "navlog": [{"wpt":waypoint/fix name as printed,"cumDistNM":cumulative track distance flown to this fix in NM (the running/total distance column, not the leg distance),"eet":cumulative elapsed time from take-off to this fix as "HH:MM","fuelRemKg":planned fuel REMAINING on board at this fix in KILOGRAMS,"fl":planned flight level / altitude at this fix as printed (e.g. "350"),"oat":outside-air temperature at this fix in °C as printed (e.g. "-51" or "M51"),"wind":wind at this fix as "DDD/SSS" (e.g. "358/050"),"isaDev":ISA deviation at this fix as printed (e.g. "+3" or "P03"),"mora":minimum off-route/grid altitude (MORA) for this fix/segment if shown (e.g. "FL025"),"tropo":tropopause height/FL at this fix if shown,"airway":the airway or route segment leading TO this fix as printed (e.g. "DCT" or an airway like "N601")}]  // Read the NAVIGATION LOG / route table row-by-row across the pages provided. Capture as many waypoints as are legible, in order, with every column that is printed for that row (distance, time, fuel, FL, OAT, wind, ISA dev, MORA, tropopause, airway). If a column is missing for a row, use null for that field. Omit navlog entirely only if no nav-log table is visible.,
+ "navlog": [{"wpt":waypoint/fix name as printed,"cumDistNM":cumulative track distance flown to this fix in NM (the running/total distance column, not the leg distance),"eet":cumulative elapsed time from take-off to this fix as "HH:MM","fuelRemKg":planned fuel REMAINING on board at this fix in KILOGRAMS,"fl":planned flight level / altitude at this fix as printed (e.g. "350"),"oat":outside-air temperature at this fix in °C as printed (e.g. "-51" or "M51"),"wind":wind at this fix as "DDD/SSS" (e.g. "358/050"),"isaDev":ISA deviation at this fix as printed (e.g. "+3" or "P03"),"mora":minimum off-route/grid altitude (MORA) for this fix/segment if shown (e.g. "FL025"),"tropo":tropopause height/FL at this fix if shown,"airway":the airway or route segment leading TO this fix as printed (e.g. "DCT" or an airway like "N601"),"ias":planned IAS in knots if a speed column is shown,"gs":ground speed in knots if shown,"component":wind component as printed (e.g. "TL038" or "HD020" or "P07"),"shear":wind-shear value if shown,"lat":latitude in decimal degrees (South negative) if the fix's lat/long is printed,"lon":longitude in decimal degrees (West negative) if printed,"ittImt":the true/magnitude track pair "ITT/IMT" as printed (e.g. "132/132"),"cdistNM":cumulative distance column if printed separately from cumDistNM,"rdistNM":remaining distance to destination in NM if shown,"airspace":FIR/airspace name for this segment if shown,"freq":navaid frequency for this fix if shown,"ctm":the cumulative-time (CTM) column as "HH:MM" if shown,"rtime":remaining time to destination as "HH:MM" if shown}]  // Read the NAVIGATION LOG / route table row-by-row across the pages provided. Capture as many waypoints as are legible, in order, with every column that is printed for that row (distance, time, fuel, FL, OAT, wind, ISA dev, MORA, tropopause, airway). If a column is missing for a row, use null for that field. Omit navlog entirely only if no nav-log table is visible.,
  "depRwy": planned departure runway e.g. "07R",
  "arrRwy": planned or expected arrival runway,
  "sid": SID / departure procedure name if shown,
@@ -824,8 +824,7 @@ export default {
     if(url.pathname === "/ofp/correct" && request.method === "POST"){
       // admin-only: corrections are fed into every future /ofp/parse prompt, so keep this curated
       // (prevents anyone from poisoning the shared AI context). Pass the admin token to add a correction.
-      const tok = request.headers.get("x-admin-token") || (new URL(request.url)).searchParams.get("token") || "";
-      if(!env.ADMIN_TOKEN || tok !== env.ADMIN_TOKEN) return json({ok:false, error:"unauthorized"}, 401);
+      if(!tokenOk(env, request)) return json({ok:false, error:"unauthorized"}, 401);
       let body={}; try{ body = await request.json(); }catch(e){}
       const note = (body.note||"").toString().replace(/\s+/g," ").slice(0,300);
       if(!note) return json({ok:false, error:"empty note"}, 400);
@@ -836,8 +835,7 @@ export default {
     }
     // ---- admin: UPLOAD an OFP to teach the AI a new airline. The AI derives a concise format hint from the OFP text and stores it in the correction library. ----
     if(url.pathname === "/ofp/learn" && request.method === "POST"){
-      const tok = request.headers.get("x-admin-token") || url.searchParams.get("token") || "";
-      if(!env.ADMIN_TOKEN || tok !== env.ADMIN_TOKEN) return json({ok:false, error:"unauthorized"}, 401);
+      if(!tokenOk(env, request)) return json({ok:false, error:"unauthorized"}, 401);
       if(!env.ANTHROPIC_API_KEY) return json({ok:false, error:"AI not configured yet."}, 503);
       track(ctx, env, "ai");
       let body={}; try{ body = await request.json(); }catch(e){}
@@ -856,8 +854,7 @@ export default {
     }
     // ---- admin: view / replace the correction library that feeds every OFP read ----
     if(url.pathname === "/ofp/examples" && (request.method === "GET" || request.method === "POST")){
-      const tok = request.headers.get("x-admin-token") || url.searchParams.get("token") || "";
-      if(!env.ADMIN_TOKEN || tok !== env.ADMIN_TOKEN) return json({ok:false, error:"unauthorized"}, 401);
+      if(!tokenOk(env, request)) return json({ok:false, error:"unauthorized"}, 401);
       if(request.method === "POST"){ // replace the whole library (used to delete/edit entries)
         let body={}; try{ body = await request.json(); }catch(e){}
         const list = (body.examples||"").toString().split("\n").map(function(s){return s.replace(/^\s*-\s*/,"").trim();}).filter(Boolean);
@@ -872,6 +869,13 @@ export default {
     // ---- Flightradar24 proxy: keeps the paid FR24 token server-side (app can't call FR24 directly: key + CORS) ----
     if(url.pathname === "/fr24/lookup" && request.method === "GET"){
       if(!env.FR24_TOKEN) return json({ok:false, error:"FR24 lookup not configured yet."}, 503);
+      // Gate the PAID FR24 quota behind an active licence + a per-device rate limit (previously open to anyone).
+      const _fdev = (url.searchParams.get("device")||"").trim().toUpperCase();
+      const _fcode = (url.searchParams.get("code")||"").toString();
+      if(!tokenOk(env, request)){
+        if(!(await licOk(env, {device:_fdev, code:_fcode}))) return json({ok:false, error:"This feature needs an active Sky Matrix licence."}, 403);
+        if(!(await rateOk(env, "fr24:"+_fdev, 60, 3600))) return json({ok:false, error:"Too many aircraft lookups from this device. Please try again later."}, 429);
+      }
       track(ctx, env, "fr24");
       const cs = (url.searchParams.get("callsign")||"").trim().toUpperCase();
       const reg = (url.searchParams.get("reg")||"").trim().toUpperCase();
@@ -897,8 +901,9 @@ export default {
       const template = (body.template||"").toString().slice(0, 8000);
       const data = (body.data||"").toString().slice(0, 2500);
       const lang = (body.lang||"English").toString().slice(0, 60);
+      const proofread = !!body.proofread;
       if(template.trim().length < 10) return json({ok:false, error:"No announcement template text supplied."}, 400);
-      const sys = "You are a cabin-announcement writer for airline crew. You receive an announcement TEMPLATE containing blanks/placeholders (underscores, [BRACKETS], {braces}, XXXX, dotted lines, or obvious gaps) and a set of FLIGHT DATA & PREFERENCES. Fill every blank with the correct value from the data, keeping the template's wording, tone and structure exactly — only fill the gaps, never rewrite. If a needed value is genuinely missing from the data, leave a clearly marked [___] gap rather than inventing it. Then give the finished announcement in " + lang + ". Return ONLY the finished announcement text, no preamble, no notes.";
+      const sys = "You are a cabin-announcement writer for airline crew. You receive an announcement TEMPLATE containing blanks/placeholders (underscores, [BRACKETS], {braces}, XXXX, dotted lines, or obvious gaps) and a set of FLIGHT DATA & PREFERENCES. Fill every blank with the correct value from the data, keeping the template's wording, tone and structure exactly — only fill the gaps, never rewrite. " + (proofread ? "Also silently correct any spelling, grammar or punctuation mistakes in the wording without changing its meaning or style. " : "") + "If a needed value is genuinely missing from the data, leave a clearly marked [___] gap rather than inventing it. Then give the finished announcement in " + lang + ". Return ONLY the finished announcement text, no preamble, no notes.";
       let out; try{ out = await anthropic(env, sys, "TEMPLATE:\n" + template + "\n\nFLIGHT DATA & PREFERENCES:\n" + data); }
       catch(e){ return json({ok:false, error:"AI failed: "+e.message}, 502); }
       return json({ok:true, text: out.trim()});
@@ -1151,4 +1156,19 @@ export default {
       due.sort(function(a,b){ return a._d - b._d; });
       const rows = due.map(function(s){
         const when = s._d<0 ? ("OVERDUE by "+(-s._d)+" day(s)") : (s._d===0 ? "due today" : ("in "+s._d+" day(s)"));
-        return "<tr><td style='padding:6px 10px;border:1px solid #ddd'>"+he(s.name)+"</td><td style='padding:6px 10px;border:1px solid #ddd'>"+he(s.cost)+"</td><td 
+        return "<tr><td style='padding:6px 10px;border:1px solid #ddd'>"+he(s.name)+"</td><td style='padding:6px 10px;border:1px solid #ddd'>"+he(s.cost)+"</td><td style='padding:6px 10px;border:1px solid #ddd'>"+he(s.due)+"</td><td style='padding:6px 10px;border:1px solid #ddd'>"+he(when)+"</td></tr>";
+      }).join("");
+      const html = "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#12233f\">"
+        + "<h2 style=\"margin:0 0 10px\">Sky Matrix &mdash; service reminders</h2>"
+        + "<p style=\"margin:0 0 12px\">These tracked services are due within the next 7 days:</p>"
+        + "<table style=\"border-collapse:collapse\">"
+        + "<tr><th style='padding:6px 10px;border:1px solid #ddd;text-align:left'>Service</th>"
+        + "<th style='padding:6px 10px;border:1px solid #ddd;text-align:left'>Cost</th>"
+        + "<th style='padding:6px 10px;border:1px solid #ddd;text-align:left'>Due</th>"
+        + "<th style='padding:6px 10px;border:1px solid #ddd;text-align:left'>Status</th></tr>"
+        + rows + "</table></div>";
+      const to = (env.REMINDER_EMAIL||"").trim();
+      if(to) await sendMail(env, to, "Sky Matrix - service reminder ("+due.length+" due)", html);
+    }catch(e){}
+  }
+}; 
