@@ -321,6 +321,45 @@ async function emailUsedByOther(env, email, device){
   }catch(e){}
   return "";
 }
+// Return EVERY other device currently carrying this email (not just the first).
+async function devicesWithEmail(env, email, exceptDevice){
+  const out=[];
+  try{
+    email=(email||"").toLowerCase(); if(!email) return out;
+    let cursor, legacyGets=0;
+    do{
+      const list = await env.TRIALS.list({prefix:"trial:", cursor});
+      for(const k of list.keys){
+        const dev=k.name.slice(6); if(dev===exceptDevice) continue;
+        let em="";
+        if(k.metadata && k.metadata.e!=null){ em=String(k.metadata.e).toLowerCase(); }
+        else if(legacyGets<300){ legacyGets++; try{ em=((JSON.parse((await env.TRIALS.get(k.name))||"{}").email)||"").toLowerCase(); }catch(e){} }
+        if(em && em===email) out.push(dev);
+      }
+      cursor = list.list_complete ? null : list.cursor;
+    } while(cursor);
+  }catch(e){}
+  return out;
+}
+// ONE email = ONE active device, even for admin grants. When an admin moves a licence to another device, the email is
+// released from every other device and those licences are expired, so two devices can never stay active on one email.
+async function releaseEmailFromOtherDevices(env, email, keepDevice){
+  const moved=[];
+  const others = await devicesWithEmail(env, email, keepDevice);
+  for(const dev of others){
+    try{
+      const s = await env.TRIALS.get("trial:"+dev); if(!s) continue;
+      let rec; try{ rec=JSON.parse(s); }catch(e){ continue; }
+      rec.email = "";                  // free the email
+      rec.expDay = 0;                  // expire the superseded licence
+      rec.supersededBy = keepDevice;
+      rec.supersededAt = Date.now();
+      await putTrial(env, dev, rec);
+      moved.push(dev);
+    }catch(e){}
+  }
+  return moved;
+}
 async function issueTrial(env, device, email, {admin=false, days=null, plan=""} = {}){
   device = device.toUpperCase();
   if(!/^SKM-[A-Z0-9]{6}$/.test(device)) return {ok:false, reason:"baddevice"};
@@ -345,9 +384,15 @@ async function issueTrial(env, device, email, {admin=false, days=null, plan=""} 
   const { code, expDay } = await signCode(env, device, d);
   const rec = { email: email||"", expDay, at: Date.now(), admin: !!admin, plan: plan || planLabel("", null, d), source: admin?"admin/paid":"self-trial" };
   await putTrial(env, device, rec);
-  if(emNorm){ try{ await env.TRIALS.put("email:"+emNorm, device); }catch(e){} }   // bind (or admin-rebind) email -> device
+  // ONE email = ONE active device. An admin grant MOVES the licence: any other device on this email is expired and
+  // has the email cleared, so a second device is never left active (previously admin grants bypassed this entirely).
+  let movedFrom = [];
+  if(emNorm){
+    try{ movedFrom = await releaseEmailFromOtherDevices(env, emNorm, device); }catch(e){}
+    try{ await env.TRIALS.put("email:"+emNorm, device); }catch(e){}   // bind (or admin-rebind) email -> device
+  }
   if(email) await sendMail(env, email, "Sky Matrix — your access code", codeEmailHtml(env, device, code, expDay));
-  return {ok:true, code, expDay, days:d};
+  return {ok:true, code, expDay, days:d, movedFrom};
 }
 
 /* ---- usage counters for your paid services (AI + FR24), so the admin console can show consumption ---- */

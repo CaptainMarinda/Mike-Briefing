@@ -1042,6 +1042,18 @@ var LIC_PUBKEY = "BMxAfrty9p7_t79ebh4KowBcDiZVaiyBIRPPgMGaPK2Bt4yB9EU1W-4z9WQ4E4
   function enterApp(){ hideAll(); try{sessionStorage.setItem('sm_unlocked','1');}catch(e){} if(typeof requestWake==='function')requestWake();
     try{ var p=getProfile(); var mp={ap_name:p.name,ap_pos:p.position,ap_air:p.airline}; for(var id in mp){ var e=document.getElementById(id); if(e&&mp[id]){ e.value=mp[id]; try{e.dispatchEvent(new Event('input',{bubbles:true}));}catch(_){} } } }catch(e){}
     try{ if(window.__paWho)window.__paWho(); }catch(e){}
+    // Re-sync the pilot details to the admin console. The first save can happen offline (or before the Worker was
+    // updated), so push them again on each open — at most once a day — until the server has them.
+    try{
+      var p2=getProfile(), code2=localStorage.getItem('sm_lic')||'', dev2=localStorage.getItem('sm_dev')||'';
+      var last=+(localStorage.getItem('sm_profile_sync')||0);
+      if(p2 && p2.name && p2.position && p2.airline && p2.aircraft && code2 && dev2 && (Date.now()-last > 864e5)){
+        fetch('https://skymatrix-trial.skymatrix.workers.dev/profile',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({device:dev2,code:code2,name:p2.name,position:p2.position,airline:p2.airline,aircraft:p2.aircraft})})
+          .then(function(r){return r.json();}).then(function(j){ if(j&&j.ok){ try{localStorage.setItem('sm_profile_sync',String(Date.now()));}catch(e){} } })
+          .catch(function(){});
+      }
+    }catch(e){}
   }
   function showProfile(){ var p=getProfile();
     var n=document.getElementById('pf_name'); if(n){ n.value=p.name||''; if(p.name){ n.readOnly=true; n.style.opacity='.65'; } }
@@ -1335,7 +1347,7 @@ function smMarkSVG(u){return '<svg viewBox="0 0 200 200" xmlns="http://www.w3.or
 +'</svg>';}
 (function(){var i=0;['hdrLogo','lockLogo','footLogo','loginLogo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=smLogoSVG('L'+(i++));});var m=document.getElementById('aiGoMark');if(m)m.innerHTML=smMarkSVG('BTN');})();
 /* visible build stamp — bump APP_VERSION on every release so you can confirm at a glance that the latest is live (matches the Worker /version) */
-var APP_VERSION='2026-07-20-batch13';
+var APP_VERSION='2026-07-20-batch14';
 /* Friendly public version + changelog shown on the PIN/login screen. Bump APP_VER and prepend a CHANGELOG entry each release. */
 var APP_VER='v1.2';
 var CHANGELOG=[
