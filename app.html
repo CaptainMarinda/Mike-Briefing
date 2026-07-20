@@ -302,6 +302,29 @@
   html.light .fcard{background:#ffffff;border-color:#d3dce8}
   html.light .fcard h2{color:#5a6b85}
   html.light label.lab,html.light label.fld{color:#3a5680}
+  /* "Reading your OFP" overlay — big, centred, logo rotating behind the text */
+  #aiWait{display:none;position:fixed;inset:0;z-index:400;background:rgba(10,17,30,.93);
+    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:24px}
+  #aiWait.on{display:flex}
+  #aiWait .aiwrap{position:relative;display:flex;align-items:center;justify-content:center;
+    width:min(560px,92vw);min-height:min(420px,60vh)}
+  #aiWait .aimark{position:absolute;width:min(340px,72vw);height:auto;opacity:.30;
+    animation:aiSpin 9s linear infinite;filter:drop-shadow(0 0 34px rgba(47,139,255,.45))}
+  #aiWait .aitxt{position:relative;text-align:center;padding:0 14px}
+  #aiWait .ai1{font-size:26px;font-weight:800;color:#fff;letter-spacing:.6px}
+  #aiWait .ai2{font-size:17px;color:#cfe6ff;margin-top:10px;line-height:1.5}
+  #aiWait .ai2 b{color:#7fd8ff;letter-spacing:1px}
+  #aiWait .ai3{font-size:13px;color:#9fb3d1;margin-top:12px}
+  #aiWait .aibar{margin:18px auto 0;width:210px;height:4px;border-radius:3px;background:rgba(255,255,255,.14);overflow:hidden}
+  #aiWait .aibar span{display:block;width:40%;height:100%;border-radius:3px;
+    background:linear-gradient(90deg,#1f6dff,#7fe0ff);animation:aiSlide 1.5s ease-in-out infinite}
+  @keyframes aiSpin{to{transform:rotate(360deg)}}
+  @keyframes aiSlide{0%{transform:translateX(-110%)}100%{transform:translateX(320%)}}
+  @media(prefers-reduced-motion:reduce){#aiWait .aimark{animation:none}#aiWait .aibar span{animation:none;width:100%}}
+  html.light #aiWait{background:rgba(238,242,247,.95)}
+  html.light #aiWait .ai1{color:#0f1c33}
+  html.light #aiWait .ai2{color:#25406a}
+  html.light #aiWait .ai3{color:#54677f}
   /* Nav log / fuel bar / INFO use theme-aware classes instead of hardcoded dark colours
      (previously these were inline near-white on white in the light theme = unreadable). */
   .nl-lbl{color:#7e90ad}
@@ -1004,6 +1027,36 @@
   </div>
 </div>
 
+<!-- Full-screen "reading your OFP" overlay, shown while Sky Matrix AI works -->
+<div id="aiWait" aria-live="polite">
+  <div class="aiwrap">
+    <svg class="aimark" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <g stroke="#2f8bff" fill="none">
+        <circle cx="100" cy="100" r="80" stroke="#1f6dff" stroke-opacity=".35" stroke-width="2"/>
+        <g stroke-opacity=".45" stroke-width="1.5">
+          <line x1="100" y1="20" x2="169" y2="60"/><line x1="169" y1="60" x2="169" y2="140"/>
+          <line x1="169" y1="140" x2="100" y2="180"/><line x1="100" y1="180" x2="31" y2="140"/>
+          <line x1="31" y1="140" x2="31" y2="60"/><line x1="31" y1="60" x2="100" y2="20"/>
+          <line x1="100" y1="20" x2="100" y2="100"/><line x1="169" y1="60" x2="100" y2="100"/>
+          <line x1="169" y1="140" x2="100" y2="100"/><line x1="100" y1="180" x2="100" y2="100"/>
+          <line x1="31" y1="140" x2="100" y2="100"/><line x1="31" y1="60" x2="100" y2="100"/>
+        </g>
+        <g fill="#39b4ff" stroke="none">
+          <circle cx="100" cy="20" r="4"/><circle cx="169" cy="60" r="4"/><circle cx="169" cy="140" r="4"/>
+          <circle cx="100" cy="180" r="4"/><circle cx="31" cy="140" r="4"/><circle cx="31" cy="60" r="4"/>
+        </g>
+      </g>
+      <g transform="rotate(-16 100 100)"><path d="M100 36 L150 158 L100 132 L50 158 Z" fill="#39b4ff" opacity=".9"/></g>
+    </svg>
+    <div class="aitxt">
+      <div class="ai1">Please wait</div>
+      <div class="ai2">Your OFP is being read by <b>SKY MATRIX AI</b></div>
+      <div class="ai3" id="aiWaitSub">Reading the flight plan pages…</div>
+      <div class="aibar"><span></span></div>
+    </div>
+  </div>
+</div>
+
 <button id="wbFab" class="fab" type="button" title="Whiteboard / notes" aria-label="Whiteboard"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
 <div id="almPop"><svg width="18" height="18" viewBox="0 0 24 24" style="flex:0 0 auto;fill:none;stroke:#ffcf7a;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span id="almTxt" style="flex:1">Alert</span><button id="almAck" type="button" style="padding:6px 14px">OK</button></div>
 <div class="modalwrap" id="wbModal">
@@ -1365,7 +1418,7 @@ function smMarkSVG(u){return '<svg viewBox="0 0 200 200" xmlns="http://www.w3.or
 +'</svg>';}
 (function(){var i=0;['hdrLogo','lockLogo','footLogo','loginLogo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=smLogoSVG('L'+(i++));});var m=document.getElementById('aiGoMark');if(m)m.innerHTML=smMarkSVG('BTN');})();
 /* visible build stamp — bump APP_VERSION on every release so you can confirm at a glance that the latest is live (matches the Worker /version) */
-var APP_VERSION='2026-07-20-batch25';
+var APP_VERSION='2026-07-20-batch28';
 /* Friendly public version + changelog shown on the PIN/login screen. Bump APP_VER and prepend a CHANGELOG entry each release. */
 var APP_VER='v1.2';
 var CHANGELOG=[
@@ -1865,7 +1918,7 @@ function parseOFP(text, opts){
   try{ applyLidoHeader(data, T); }catch(e){}
   // PIA plans are plain labelled text — read them deterministically (overrides the generic guesses).
   try{ applyPiaOfp(data, T); }catch(e){}
-  try{ data.firs=sanitizeFirs(data.firs); }catch(e){}
+  try{ data.firs=enrichFirs(sanitizeFirs(data.firs)); }catch(e){}
   // Fuel bar figures: "PLAN REM x  PLAN REQ y" (tonnes, nav-log header) + "FINL nnnn" (final reserve, kg) + "ALTN <icao> nnnn"
   try{
     var _pr=/PLAN\s+REM\s+([\d.]+)\s+PLAN\s+REQ\s+([\d.]+)/i.exec(T);
@@ -1948,6 +2001,39 @@ function applyAIVerified(data, d){
   return diffs;
 }
 
+// Resolve a FIR/UIR ICAO to a readable name + country. PIA prints only the code, so fill the rest here.
+var FIR_NAME={OAKX:'Kabul FIR',UTDD:'Dushanbe FIR',UCFO:'Bishkek FIR',UZTR:'Turkmenabat FIR',UAII:'Shymkent FIR',
+ UACN:'Astana FIR',USSV:'Yekaterinburg FIR',USTV:'Tyumen FIR',ULLL:'St Petersburg FIR',ENOB:'Bodo Oceanic FIR',
+ BGGL:'Nuuk FIR',CZEG:'Edmonton FIR',CZUL:'Montreal FIR',CZQX:'Gander Oceanic FIR',CZYZ:'Toronto FIR',
+ CZQM:'Moncton FIR',CZWG:'Winnipeg FIR',CZVR:'Vancouver FIR',EGGX:'Shanwick Oceanic FIR',EGTT:'London FIR',
+ EGPX:'Scottish FIR',EHAA:'Amsterdam FIR',EDUU:'Rhein UIR',EDVV:'Hannover UIR',LFFF:'France UIR',LIMM:'Milan UIR',
+ LOVV:'Vienna FIR',LJLA:'Ljubljana FIR',LDZO:'Zagreb FIR',LQSB:'Sarajevo FIR',LYBA:'Beograd FIR',LWSS:'Skopje FIR',
+ LGGG:'Athens FIR',LTBB:'Istanbul FIR',LTAA:'Ankara FIR',LCCC:'Nicosia FIR',HECC:'Cairo FIR',OJAC:'Amman FIR',
+ OEJD:'Jeddah FIR',OBBB:'Bahrain FIR',OTDF:'Doha FIR',OMAE:'Emirates FIR',OOMM:'Muscat FIR',OPKR:'Karachi FIR',
+ OPLR:'Lahore FIR',OYSC:'Sanaa FIR',HCSM:'Mogadishu FIR',HKNA:'Nairobi FIR',HTDC:'Dar es Salaam FIR',
+ OSTT:'Damascus FIR',LAAA:'Tirana FIR',UAAA:'Almaty FIR',UUWV:'Moscow FIR',BIRD:'Reykjavik FIR',ENOR:'Norway FIR'};
+var FIR_CC={OA:'Afghanistan',UT:'Uzbekistan / Turkmenistan',UC:'Kyrgyzstan',UA:'Kazakhstan',US:'Russia',UU:'Russia',
+ UL:'Russia',UR:'Russia',UW:'Russia',EN:'Norway',BG:'Greenland',CZ:'Canada',CY:'Canada',EG:'United Kingdom',
+ EH:'Netherlands',ED:'Germany',LF:'France',LI:'Italy',LO:'Austria',LJ:'Slovenia',LD:'Croatia',LQ:'Bosnia',
+ LY:'Serbia',LW:'North Macedonia',LG:'Greece',LT:'Turkiye',LC:'Cyprus',LA:'Albania',HE:'Egypt',OJ:'Jordan',
+ OE:'Saudi Arabia',OB:'Bahrain',OT:'Qatar',OM:'UAE',OO:'Oman',OP:'Pakistan',OY:'Yemen',OI:'Iran',OS:'Syria',
+ HC:'Somalia',HK:'Kenya',HT:'Tanzania',HA:'Ethiopia',BI:'Iceland',EK:'Denmark',ES:'Sweden',EF:'Finland'};
+function firMeta(code){
+  code=String(code||'').toUpperCase();
+  var nm=FIR_NAME[code]||'', cc=FIR_CC[code.slice(0,2)]||'';
+  if(!cc && typeof CC2!=='undefined' && CC2[code.slice(0,2)]) cc=CC2[code.slice(0,2)];
+  return {name:nm, code:code, country:cc};
+}
+// Fill in name/country for any FIR entry that only has a code (from any source).
+function enrichFirs(list){
+  return (list||[]).map(function(f){
+    var c=String((f&&f.code)||'').toUpperCase();
+    if(!c) return f;
+    var meta=firMeta(c);
+    return {code:c, name:(f.name&&String(f.name).trim())||meta.name, country:(f.country&&String(f.country).trim())||meta.country};
+  });
+}
+
 // ---- PIA (NAVBLUE / OPIS) OFP — fully deterministic read of the labelled fields. -------------------
 // PIA plans are plain text with clearly labelled values, so nothing here needs the AI. Validated against
 // three real plans (PIA753 OPIS-OERK, PIA749 OPIS-LFPG, PIA781 OPIS-CYYZ): every field below matched.
@@ -1990,7 +2076,7 @@ function parsePiaOfp(T){
   var am=/^ALTN\s+([A-Z]{4})\s+\d/m.exec(T); if(am) o.altnIcao=am[1];
   // FIR crossings: PIA prints them as nav-log rows, e.g. "ENTER FIR OAKX  23000 ..."
   var fr=[],sf={},fm,fre=/ENTER\s+FIR\s+([A-Z]{4})/g;
-  while((fm=fre.exec(T))){ if(!sf[fm[1]]){ sf[fm[1]]=1; fr.push({name:'',code:fm[1],country:''}); } }
+  while((fm=fre.exec(T))){ if(!sf[fm[1]]){ sf[fm[1]]=1; fr.push(firMeta(fm[1])); } }
   if(fr.length) o.firs=fr;
   // ETOPS / EDTO equal-time points:
   //   "ETP1 CRITICAL FUEL CALCULATION   UATT/ENBO"
@@ -2083,6 +2169,10 @@ function applyPiaOfp(data, T){
   try{ var co=parsePiaCompanyNotams(T); if(co.length) data.coCb=(data.coCb&&data.coCb.length)?data.coCb:co; }catch(e){}
   data.elwOver=(data.elwt&&data.mlwt)?(+data.elwt>+data.mlwt):null;
   data.towOver=(data.etow&&data.mtow)?(+data.etow>+data.mtow):null;
+  // PIA plans do NOT print planned runways (the ATIS block is a blank fill-in), so any runway the generic
+  // parser or the AI "found" is a mis-read — e.g. DEP/ARR both "13" on OPIS-LFPG. Blank beats wrong.
+  if(!p.depRwy) data.depRwy='';
+  if(!p.arrRwy) data.arrRwy='';
   return true;
 }
 
@@ -2579,7 +2669,7 @@ async function loadFile(f){
   try{
     lastText=await readFile(f);
     if(!lastText||!lastText.trim()) throw new Error('File looks empty after reading.');
-    paste.value=lastText.slice(0,200000);
+    paste.value=lastText.slice(0,200000);   // display only — parsing uses the full lastText
     // Keep the original OFP document so it can be opened later from Docs → OFP
     try{ if(window.__saveOfpDoc) window.__saveOfpDoc(f.name, f); }catch(e){}
     setMsg('Loaded '+f.name+'. Now tap “Sky Matrix AI”.','ok');
@@ -2588,7 +2678,10 @@ async function loadFile(f){
 function setMsg(t,k){msg.textContent=t;msg.className='msg '+(k||'');}
 
 function generate(ev){
-  const text=(paste.value.trim()||lastText).trim();
+  // Parse the FULL OFP text. The textarea is capped at 200k for display only — a long plan (PIA can be
+  // 500k+ chars) would otherwise lose its later pages: nav log tail, NOTAMs, company NOTAMs, crew info.
+  const _pv=(paste.value||'').trim();
+  const text=(((lastText||'').length > _pv.length) ? lastText : (_pv||lastText)).trim();
   if(!text){setMsg('Load or paste an OFP first.','err');return;}
   try{
     const opts={known:'',qseats:0};
@@ -2751,12 +2844,18 @@ var _goBtn=document.getElementById('go'); if(_goBtn)_goBtn.onclick=generate;   /
         }).catch(function(){ setMsg('Qatar OFP — briefing ready (offline; nav log from the built-in reader).','ok'); });
       return;
     }
+    // Big "please wait" overlay while the AI reads the plan.
+    function aiWait(on,sub){
+      var el=document.getElementById('aiWait'); if(!el)return;
+      if(sub){ var s3=document.getElementById('aiWaitSub'); if(s3)s3.textContent=sub; }
+      el.classList.toggle('on',!!on);
+    }
     // FOOLPROOF FALLBACK: if Sky Matrix AI cannot be reached (no internet, quota, provider down), still build the
     // whole briefing from the OFP text alone. Qatar / Emirates / Etihad / PIA are fully readable offline.
     function buildOfflineBriefing(text, why){
       var data; try{ data=parseOFP(text,{known:'',qseats:0}); }catch(e){ return false; }
       if(!data || !(data.dep||data.dest||(data.navlog&&data.navlog.length))) return false;
-      try{ data.firs=sanitizeFirs(data.firs); }catch(e){}
+      try{ data.firs=enrichFirs(sanitizeFirs(data.firs)); }catch(e){}
       try{ build(data); }catch(e){}
       window.__OFP=data;
       try{ localStorage.setItem('sm_ofptext',text); }catch(e){}
@@ -2772,7 +2871,9 @@ var _goBtn=document.getElementById('go'); if(_goBtn)_goBtn.onclick=generate;   /
       setMsg('Briefing ready \u2014 read offline from your OFP'+(n?(' ('+n+' waypoints)'):'')+'. '+(why||'Sky Matrix AI was not reachable.'),'warn');
       return true;
     }
-    aiBtn.disabled=true; setMsg(window.__ofpPdfBuf?'Reading the OFP pages with Sky Matrix AI…':'Reading the OFP with Sky Matrix AI…','');
+    aiBtn.disabled=true;
+    aiWait(true, window.__ofpPdfBuf ? 'Reading the flight plan pages…' : 'Reading the flight plan…');
+    setMsg('Reading your OFP with Sky Matrix AI…','');
     ofpPageImages()
       .then(function(images){ var _h={'Content-Type':'application/json'}; try{var _at=localStorage.getItem('sm_admin_tok'); if(_at)_h['x-admin-token']=_at;}catch(e){} /* admin devices auto-teach the reader from each new airline */ return fetch(AI_URL,{method:'POST',headers:_h,body:JSON.stringify({text:text.slice(0,90000), images:images, device:(localStorage.getItem('sm_dev')||''), code:(localStorage.getItem('sm_lic')||'')})}); })
       .then(function(r){return r.json();})
@@ -2802,7 +2903,7 @@ var _goBtn=document.getElementById('go'); if(_goBtn)_goBtn.onclick=generate;   /
         // Fills only what the AI left blank — validated against Emirates, Etihad and Qatar OFPs.
         try{ applyLidoHeader(data, text); }catch(e){}
         try{ applyPiaOfp(data, text); }catch(e){}   // PIA: labelled text beats an AI read of the same page
-        try{ data.firs=sanitizeFirs(data.firs); }catch(e){}   // drop NOTAM prose that merely contains "FIR"
+        try{ data.firs=enrichFirs(sanitizeFirs(data.firs)); }catch(e){}   // drop NOTAM prose that merely contains "FIR"
         // carry the AI's raw NOTAM text so the NOTAM viewer can show it when the offline parser can't structure them (e.g. PIA)
         try{ if(d.notamsRaw && !data.notamRaw){ data.notamRaw=String(d.notamsRaw); } }catch(e){}
         try{ build(data); }catch(e){}
@@ -2834,7 +2935,7 @@ var _goBtn=document.getElementById('go'); if(_goBtn)_goBtn.onclick=generate;   /
         if(!buildOfflineBriefing(text,'No connection to Sky Matrix AI \u2014 this briefing was read offline.'))
           setMsg('Could not read this OFP offline, and Sky Matrix AI is not reachable. Check your internet connection.','err');
       })
-      .then(function(){ aiBtn.disabled=false; });
+      .then(function(){ aiWait(false); aiBtn.disabled=false; });
   });
 })();
 var _pb=document.getElementById('print'); if(_pb)_pb.onclick=()=>window.print();
@@ -3094,6 +3195,9 @@ document.querySelectorAll('#docsnav button').forEach(b=>b.addEventListener('clic
     set('dep_block',blk); set('dep_ft',ft); set('dep_fl',OFP.highFL?('FL'+OFP.highFL):''); set('dep_std',stdHHMM());
     set('dep_zfw',OFP.ezfw); set('dep_tow',OFP.etow); set('dep_lwt',OFP.elwt); set('dep_rwy',OFP.depRwy);
     set('ar_mlwt',OFP.mlwt); set('ar_lwt',OFP.elwt);
+    // planned fuel remaining at destination = last nav-log fix
+    try{ if(OFP.navlog&&OFP.navlog.length){ var _lf=OFP.navlog[OFP.navlog.length-1].fuelRemKg;
+      if(_lf!=null&&!isNaN(_lf)) set('ar_arrfuel', Math.round(_lf).toLocaleString()+' kg'); } }catch(e){}
     if($('dh_from'))$('dh_from').textContent=OFP.dep||'—'; if($('dh_to'))$('dh_to').textContent=OFP.dest||'—';
     if($('ah_to'))$('ah_to').textContent=OFP.dest||'—';
     syncATD($('ofp_atd')?$('ofp_atd').value:($('dep_chocks')?$('dep_chocks').value:''));
@@ -3107,7 +3211,7 @@ document.querySelectorAll('#docsnav button').forEach(b=>b.addEventListener('clic
     if($('ar_eta'))$('ar_eta').value=eta!=null?fmt(eta)+'Z':'';
     if($('ar_etal'))$('ar_etal').value=(eta!=null&&dap)?fmt(locT(eta,du)):'';
     const staM=toM(staHHMM());
-    if($('ar_beforesta')){ if(staM!=null&&eta!=null){let d=staM-eta;if(d>720)d-=1440;if(d<-720)d+=1440;$('ar_beforesta').value=(d>=0?'+':'')+Math.round(d)+' min';} else $('ar_beforesta').value=''; }
+    if($('ar_beforesta')){ if(staM!=null&&eta!=null&&!isNaN(staM)&&!isNaN(eta)){let d=staM-eta;if(d>720)d-=1440;if(d<-720)d+=1440;$('ar_beforesta').value=(d>=0?'+':'')+Math.round(d)+' min';} else $('ar_beforesta').value=''; }
     if($('dh_lt'))$('dh_lt').textContent=dep?fmt(locT(nowMin,pu)):'--:--';
     if($('ah_lt'))$('ah_lt').textContent=dap?fmt(locT(nowMin,du)):'--:--';
   }
@@ -3970,9 +4074,19 @@ document.querySelectorAll('#docsnav button').forEach(b=>b.addEventListener('clic
     if(!O||!O.notams||!O.notams[ic]||!O.notams[ic].length){
       // Structured NOTAMs not parsed for this layout (e.g. PIA) — fall back to the raw NOTAM section from the OFP / AI
       var raw=(O&&(O.notamRaw||O.notamFull||O.notamsRaw||''))||'';
-      var body = raw
-        ? '<div style="font-weight:700;margin-bottom:8px;color:#fff">'+esc(label||ic)+' — NOTAMs (raw from OFP)</div><div style="white-space:pre-wrap;color:#e6eefc;font-size:12px;line-height:1.5">'+esc(String(raw).slice(0,9000))+'</div>'
-        : '<div style="color:#e6eefc">No NOTAMs for '+esc(ic)+' in the loaded OFP.</div>';
+      // Show ONLY this airport's NOTAMs. Keep a header line if it names this ICAO, plus its indented body.
+      var keep=[], take=false, ln2, L=String(raw).split('\n');
+      for(var q=0;q<L.length;q++){
+        ln2=L[q];
+        if(/^\S/.test(ln2)){ take = ic ? (ln2.toUpperCase().indexOf(ic)>=0) : true; if(take) keep.push(ln2); }
+        else if(take) keep.push(ln2);
+      }
+      var only=keep.join('\n').trim();
+      var noneStated = ic && new RegExp('NO OPERATIONAL NOTAMS ON FILE FOR '+ic,'i').test(String(O&&O.notamFull||'')+String(raw));
+      var body;
+      if(only) body='<div style="font-weight:700;margin-bottom:8px;color:#fff">'+esc(label||ic)+' — NOTAMs (from OFP)</div><div style="white-space:pre-wrap;color:#e6eefc;font-size:12px;line-height:1.5">'+esc(only.slice(0,9000))+'</div>';
+      else if(noneStated) body='<div style="color:#7be0a4;font-weight:700">No operational NOTAMs on file for '+esc(ic)+'.</div><div class="hint" style="margin-top:6px">Stated explicitly in the OFP.</div>';
+      else body='<div style="color:#e6eefc">No NOTAMs for '+esc(ic)+' in the loaded OFP.</div>';
       if(window.__floatChecklist)window.__floatChecklist('ntm'+ic,(label||ic)+' NOTAMs',body); return;
     }
     var nw=wxNow(); var list=O.notams[ic]; var CH={r:'#ff6b6b',a:'#E0A33A',g:'#34c759',n:'#9fb3d1'};
