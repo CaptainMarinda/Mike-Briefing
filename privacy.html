@@ -3,7 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Privacy &amp; Security | Sky Matrix</title>
-<meta name="description" content="How Sky Matrix handles your data, the third-party services it uses, the APK checksum for safe sideloading, and its security model.">
+<meta name="description" content="How Sky Matrix handles your data, the third-party services it uses, the APK checksums for safe sideloading, and its security model.">
 <meta name="theme-color" content="#0e1726">
 <link rel="canonical" href="https://www.skymatrix.biz/privacy.html">
 <style>
@@ -37,7 +37,7 @@
 <body>
 <header class="nav"><div class="wrap"><a class="brand" href="index.html">SKY MATRIX<small>FLY INFORMED</small></a><a class="back" href="index.html">&larr; Back to site</a></div></header>
 
-<div class="hd"><div class="wrap"><div class="kicker">Trust</div><h1>Privacy &amp; Security</h1><div class="upd">Last updated: 6 July 2026</div></div></div>
+<div class="hd"><div class="wrap"><div class="kicker">Trust</div><h1>Privacy &amp; Security</h1><div class="upd">Last updated: 20 July 2026</div></div></div>
 
 <div class="body"><div class="wrap">
 
@@ -77,19 +77,34 @@
   <ul>
     <li>Licences are protected with an <b>ECDSA P-256</b> digital signature, only our server holds the private key, so codes can't be forged, and each is bound to one device.</li>
     <li>Your PIN is stored as a salted one-way hash; biometric unlock uses the platform authenticator (WebAuthn) and never exposes your fingerprint/face to the app.</li>
+    <li>Our Android apps are signed with our own private release key, Android verifies that signature on install and will only accept future updates signed with the same key.</li>
     <li>The app is served only over HTTPS. Sensitive data is never placed in URLs.</li>
     <li>Honest caveat: any client-side gate deters casual access but is not a guarantee against a determined attacker. Use a strong PIN and keep your device secured.</li>
   </ul>
 
-  <h2 id="checksum">Android APK, verify before you install</h2>
-  <p>If you sideload the Android app, confirm the file is authentic by checking its SHA-256 checksum against the value below before installing.</p>
+  <h2 id="checksum">Android APKs, verify before you install</h2>
+  <p>If you sideload one of our Android apps, confirm the file is authentic by checking its SHA-256 checksum against the matching value below before installing.</p>
+
   <div class="chk">
-    <div><b>File:</b> skymatrix.apk</div>
+    <div><b>File:</b> skymatrix.apk &nbsp;<span style="color:var(--grey);font-size:13px">(Sky Matrix, flight briefing)</span></div>
     <div><b>SHA-256:</b></div>
     <div class="hash">b2c398a40c5a9b0f84052cca9e7dc9a856f027e6e59c59f58b6746310e405dd6</div>
-    <p style="margin:12px 0 0;font-size:13px">Windows: <code>certutil -hashfile skymatrix.apk SHA256</code> &nbsp;&middot;&nbsp; macOS/Linux: <code>shasum -a 256 skymatrix.apk</code>. The output must match exactly. This checksum is for the current published build; it changes whenever the app is rebuilt.</p>
   </div>
-  <p style="font-size:13px">Only install the APK from our official Download link. Because it is sideloaded, Android will warn about "unknown sources", that is expected; the checksum above is how you confirm it hasn't been tampered with.</p>
+
+  <div class="chk">
+    <div><b>File:</b> SkyAlarm.apk &nbsp;<span style="color:var(--grey);font-size:13px">(Sky Alarm, free)</span></div>
+    <div><b>SHA-256:</b></div>
+    <div class="hash">88e5d9a1fddaf49908eca8c45f3eb3db6ec76b216c04e4703142ae27d0d05b0e</div>
+  </div>
+
+  <div class="chk">
+    <div><b>File:</b> MatrixBudget.apk &nbsp;<span style="color:var(--grey);font-size:13px">(Sky Matrix Budget v2.0, delivered by our checkout provider)</span></div>
+    <div><b>SHA-256:</b></div>
+    <div class="hash">0e300cbf67838d154d0f2be197e13b21b918806d3ce6e818567e5bae779cef5f</div>
+  </div>
+
+  <p style="font-size:13px">To check a file, on Windows run <code>certutil -hashfile &lt;filename&gt; SHA256</code>, or on macOS/Linux <code>shasum -a 256 &lt;filename&gt;</code>. The output must match the value above exactly. These checksums are for the current published builds; each one changes whenever that app is rebuilt.</p>
+  <p style="font-size:13px">Only install an APK obtained from our official download or checkout link. Because these apps are sideloaded, Android will warn about "unknown sources", that is expected; the checksums above are how you confirm the file hasn't been tampered with.</p>
 
   <h2>Your choices</h2>
   <p>You can stop all outbound data by simply not using the online features, the core briefing works offline. To delete your data, clear the app's storage on your device. For a licence transfer or account/data request, email <a href="mailto:admin@skymatrix.biz">admin@skymatrix.biz</a>.</p>
