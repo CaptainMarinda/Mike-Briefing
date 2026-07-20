@@ -302,6 +302,24 @@
   html.light .fcard{background:#ffffff;border-color:#d3dce8}
   html.light .fcard h2{color:#5a6b85}
   html.light label.lab,html.light label.fld{color:#3a5680}
+  /* Nav log / fuel bar / INFO use theme-aware classes instead of hardcoded dark colours
+     (previously these were inline near-white on white in the light theme = unreadable). */
+  .nl-lbl{color:#7e90ad}
+  .nl-wp{color:#e6eefc}
+  .nl-plan{color:#7be0a4}
+  .nl-det{color:#c7d6ee}
+  .info-txt{color:#dce8ff}
+  html.light .nl-lbl{color:#54677f}
+  html.light .nl-wp{color:#0f1c33}
+  html.light .nl-plan{color:#146c3f}
+  html.light .nl-det{color:#26364f}
+  html.light .info-txt{color:#1f2937}
+  html.light .nlTbl{color:#1f2937}
+  html.light .nlTbl tbody tr{border-top-color:#dde4ee!important}
+  html.light .nlTbl input{background:#ffffff!important;border:1px solid #c2ccdb!important;color:#1f2937!important}
+  html.light #nlWpTable>div[style*="background:#0b1526"]{background:#f4f7fb!important;border-color:#d3dce8!important}
+  html.light #nlWpTable div[style*="background:#12203a"]{background:#e3e9f2!important}
+  html.light tr[id^="nlDet"]>td{background:#f4f7fb!important}
   html.light .view select,html.light .view input[type=time],html.light .view input[type=number],html.light .view input[type=text]{background:#f4f7fb;border-color:#d3dce8;color:#1f2937}
   html.light .view input[readonly]{background:#eaf2fb;color:#1f5a8a}
   html.light .dispbox{background:#f4f7fb;border-color:#d3dce8}
@@ -1347,7 +1365,7 @@ function smMarkSVG(u){return '<svg viewBox="0 0 200 200" xmlns="http://www.w3.or
 +'</svg>';}
 (function(){var i=0;['hdrLogo','lockLogo','footLogo','loginLogo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=smLogoSVG('L'+(i++));});var m=document.getElementById('aiGoMark');if(m)m.innerHTML=smMarkSVG('BTN');})();
 /* visible build stamp — bump APP_VERSION on every release so you can confirm at a glance that the latest is live (matches the Worker /version) */
-var APP_VERSION='2026-07-20-batch16';
+var APP_VERSION='2026-07-20-batch18';
 /* Friendly public version + changelog shown on the PIN/login screen. Bump APP_VER and prepend a CHANGELOG entry each release. */
 var APP_VER='v1.2';
 var CHANGELOG=[
@@ -2411,6 +2429,7 @@ var _goBtn=document.getElementById('go'); if(_goBtn)_goBtn.onclick=generate;   /
         if(!data.etopsPts)data.etopsPts=[];
         // the offline parse mis-reads route/FIR/runway/SID/STAR on non-Qatar OFPs — clear them so the AI owns them (blank beats wrong)
         data.firs=[]; data.etopsPts=[]; data.depRwy=''; data.arrRwy=''; data.sid=''; data.star=''; data.highFL='';
+        data.tropo=null;   // the offline tropopause read is garbage on non-Qatar OFPs (e.g. "55512") — let the AI own it
         applyAI(data,d);
         // carry the AI's raw NOTAM text so the NOTAM viewer can show it when the offline parser can't structure them (e.g. PIA)
         try{ if(d.notamsRaw && !data.notamRaw){ data.notamRaw=String(d.notamsRaw); } }catch(e){}
@@ -2962,7 +2981,7 @@ document.querySelectorAll('#docsnav button').forEach(b=>b.addEventListener('clic
       s=e+gap;
     }
     tb.innerHTML=rows;
-    if(lrb)lrb.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="color:#7e90ad;text-align:left"><th style="padding:3px 6px">#</th><th>Crew</th><th>From</th><th>To</th><th>Duration</th></tr></thead><tbody>'+rows+'</tbody></table>';
+    if(lrb)lrb.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr class="nl-lbl" style="text-align:left"><th style="padding:3px 6px">#</th><th>Crew</th><th>From</th><th>To</th><th>Duration</th></tr></thead><tbody>'+rows+'</tbody></table>';
     if(lrc)lrc.style.display=rows?'block':'none';
     let totalRest=(end-start)<0?(end-start+1440):(end-start);
     sum.textContent='Rest window '+fmt(start)+'–'+fmt(end)+' ('+Math.floor(totalRest/60)+'h '+(totalRest%60)+'m) · one R = '+unit+' min · '+gaps+' handover gap(s) of '+gap+' min.';
@@ -3250,10 +3269,10 @@ document.querySelectorAll('#docsnav button').forEach(b=>b.addEventListener('clic
       if(k>=0) wps.splice(k+1,0,np); else wps.push(np);
     });
     var toV=(($('d_to')||{}).value||''); var toMinAbs=toV?toM(toV):null;
-    var cell=function(lbl,v){ return (v==null||v===''||v==='--')?'':('<span><span style="color:#7e90ad">'+lbl+':</span> '+esc(v)+'</span>'); };
+    var cell=function(lbl,v){ return (v==null||v===''||v==='--')?'':('<span><span class="nl-lbl">'+lbl+':</span> '+esc(v)+'</span>'); };
     var initFL=O.initFL?('FL'+String(O.initFL).replace(/^FL/i,'')):'';
     var h='<div class="hint" style="margin:0 0 6px">Plan values (<b>RETA</b> / <b>RFOB</b> / <b>PFL</b>) are read from the OFP. Enter your actual <b>ATA</b>, <b>AFOB</b> and <b>AFL</b> as you fly — saved on this device. Tap a waypoint for its OFP detail and notes.</div>';
-    h+='<div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="nlTbl" style="width:100%;border-collapse:collapse;font-size:11px;white-space:nowrap"><thead><tr style="color:#7e90ad;text-align:left">'
+    h+='<div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="nlTbl" style="width:100%;border-collapse:collapse;font-size:11px;white-space:nowrap"><thead><tr class="nl-lbl" style="text-align:left">'
       +'<th style="padding:3px 4px">Waypoint</th><th title="Cumulative distance">NM</th><th title="Plan ETA (from OFP)">RETA</th><th title="Actual time of arrival">ATA</th><th title="Plan fuel remaining (from OFP)">RFOB</th><th title="Actual fuel on board">AFOB</th><th title="Plan FL (from OFP)">PFL</th><th title="Actual FL">AFL</th><th></th></tr></thead><tbody>';
     for(var i=0;i<wps.length;i++){ var w=wps[i], st=navGet(O,w.name), cum=wpCum(w);
       var reta=(w.elapsed!=null&&toMinAbs!=null)?fmt((((toMinAbs+w.elapsed)%1440)+1440)%1440)+'Z':(w.elapsed!=null?('+'+fmt(w.elapsed)):'--');
@@ -3262,21 +3281,21 @@ document.querySelectorAll('#docsnav button').forEach(b=>b.addEventListener('clic
       var pfl=_f?(/^\d+$/.test(_f)?('FL'+_f):_f):(initFL||'--');
       var rfob=(w.fuel!=null)?Math.round(w.fuel).toLocaleString():'--';
       h+='<tr style="border-top:1px solid #16233a">'
-        +'<td style="padding:4px 4px;cursor:pointer" onclick="window.__nlTog('+i+')"><b style="color:#e6eefc">'+esc(w.name||('WP'+(i+1)))+'</b>'
+        +'<td style="padding:4px 4px;cursor:pointer" onclick="window.__nlTog('+i+')"><b class="nl-wp">'+esc(w.name||('WP'+(i+1)))+'</b>'
         +(ov.dir===w.name?' <span style="background:#12324a;border:1px solid #2f8bff;color:#cfe6ff;border-radius:4px;padding:0 5px;font-size:10px">DIR TO</span>':'')
         +(w.user?' <span style="background:#3a2a12;border:1px solid #E0A33A;color:#ffdf9e;border-radius:4px;padding:0 5px;font-size:10px">USER</span>':'')
-        +' <span style="color:#7e90ad">&#9662;</span></td>'
+        +' <span class="nl-lbl">&#9662;</span></td>'
         +'<td>'+(cum!=null?Math.round(cum):'--')+'</td>'
-        +'<td style="color:#7be0a4">'+reta+'</td>'
+        +'<td class="nl-plan">'+reta+'</td>'
         +'<td><input class="nl-ata" data-wp="'+esc(w.name)+'" value="'+esc(st.ata||'')+'" placeholder="hhmm" inputmode="numeric" style="width:44px;font-size:11px;padding:2px 3px"></td>'
-        +'<td style="color:#7be0a4">'+rfob+'</td>'
+        +'<td class="nl-plan">'+rfob+'</td>'
         +'<td><input class="nl-afob" data-wp="'+esc(w.name)+'" value="'+esc(st.afob||'')+'" placeholder="kg" inputmode="numeric" style="width:52px;font-size:11px;padding:2px 3px"></td>'
-        +'<td style="color:#7be0a4">'+pfl+'</td>'
+        +'<td class="nl-plan">'+pfl+'</td>'
         +'<td><input class="nl-afl" data-wp="'+esc(w.name)+'" value="'+esc(st.afl||'')+'" placeholder="FL" inputmode="numeric" style="width:40px;font-size:11px;padding:2px 3px"></td>'
         +'<td><button type="button" class="nl-menu" data-wp="'+esc(w.name)+'" title="Waypoint actions" style="background:none;border:0;color:#7e90ad;cursor:pointer;font-size:16px;padding:2px 6px;line-height:1">&#8942;</button></td>'
         +'</tr>';
       h+='<tr id="nlDet'+i+'" style="display:none"><td colspan="9" style="padding:6px 10px;background:#0e1930">'
-        +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(115px,1fr));gap:6px 14px;color:#c7d6ee;font-size:11.5px">'
+        +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(115px,1fr));gap:6px 14px;font-size:11.5px" class="nl-det">'
         +cell('Airway',w.airway)+cell('EET',w.elapsed!=null?fmt(w.elapsed):'')+cell('CTM',w.ctm)+cell('RTIME',w.rtime)
         +cell('IAS',w.ias)+cell('G/S',w.gs)+cell('Wind',w.wind)+cell('Component',w.component)
         +cell('Tropo',w.tropo)+cell('OAT',w.oat!=null?(w.oat+'°C'):'')+cell('ISA dev',w.isaDev)+cell('Shear',w.shear)
@@ -3284,8 +3303,8 @@ document.querySelectorAll('#docsnav button').forEach(b=>b.addEventListener('clic
         +cell('Lat',w.lat!=null?w.lat.toFixed(2):'')+cell('Long',w.lon!=null?w.lon.toFixed(2):'')
         +cell('ITT/IMT',w.ittImt)+cell('Airspace',w.airspace)+cell('Frequency',w.freq)
         +'</div>'
-        +'<textarea class="nl-notes" data-wp="'+esc(w.name)+'" placeholder="Clearance / notes…" style="width:100%;margin-top:6px;min-height:36px;font-size:12px;color:#e6ecf5">'+esc(st.notes||'')+'</textarea>'
-        +'<label style="display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;color:#c7d6ee;cursor:pointer"><input type="checkbox" class="nl-rvsm" data-wp="'+esc(w.name)+'"'+(st.rvsm?' checked':'')+' style="width:16px;height:16px"> RVSM check</label>'
+        +'<textarea class="nl-notes" data-wp="'+esc(w.name)+'" placeholder="Clearance / notes…" style="width:100%;margin-top:6px;min-height:36px;font-size:12px">'+esc(st.notes||'')+'</textarea>'
+        +'<label style="display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;cursor:pointer" class="nl-det"><input type="checkbox" class="nl-rvsm" data-wp="'+esc(w.name)+'"'+(st.rvsm?' checked':'')+' style="width:16px;height:16px"> RVSM check</label>'
         +'</td></tr>';
     }
     h+='</tbody></table></div>';
@@ -3300,26 +3319,26 @@ document.querySelectorAll('#docsnav button').forEach(b=>b.addEventListener('clic
         var marg=fb.remT-(fb.reqT||0);
         h+='<div style="margin-top:10px;padding:12px;background:#0b1526;border:1px solid #23324e;border-radius:10px">'
           +'<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:baseline;font-size:12.5px;margin-bottom:10px">'
-          +'<span style="color:#7be0a4;font-weight:700">Destination '+esc(O.dest||'--')+'</span>'
-          +'<span><span style="color:#7e90ad">RETA:</span> '+dRETA+'</span>'
-          +'<span><span style="color:#7e90ad">MDF Margin:</span> <b style="color:'+(marg>=0?'#7be0a4':'#ff9aa2')+'">'+(marg>=0?'+':'')+marg.toFixed(1)+' t</b></span>'
-          +'<span><span style="color:#7e90ad">Est FOB at Dest:</span> <b style="color:#7be0a4">'+fb.remT.toFixed(1)+' t</b></span>'
-          +'<span><span style="color:#7e90ad">Plan distance:</span> '+dNM+'</span></div>'
+          +'<span class="nl-plan" style="font-weight:700">Destination '+esc(O.dest||'--')+'</span>'
+          +'<span><span class="nl-lbl">RETA:</span> '+dRETA+'</span>'
+          +'<span><span class="nl-lbl">MDF Margin:</span> <b style="color:'+(marg>=0?'#7be0a4':'#ff9aa2')+'">'+(marg>=0?'+':'')+marg.toFixed(1)+' t</b></span>'
+          +'<span><span class="nl-lbl">Est FOB at Dest:</span> <b class="nl-plan">'+fb.remT.toFixed(1)+' t</b></span>'
+          +'<span><span class="nl-lbl">Plan distance:</span> '+dNM+'</span></div>'
           +'<div style="position:relative;height:16px;background:#12203a;border-radius:8px">'
             +'<div style="position:absolute;left:0;top:0;bottom:0;width:'+pc(fb.remT)+'%;background:linear-gradient(90deg,#1f8a4c,#34c759);border-radius:8px"></div>'
             +(fb.finalT?('<div title="Final Reserve" style="position:absolute;left:'+pc(fb.finalT)+'%;top:-4px;bottom:-4px;width:2px;background:#ffffff"></div>'):'')
             +(fb.reqT?('<div title="Min Diversion Fuel" style="position:absolute;left:'+pc(fb.reqT)+'%;top:-4px;bottom:-4px;width:2px;background:#ffd27a"></div>'):'')
           +'</div>'
-          +'<div style="display:flex;justify-content:space-between;font-size:11px;color:#9fb3d1;margin-top:6px">'
+          +'<div style="display:flex;justify-content:space-between;font-size:11px;margin-top:6px" class="nl-lbl">'
             +'<span>Final Reserve '+(fb.finalT!=null?fb.finalT.toFixed(1):'--')+' t</span>'
             +'<span>Min Diversion Fuel '+(fb.reqT!=null?fb.reqT.toFixed(1):'--')+' t</span></div>'
           +'</div>';
       } else {
         h+='<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin-top:10px;padding:10px 12px;background:#0e2a1e;border:1px solid #1f6d4a;border-radius:10px;font-size:12.5px">'
-          +'<span style="color:#7be0a4;font-weight:700">Destination '+esc(O.dest||'--')+'</span>'
-          +'<span><span style="color:#7e90ad">Plan RETA:</span> '+dRETA+'</span>'
-          +'<span><span style="color:#7e90ad">Plan FOB at dest:</span> '+dFOB+'</span>'
-          +'<span><span style="color:#7e90ad">Plan distance:</span> '+dNM+'</span>'
+          +'<span class="nl-plan" style="font-weight:700">Destination '+esc(O.dest||'--')+'</span>'
+          +'<span><span class="nl-lbl">Plan RETA:</span> '+dRETA+'</span>'
+          +'<span><span class="nl-lbl">Plan FOB at dest:</span> '+dFOB+'</span>'
+          +'<span><span class="nl-lbl">Plan distance:</span> '+dNM+'</span>'
           +'</div>';
       }
       if(ov.del.length||ov.ins.length||ov.dir) h+='<div style="margin-top:8px"><button type="button" id="nlResetOv" class="ghost" style="padding:5px 12px;font-size:12px">Reset nav-log edits</button></div>';
@@ -4417,7 +4436,7 @@ try{
     /* ---- OFP doc tab ---- */
     window.__renderDocsOfp=function(){
       var box=$('docsOfpBox'); if(!box)return; var o=window.__OFP;
-      var hdr = o ? ('<p style="color:#dce8ff;margin:0 0 8px">Flight <b>'+E((o.fltCs||o.flt||'')||'—')+'</b> &middot; '+E((o.dep||'—')+' → '+(o.dest||'—'))+(o.tripT?(' &middot; '+E(o.tripT)):'')+'</p>') : '';
+      var hdr = o ? ('<p class="info-txt" style="margin:0 0 8px">Flight <b>'+E((o.fltCs||o.flt||'')||'—')+'</b> &middot; '+E((o.dep||'—')+' → '+(o.dest||'—'))+(o.tripT?(' &middot; '+E(o.tripT)):'')+'</p>') : '';
       if(!window.__getOfpDoc){ box.innerHTML=hdr+'<p class="hint">No OFP document stored yet.</p>'; return; }
       window.__getOfpDoc(function(d){
         if(d&&d.blob){
@@ -4435,13 +4454,22 @@ try{
     /* ---- INFO page: route synthesis + crew ---- */
     window.__renderInfo=function(){ var el=$('out-info'); if(!el)return; var o=window.__OFP; var H='';
       if(!o){ el.innerHTML='<div class="fcard"><h2>Flight info</h2><p class="hint">Load an OFP to see the route synthesis and crew.</p></div>'; return; }
-      var wps=''; try{ var arr=(o.routeWps&&o.routeWps.length?o.routeWps:(o.route||[])); wps=arr.map(function(w){return E(w.name||w.id||w.ident||'');}).filter(Boolean).join('  →  '); }catch(e){}
+      // Prefer the structured nav log (real waypoint names, in order). The coordinate-scraped routeWps
+      // list mislabels airways as waypoints (DCT / DP) and falls back to raw lat-longs.
+      var wps=''; try{
+        var arr = (o.navlog && o.navlog.length)
+          ? o.navlog.map(function(r){ return r && r.wpt; })
+          : (o.routeWps && o.routeWps.length ? o.routeWps : (o.route||[])).map(function(w){ return w.name||w.id||w.ident||''; });
+        wps = arr.map(function(n){ return String(n==null?'':n).trim(); })
+                 .filter(function(n){ return n && !/^(DCT|DP|CLB|DSC)$/i.test(n); })
+                 .map(E).join('  →  ');
+      }catch(e){}
       var syn='Flight '+E((o.fltCs||o.flt||'')||'')+' from '+E(o.dep||'—')+' to '+E(o.dest||'—')
         +(o.altn?(' with alternate '+E(o.altn)):'')+'. '
         +(o.tripT?('Planned trip time '+E(o.tripT)+'. '):'')
         +(o.highFL?('Highest planned level FL'+E(o.highFL)+'. '):'')
         +(o.routeTotNM?('Great-circle plan distance about '+E(o.routeTotNM)+' NM. '):'');
-      H+='<div class="fcard"><h2>Route synthesis</h2><p style="line-height:1.65;color:#dce8ff">'+syn+'</p>'
+      H+='<div class="fcard"><h2>Route synthesis</h2><p class="info-txt" style="line-height:1.65">'+syn+'</p>'
         +(wps?('<p class="hint" style="margin-top:8px">Waypoints: '+wps+'</p>'):'')+'</div>';
       // Crew info from the OFP (flight-attendant seats, Crew Orders & Bulletins, Special Crew Briefings)
       if(window.__crewInfoHtml) H+='<div class="fcard"><h2>Crew info</h2>'+window.__crewInfoHtml+'</div>';
