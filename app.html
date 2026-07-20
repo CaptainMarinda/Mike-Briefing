@@ -1347,7 +1347,7 @@ function smMarkSVG(u){return '<svg viewBox="0 0 200 200" xmlns="http://www.w3.or
 +'</svg>';}
 (function(){var i=0;['hdrLogo','lockLogo','footLogo','loginLogo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=smLogoSVG('L'+(i++));});var m=document.getElementById('aiGoMark');if(m)m.innerHTML=smMarkSVG('BTN');})();
 /* visible build stamp — bump APP_VERSION on every release so you can confirm at a glance that the latest is live (matches the Worker /version) */
-var APP_VERSION='2026-07-20-batch14';
+var APP_VERSION='2026-07-20-batch16';
 /* Friendly public version + changelog shown on the PIN/login screen. Bump APP_VER and prepend a CHANGELOG entry each release. */
 var APP_VER='v1.2';
 var CHANGELOG=[
@@ -2490,6 +2490,7 @@ try{ if(navigator.storage && navigator.storage.persist){ navigator.storage.persi
   var sel=0; try{sel=parseInt(localStorage.getItem('sm_cl_sel')||'0',10)||0;}catch(e){} if(sel<0||sel>=lists.length)sel=0;
   function save(){try{localStorage.setItem('sm_checklists',JSON.stringify(lists));localStorage.setItem('sm_cl_sel',String(sel));}catch(e){}}
   function cur(){return lists[sel]||lists[0];}
+  var expanded=false;   // checklists start minimised each time the app opens; they open only when selected
   function renderTabs(){ if(!tabsEl)return;
     tabsEl.innerHTML=lists.map(function(l,i){ var on=i===sel;
       return '<span class="cltab" style="display:inline-flex;align-items:center;gap:2px;padding:4px 8px;border-radius:16px;font-size:12.5px;border:1px solid '+(on?'#2f8bff':'#2a3c5e')+';background:'+(on?'rgba(47,139,255,.18)':'#12203a')+';color:'+(on?'#dbeafe':'#9fb3d1')+'">'
@@ -2497,13 +2498,20 @@ try{ if(navigator.storage && navigator.storage.persist){ navigator.storage.persi
         +'<span class="cltab-n" data-i="'+i+'" style="cursor:pointer;padding:0 2px">'+esc(l.name)+' <span style="opacity:.6">('+(l.items?l.items.length:0)+')</span></span>'
         +'<button class="cltab-r" data-i="'+i+'" title="Move right" style="background:none;border:0;color:inherit;cursor:pointer;padding:0 3px;font-size:14px"'+(i===lists.length-1?' disabled':'')+'>&rsaquo;</button>'
         +'</span>'; }).join('');
-    tabsEl.querySelectorAll('.cltab-n').forEach(function(b){ b.addEventListener('click',function(){ sel=+b.getAttribute('data-i'); save(); renderAll(); }); });
+    tabsEl.querySelectorAll('.cltab-n').forEach(function(b){ b.addEventListener('click',function(){ var i=+b.getAttribute('data-i'); expanded=(i===sel)?!expanded:true; sel=i; save(); renderAll(); }); });
     tabsEl.querySelectorAll('.cltab-l').forEach(function(b){ b.addEventListener('click',function(){ var i=+b.getAttribute('data-i'); if(i>0){ var t=lists[i-1];lists[i-1]=lists[i];lists[i]=t; sel=(sel===i)?i-1:(sel===i-1?i:sel); save(); renderAll(); } }); });
     tabsEl.querySelectorAll('.cltab-r').forEach(function(b){ b.addEventListener('click',function(){ var i=+b.getAttribute('data-i'); if(i<lists.length-1){ var t=lists[i+1];lists[i+1]=lists[i];lists[i]=t; sel=(sel===i)?i+1:(sel===i+1?i:sel); save(); renderAll(); } }); });
   }
+  function clHead(open){ var items=cur().items||[], done=items.filter(function(x){return x.done;}).length;
+    return '<button type="button" id="clToggle" style="width:100%;text-align:left;background:#12203a;border:1px solid '+(open?'#2f8bff':'#2a3c5e')+';color:#dfeaff;border-radius:10px;padding:12px 14px;cursor:pointer;font-size:14px;font-weight:700'+(open?';margin-bottom:10px':'')+'">'
+      +'<span style="color:'+(open?'#7ec8ff':'#7e90ad')+';margin-right:8px">'+(open?'&#9662;':'&#9656;')+'</span>'+esc(cur().name)
+      +'<span style="float:right;font-weight:400;color:#9fb3d1;font-size:12.5px">'+(items.length?(done+' / '+items.length+' done'):'empty')+' &nbsp;&middot; '+(open?'minimise':'tap to open')+'</span></button>'; }
+  function wireToggle(){ var t=$('clToggle'); if(t)t.addEventListener('click',function(){ expanded=!expanded; render(); }); }
   function render(){ var items=cur().items||[]; var nm=$('cl_curname'); if(nm)nm.textContent=cur().name;
-    if(!items.length){listEl.innerHTML='<p class="hint">No items yet. Add items above, or use the Checklist maker below.</p>';return;}
-    listEl.innerHTML=items.map(function(it,i){
+    // Collapsed by default — the checklist opens only when you select it.
+    if(!expanded){ listEl.innerHTML=clHead(false); wireToggle(); return; }
+    if(!items.length){listEl.innerHTML=clHead(true)+'<p class="hint">No items yet. Add items above, or use the Checklist maker below.</p>';wireToggle();return;}
+    listEl.innerHTML=clHead(true)+items.map(function(it,i){
       return '<div class="clrow" data-i="'+i+'"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;flex:1">'+
         '<input type="checkbox" class="clchk" '+(it.done?'checked':'')+' style="width:20px;height:20px;flex:0 0 auto">'+
         '<span style="'+(it.done?'text-decoration:line-through;color:#7e90ad':'')+'">'+esc(it.text)+'</span></label>'+
@@ -2511,6 +2519,7 @@ try{ if(navigator.storage && navigator.storage.persist){ navigator.storage.persi
         '<button class="cldn ghost" type="button" title="Move down" style="padding:4px 8px"'+(i===items.length-1?' disabled':'')+'>▼</button>'+
         '<button class="cldel ghost" type="button" style="padding:4px 10px">✕</button></div>';
     }).join('');
+    wireToggle();
     listEl.querySelectorAll('.clrow').forEach(function(row){ var i=+row.dataset.i; var it2=cur().items;
       row.querySelector('.clchk').addEventListener('change',function(e){it2[i].done=e.target.checked;save();render();});
       row.querySelector('.cldel').addEventListener('click',function(){it2.splice(i,1);save();render();});
@@ -2519,7 +2528,7 @@ try{ if(navigator.storage && navigator.storage.persist){ navigator.storage.persi
     });
   }
   function renderAll(){ renderTabs(); render(); }
-  function addItem(){var v=input.value.trim();if(!v)return;cur().items.push({text:v,done:false});input.value='';save();renderAll();}
+  function addItem(){var v=input.value.trim();if(!v)return;cur().items.push({text:v,done:false});input.value='';expanded=true;save();renderAll();}
   add.addEventListener('click',addItem);
   input.addEventListener('keydown',function(e){if(e.key==='Enter')addItem();});
   if(reset)reset.addEventListener('click',function(){cur().items.forEach(function(it){it.done=false;});save();render();});
@@ -4371,6 +4380,22 @@ try{
     /* ---- Inflight Display → Time tab: bring In-flight Rest cards to the top ---- */
     var rest=$('view-rest'), live=$('disp-live');
     if(rest && live){ var kids=Array.prototype.slice.call(rest.children); var ref=live.firstChild; kids.forEach(function(n){ live.insertBefore(n,ref); }); }
+    /* ---- Time tab: merge the flight-time box and the GPS auto take-off/landing box into ONE card at the TOP ---- */
+    try{
+      var dTo=$('d_to'), gArm=$('gpsArm');
+      var fcard=dTo?dTo.closest('.fcard'):null, gcard=gArm?gArm.closest('.fcard'):null;
+      if(fcard){
+        var h2=fcard.querySelector('h2');
+        if(h2&&h2.firstChild&&h2.firstChild.nodeType===3) h2.firstChild.nodeValue='Flight time ';
+        if(gcard && gcard!==fcard){
+          var gh=gcard.querySelector('h2');
+          if(gh){ gh.style.fontSize='15px'; gh.style.marginTop='14px'; gh.style.paddingTop='12px'; gh.style.borderTop='1px solid #20304f'; }
+          while(gcard.firstChild) fcard.appendChild(gcard.firstChild);
+          if(gcard.parentNode) gcard.parentNode.removeChild(gcard);
+        }
+        if(live) live.insertBefore(fcard, live.firstChild);
+      }
+    }catch(e){}
     /* ---- Time marker card ---- */
     if(live && !$('tm_card')){
       var tm=document.createElement('div'); tm.className='fcard'; tm.id='tm_card';
